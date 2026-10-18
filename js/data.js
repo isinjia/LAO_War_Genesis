@@ -98,10 +98,10 @@
 
   // currencies: parts (부품, earned by every win) pay for the making (gacha); tuna (참치, first clears / records)
   // buys a chosen unit outright in the recruit shop.
-  // gacha: rates per rank, a 10-pull guarantees S or better, and PITY pulls without SS guarantee one.
-  // The featured SS (changes daily) takes half of the SS draws. Duplicates turn into card copies (PULL_CARDS).
+  // gacha: rates per rank, a 10-pull guarantees S or better, and PITY pulls without the selected SS guarantee that unit.
+  // The player selects any SS. Half of ordinary SS draws are that unit; 40 pulls guarantee it. Duplicates turn into card copies (PULL_CARDS).
   const GACHA = {
-    cost1: 500, cost10: 5000, rates: { B: 0.47, A: 0.32, S: 0.18, SS: 0.03 }, pity: 80, featuredShare: 0.5, // tools/econ_sim.js: ~12 SS in 4 weeks
+    cost1: 500, cost10: 5000, rates: { B: 0.47, A: 0.32, S: 0.18, SS: 0.03 }, pity: 40, featuredShare: 0.5,
     startParts: 5000, startTuna: 300,
   };
   const SHOP_PRICE = { B: 150, A: 400, S: 1000, SS: 3000 }; // tuna, recruit shop (a link for an owned unit)

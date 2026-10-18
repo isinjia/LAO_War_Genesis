@@ -93,6 +93,22 @@
       }
       return 'menu opens preview; detail button spends XP and cards once';
     });
+    await step('selected pickup: all SS and counter preserved on switch', () => {
+      const old = { pickup: APP.save.pickup, pity: APP.save.pity };
+      try {
+        APP.save.pity = 17; APP.openLobby('gacha');
+        document.getElementById('btnPickup').click();
+        const options = [...document.querySelectorAll('[data-pickup]')];
+        if (options.length !== D.UNITS.filter(u => u.rank === 'SS').length) throw new Error('SS excluded from selection');
+        const target = options.find(b => b.dataset.pickup !== old.pickup);
+        target.click();
+        if (APP.save.pickup !== target.dataset.pickup || APP.save.pity !== 17) throw new Error('switch lost counter');
+        if (!document.getElementById('pity').textContent.includes('23')) throw new Error('40-pull guarantee not shown');
+      } finally {
+        Object.assign(APP.save, old); document.getElementById('modal').classList.remove('show'); APP.openLobby('campaign');
+      }
+      return 'all SS selectable, 17/40 maintained after switch';
+    });
     await step('battle 1-1: deploy, fight, enemies spawn', async () => {
       const G = await battle(D.STAGES[0], ['brownie', 'leprechaun', 'gnome'], 40);
       if (!G.allies.length && !G.over) throw new Error('no allies');

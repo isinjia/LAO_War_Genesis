@@ -1109,3 +1109,14 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
 .detail .stat-grid > span { min-height: 48px; }
 .detail .stat-next { display: block; color: #86ed8a; font-family: var(--en); font-weight: 700; }
 .detail .stat-next small { color: #a1d9a3; font-size: 11px; margin-left: 4px; white-space: nowrap; }
+.pickup-select { align-self: flex-start; padding: 8px 14px; border: 1px solid #8bbdd2; border-radius: 4px; background: #123248; color: #def5ff; font-size: 13px; font-weight: 700; }
+.pickup-select span { margin-left: 12px; }
+.pity > small { display: block; margin-top: 8px; line-height: 1.6; color: #b9c6d5; font-size: 11px; }
+.pickup-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pickup-options button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; min-width: 0; border: 1px solid #536174; border-radius: 5px; background: #182432; }
+.pickup-options button.selected { border-color: #ffcf48; background: #40391f; box-shadow: inset 0 0 0 1px #ffcf48; }
+.pickup-options img { width: 72px; height: 72px; max-width: 100%; object-fit: contain; }
+.pickup-options b { font-size: 13px; }
+.pickup-options small { color: #ffdf79; font-size: 11px; }
+.pickup-note { color: #bdc9d5; font-size: 12px; text-align: center; }
+@media(max-width: 640px) { .pickup-options { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

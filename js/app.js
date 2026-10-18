@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.58'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.59'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -966,8 +966,19 @@
   // ── making (gacha, parts) and recruit shop (tuna) ──────
   const G_ = D.GACHA;
   const SS = D.UNITS.filter((u) => u.rank === 'SS');
-  const FEATURABLE = SS.filter((u) => window.FULL && FULL[u.id]); // the banner needs a full-body illustration
-  const featured = () => FEATURABLE[Math.floor(Date.now() / 86400000) % FEATURABLE.length]; // changes daily
+  const featured = () => SS.find((u) => u.id === save.pickup) || SS[0];
+  if (!save.pickupV) {
+    // The old counter included the tutorial only until the first random SS reset it.
+    if (save.tutPulled && save.pity === save.pulls) save.pity = Math.max(0, save.pity - 10);
+    save.pickup = featured().id; save.pickupV = 1; persist();
+  }
+  function selectPickup() {
+    modal('SS 픽업 선택', `<div class="pickup-options">${SS.map((u) => `<button data-pickup="${u.id}" class="${u.id === featured().id ? 'selected' : ''}" aria-pressed="${u.id === featured().id}"><img src="${IMG['u_' + u.id]}" alt=""><b>${u.name}</b><small>${u.id === featured().id ? '선택 중' : '선택'}</small></button>`).join('')}</div><p class="pickup-note">무료로 변경할 수 있으며, 확정까지 누적한 횟수는 유지됩니다.</p>`, [['닫기', closeModal, 'd']], true);
+    document.querySelectorAll('[data-pickup]').forEach((button) => { button.onclick = () => {
+      save.pickup = button.dataset.pickup; persist(); AUDIO.play('click'); closeModal(); renderGacha();
+    }; });
+  }
+  $('btnPickup').onclick = selectPickup;
   let gtab = 'making';
   document.querySelectorAll('.gtab').forEach((b) => { b.onclick = () => { gtab = b.dataset.g; AUDIO.play('click', 0.5, 1.35); renderGacha(); }; });
 
@@ -979,9 +990,9 @@
     const f = featured();
     setArt($('bannerArt'), f.id);
     $('pickName').innerHTML = `${rk('SS')} ${f.name}`;
-    $('pickDesc').textContent = `${f.role} · ${f.desc} — SS 등장 시 ${Math.round(G_.featuredShare * 100)}%는 픽업 대원`;
+    $('pickDesc').textContent = `${f.role} · ${f.desc} — 일반 SS 등장 시 ${Math.round(G_.featuredShare * 100)}%는 선택한 대원`;
     $('rates').innerHTML = D.RANK_ORDER.map((r) => `<span>${rk(r)}${(G_.rates[r] * 100).toFixed(0)}%</span>`).join('') + `<span>· 중복은 그 대원의 카드 (업그레이드 재료)</span>`;
-    $('pity').innerHTML = `SS 확정까지 <b>${G_.pity - save.pity}</b>회 · 픽업 ${f.name} ${(G_.rates.SS * G_.featuredShare * 100).toFixed(1)}%<div class="pity-bar"><i style="width:${(save.pity / G_.pity) * 100}%"></i></div>`;
+    $('pity').innerHTML = `${f.name} 확정까지 <b>${Math.max(1, G_.pity - save.pity)}</b>회 · 일반 제조 픽업 ${(G_.rates.SS * G_.featuredShare * 100).toFixed(1)}%<div class="pity-bar"><i style="width:${Math.min(100, (save.pity / G_.pity) * 100)}%"></i></div><small>선택한 대원 획득 시 초기화 · 다른 SS 획득 / 픽업 변경 시 유지 · 튜토리얼 10회 제외</small>`;
     $('pull1').disabled = save.parts < G_.cost1;
     $('pull10').disabled = save.parts < G_.cost10;
     const box = $('ssList');
@@ -1042,7 +1053,6 @@
       for (const k of D.RANK_ORDER) { acc += G_.rates[k]; if (r < acc) { rank = k; break; } }
     }
     if (forceS && (rank === 'B' || rank === 'A')) rank = 'S';
-    if (rank === 'SS') save.pity = 0;
     return rank;
   }
 
@@ -1054,10 +1064,16 @@
     const out = [];
     for (let i = 0; i < n; i++) {
       const last = n === 10 && i === 9 && !out.some((o) => o.u.rank === 'S' || o.u.rank === 'SS');
+      const guaranteed = save.pity + 1 >= G_.pity;
       const rank = rollRank(last);
       const pool = D.UNITS.filter((u) => u.rank === rank);
       let u = pool[Math.floor(Math.random() * pool.length)];
-      if (rank === 'SS' && Math.random() < G_.featuredShare) u = featured();
+      if (rank === 'SS') {
+        const pick = featured();
+        const others = pool.filter((unit) => unit.id !== pick.id);
+        u = guaranteed || !others.length || Math.random() < G_.featuredShare ? pick : others[Math.floor(Math.random() * others.length)];
+        if (u.id === pick.id) save.pity = 0;
+      }
       out.push(Object.assign({ u }, obtain(u)));
     }
     persist();
@@ -1266,7 +1282,7 @@
   const TUT_ADD = 'valkyrie'; // the S of that pull: the player puts her in the squad
   function tutorialPull() {
     save.parts = Math.max(0, save.parts - G_.cost10);
-    save.pulls += 10; save.pity += 10;
+    save.pulls += 10; // fixed tutorial cards never advance the selected-SS guarantee
     save.tutPulled = 1;
     const out = TUT_PULL.map((id) => Object.assign({ u: D.UNIT[id] }, obtain(D.UNIT[id], true, D.PULL_CARDS[D.UNIT[id].rank][0])));
     persist();
