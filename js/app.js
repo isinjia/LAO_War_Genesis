@@ -74,7 +74,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.24'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.25'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -990,6 +990,24 @@
     placeCoach(coach, $('lcoachArrow'), el);
   }
   setInterval(lobbyTutTick, 200);
+  // a forced tutorial: while the coach points at something, taps anywhere else do nothing (the skip button, popups
+  // the step opens, the story and the battlefield drag stay usable)
+  function tutGuard(e) {
+    const t = e.target;
+    if (!(t instanceof Element) || save.tut || noSave) return;
+    const lobbyOn = $('lcoach').classList.contains('show');
+    const battleOn = !!tut && $('hud').classList.contains('show');
+    if (!lobbyOn && !battleOn) return;
+    const target = document.querySelector(lobbyOn ? '.lpulse' : '.pulse-target');
+    if (!target) return; // nothing pointed at (a step waiting): free play
+    if (target.contains(t) || t.closest('#tutSkip, #modal, #gachaResult, #story, #lcoach, #coach') || (battleOn && t.id === 'gl')) return;
+    e.stopPropagation(); e.preventDefault();
+    if (e.type === 'pointerdown') { // a nudge towards the right spot
+      target.classList.remove('tut-nudge'); void target.offsetWidth; target.classList.add('tut-nudge');
+      setTimeout(() => target.classList.remove('tut-nudge'), 400); // back to its pulse
+    }
+  }
+  for (const ev of ['pointerdown', 'click']) addEventListener(ev, tutGuard, { capture: true });
   // a bubble next to its target: above it in the lower part of the screen, below it otherwise
   function placeCoach(coach, arrow, el) {
     const r = el.getBoundingClientRect(), w = coach.offsetWidth, h = coach.offsetHeight;

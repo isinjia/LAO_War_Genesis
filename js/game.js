@@ -708,6 +708,7 @@
     G.cds = G.cds.map((c) => Math.max(0, c - dt));
     if (G.cannon < D.CANNON.charge) G.cannon = Math.min(D.CANNON.charge, G.cannon + dt * (G.st.cannonK || 1) / (1 - 0.2 * Math.min(3, buffN(G.st, 'cannon'))));
     updateCannon(dt);
+    basePower(dt);
     spawner(dt);
     for (const f of G.allies) stepFighter(f, dt);
     for (const f of G.enemies) stepFighter(f, dt);
@@ -887,7 +888,60 @@
     G.money -= c;
     G.worker++;
     AUDIO.play('levelup', 0.7);
-    text(-0.7, 3.6, '작업 효율 LV ' + (G.worker + 1), '#5dff9b');
+    text(BASE_C.x, 3.9, '발전 효율 LV ' + (G.worker + 1), G.worker >= D.WORKER.cost.length ? '#ffd65a' : '#5dff9b');
+    // the base powers up: rings and sparks that grow with the level
+    const col = powerColor(), k = 1 + G.worker * 0.15;
+    ring(BASE_C.x, 0.1, col, 4 * k, 0.6); ring(BASE_C.x, BASE_C.y, 0xffffff, 3 * k, 0.4);
+    sheet('flash', BASE_C.x, BASE_C.y, col, 3 * k, 0.25); sheet('aura', BASE_C.x, BASE_C.y + 0.4, col, 3.5 * k, 0.6);
+    debris(BASE_C.x, BASE_C.y + 0.8, 8 + G.worker * 2, col);
+    shake(0.08 + G.worker * 0.02, 0.25);
+  }
+
+  // ── the base reflects its power level (발전 효율): glow → rising motes → ground ring → arcs and a brighter hull,
+  // gold at the last level ──
+  const BASE_C = { x: -1.1, y: 1.6 };
+  const powerColor = () => (G.worker >= D.WORKER.cost.length ? 0xffd04a : 0x48d8ff);
+  function basePower(dt) {
+    const lv = G.worker, max = D.WORKER.cost.length, col = powerColor();
+    if (!G.basePw) {
+      const glow = sprite(tex.glow, col); glow.renderOrder = 19; // behind the base (20)
+      const halo = sprite(tex.ring, col); halo.renderOrder = 5;  // on the ground
+      const aura = sprite(tex.glow, col); aura.renderOrder = 21; // a faint charge over the hull
+      const shield = sprite(tex.ring, col); shield.renderOrder = 21; // LV6+: an energy bubble around it
+      G.basePw = { glow, halo, aura, shield, mote: 0, arc: 0, t: 0 };
+    }
+    const P = G.basePw;
+    P.t += dt;
+    for (const m of [P.glow, P.halo, P.aura, P.shield]) m.material.color.setHex(col);
+    const pulse = 0.5 + 0.5 * Math.sin(P.t * (2 + lv * 0.4));
+    const gi = lv < 1 ? 0 : Math.min(0.85, 0.3 + lv * 0.08); // LV2+
+    const gs = 6 + lv * 0.6 + pulse * 0.5;
+    P.glow.position.set(BASE_C.x, BASE_C.y, 0); P.glow.scale.set(gs, gs * 1.1, 1); P.glow.material.opacity = gi * (0.75 + 0.25 * pulse);
+    const hi = lv < 3 ? 0 : 0.35 + (lv - 3) * 0.1; // LV4+
+    const hs = 4.6 + pulse * 0.5 + lv * 0.2;
+    P.halo.position.set(BASE_C.x, 0.05, 0); P.halo.scale.set(hs, hs * 0.22, 1); P.halo.material.opacity = hi * (0.6 + 0.4 * pulse);
+    const ai = lv < 1 ? 0 : 0.04 * lv; // the hull itself takes on the charge
+    P.aura.position.set(BASE_C.x, BASE_C.y, 0); P.aura.scale.set(4.2, 4.2, 1); P.aura.material.opacity = ai * (0.7 + 0.3 * pulse);
+    const si = lv < 5 ? 0 : 0.18 + (lv - 5) * 0.08; // LV6+
+    const ss = 1 + Math.sin(P.t * 3) * 0.03;
+    P.shield.position.set(BASE_C.x, BASE_C.y + 0.1, 0); P.shield.scale.set(5.6 * ss, 4.6 * ss, 1); P.shield.material.opacity = si * (0.6 + 0.4 * pulse);
+    if (lv >= 2) { // LV3+: motes rising off the hull, more with each level
+      P.mote -= dt;
+      if (P.mote <= 0) {
+        P.mote = 0.28 / (lv - 1);
+        const m = sprite(tex.glow, lv >= max ? (Math.random() < 0.5 ? 0xffd04a : 0xfff2b0) : (Math.random() < 0.5 ? 0x48d8ff : 0xbff4ff));
+        const x0 = BASE_C.x + (Math.random() - 0.5) * 3.2, y0 = 0.3 + Math.random() * 2.6, s0 = 0.2 + Math.random() * 0.25, sway = (Math.random() - 0.5) * 0.6;
+        addFx(m, 1.4, (u) => { m.position.set(x0 + Math.sin(u * 6) * sway * 0.3, y0 + u * 1.6, 0); m.scale.set(s0, s0, 1); m.material.opacity = (u < 0.2 ? u * 5 : 1 - (u - 0.2) / 0.8) * 0.9; });
+      }
+    }
+    if (lv >= 5) { // LV6+: arcs crawling over the hull
+      P.arc -= dt;
+      if (P.arc <= 0) {
+        P.arc = 0.5 / (lv - 4);
+        const x0 = BASE_C.x + (Math.random() - 0.5) * 2.6, y0 = 0.6 + Math.random() * 2.2;
+        bolt(x0, y0, x0 + (Math.random() - 0.5) * 1.4, y0 + (Math.random() - 0.5) * 1.0, lv >= max ? 0xffe27a : 0xbff4ff);
+      }
+    }
   }
 
   // ── Orca cannon: a charge at the barrel, then a layered laser that sweeps the lane, then a fade ──
@@ -1427,8 +1481,9 @@
     G.readyGlow.visible = ready;
     if (ready) { const p = 2.6 + Math.sin(G.t * 6) * 0.4; G.readyGlow.scale.set(p, p, 1); G.readyGlow.position.set(-0.8, 2.2, 0); G.readyGlow.material.opacity = 0.55; }
     if (G.ourRig) {
-      const fl = G.base.flash ? 1.8 : 1;
-      G.ourRig.setTint(fl, fl, fl);
+      const fl = G.base.flash ? 1.8 : 1, lv = G.worker, max = D.WORKER.cost.length;
+      const up = lv >= 5 ? 0.06 * (lv - 4) : 0; // LV6+: the hull itself glows a little (gold at the last level)
+      G.ourRig.setTint(fl * (1 + up), fl * (1 + up), fl * (1 + up * (lv >= max ? 0.2 : 1.8)));
       G.ourRig.update(dt);
       if (G.over === 'lose') G.ourRig.setOpacity(Math.max(0, 1 - G.overT / 1.6));
     }

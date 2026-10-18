@@ -812,3 +812,7 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
   .power .pw-bar::before { background: repeating-linear-gradient(90deg, rgba(255, 210, 0, 0.13) 0 6px, transparent 6px 8px); }
   .power .pw-bar i { -webkit-mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); }
 }
+
+/* a tap outside the tutorial's target: the target shakes once */
+.tut-nudge { animation: tutnudge 0.35s ease-in-out; }
+@keyframes tutnudge { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }

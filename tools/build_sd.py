@@ -66,7 +66,7 @@ def v3_from(d, dv):
 
 ENEMIES = {k: "Model_MP_" + k for k in """NightChick_N Drone_N Legion_N Fallen_N Centurion_N Gigantes_N
 Intruder_N Phalangites_N Rampart_N Juggernaut_N BigChick_N Fortress_N Destroyer_N
-EmperorChick_N Executioner_EW IronPrince_N""".split()}
+EmperorChick_N Executioner_EW IronPrince_N Nest_B07 HauntedFortress_N UnderWatcher_B05""".split()}
 MONSTER_DIR = ROOT + "/AssetBundleResource/monster"
 
 CLIPS = {
