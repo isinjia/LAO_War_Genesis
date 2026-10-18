@@ -155,5 +155,8 @@
     amb = { g, nodes };
   }
 
-  window.AUDIO = { play, music, voice, setVolume, preload, ambience, volume: (k) => SET[k] };
+  // tests: what is running (the context, loaded effects, the ambience bed and its level, the music element)
+  const state = () => ({ ctx: ctx && ctx.state, unlocked, buffers: Object.keys(buffers).length, live: Object.values(live).reduce((a, n) => a + n, 0),
+    ambience: amb ? +amb.g.gain.value.toFixed(3) : null, bgm: bgm ? { src: bgm.src.split('/').pop(), paused: bgm.paused, volume: +bgm.volume.toFixed(2) } : null });
+  window.AUDIO = { play, music, voice, setVolume, preload, ambience, state, volume: (k) => SET[k] };
 })();

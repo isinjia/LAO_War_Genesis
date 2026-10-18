@@ -1342,6 +1342,8 @@
       renderer.getContext().finish();
       return (performance.now() - t0) / n;
     },
+    // tests: point the camera at world x (captures in a throttled preview, where the pan barely runs)
+    look(x) { if (!G) return; pan = null; G.userCam = performance.now(); camX = x; clampCam(); updateCam(); },
     // tests: advance the battle by `sec` simulated seconds without drawing
     sim(sec) { for (let i = 0; i < sec / STEP && G && !G.over; i++) update(STEP); },
   };
