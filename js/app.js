@@ -74,7 +74,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.19'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.20'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -1206,9 +1206,10 @@
       ['계속하기', () => pause(false)],
       ['설정', () => openSettings(() => pause(true)), 'd'],
       ['재시작', () => { closeModal(); GAME.stop(); launch(st); }, 'd'],
-      ['작전 포기', () => { closeModal(); GAME.stop(); backTo(st); }, 'o'],
+      ...(tutBattle(st) ? [] : [['작전 포기', () => { closeModal(); GAME.stop(); backTo(st); }, 'o']]), // the tutorial battle can't be left
     ]);
   }
+  const tutBattle = (st) => !save.tut && !noSave && save.cleared === 0 && !st.hard && !st.infinite && !st.daily && st.ix === 0;
 
   // back to where a stage was picked: its chapter (normal / hard) or the campaign list (infinite)
   function backTo(st) {
@@ -1274,13 +1275,16 @@
       const r = D.reward(st, 'lose');
       if (st.infinite) { save.infBuffs = []; save.infRun = 0; st.buffs = []; } // the run ends: next time from floor 1
       gain(r); persist();
+      const tutorial = tutBattle(st); // the tutorial battle: try again until it is won (or the tutorial is skipped)
       modal('', `<div class="result"><div class="big fail">MISSION FAILED</div>
         <div style="margin:8px 0">${kind === 'timeout' ? '작전 시간(10분)이 초과되었습니다. 전선을 돌파하지 못했습니다.' : '전진기지가 함락되었습니다.'}</div>
         ${rwRes(r)}
-        <div style="margin-top:10px;font-size:13px">대원 강화 · 코어 링크 · 편성을 바꿔 다시 도전해 보세요.</div></div>`, [
+        <div style="margin-top:10px;font-size:13px">${tutorial ? '튜토리얼 작전입니다. 대원을 꾸준히 출격시키며 다시 도전해 보세요.' : '대원 강화 · 코어 링크 · 편성을 바꿔 다시 도전해 보세요.'}</div></div>`, [
         ['재도전', () => { closeModal(); GAME.stop(); launch(st.infinite ? Object.assign(D.infiniteFloor(1), { buffs: [] }) : st); }],
-        ['대원 강화', () => { closeModal(); GAME.stop(); openLobby('squad'); }, 'd'],
-        [st.infinite ? '나가기' : '작전 지도', leave, 'd'],
+        ...(tutorial ? [] : [
+          ['대원 강화', () => { closeModal(); GAME.stop(); openLobby('squad'); }, 'd'],
+          [st.infinite ? '나가기' : '작전 지도', leave, 'd'],
+        ]),
       ]);
     }
   }
