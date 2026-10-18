@@ -53,7 +53,12 @@
       if (!back.hidden) throw new Error('root still has title exit');
       hub.querySelector('[data-operation="stages"]').click();
       if (!document.getElementById('pChapters').classList.contains('on')) throw new Error('no chapters');
-      if (!document.getElementById('lobby').classList.contains('operation-depth')) throw new Error('tabs not replaced');
+      if (!document.getElementById('lobby').classList.contains('operation-depth')) throw new Error('operation depth missing');
+      const mobile = matchMedia('(max-width: 1000px), (pointer: coarse)').matches;
+      const tabsShown = getComputedStyle(document.querySelector('.navbar')).display !== 'none';
+      const bottomBackShown = getComputedStyle(document.querySelector('.operation-back')).display !== 'none';
+      if (tabsShown === mobile || bottomBackShown !== mobile) throw new Error('wrong device navigation');
+      if (!mobile && document.getElementById('btnBackDesktop').hidden) throw new Error('desktop back missing');
       if (document.querySelectorAll('#chapterList .chap').length !== 8) throw new Error('mixed chapter list');
       document.querySelector('#chapterList [data-ch="0"]').click();
       if (!document.getElementById('pStages').classList.contains('on')) throw new Error('no stage map');
@@ -65,7 +70,7 @@
         back.click();
         if (!hub.classList.contains('on') || document.getElementById('lobby').classList.contains('operation-depth')) throw new Error('tabs not restored');
       }
-      return 'all 3 modes replace tabs with back and restore them on return';
+      return 'all 3 modes: desktop keeps tabs, mobile uses centered back';
     });
     await step('battle 1-1: deploy, fight, enemies spawn', async () => {
       const G = await battle(D.STAGES[0], ['brownie', 'leprechaun', 'gnome'], 40);

@@ -1089,8 +1089,12 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
 .node.locked { opacity: .5; filter: grayscale(1) brightness(.6); cursor: not-allowed; }
 /* Operation subpages replace the lobby tabs with one centered back action. */
 .operation-back { display: none; position: absolute; left: 0; right: 0; bottom: 0; height: 70px; padding-bottom: env(safe-area-inset-bottom); justify-content: center; align-items: center; z-index: 3; background: linear-gradient(0deg, #05090ff5, #101823ed); border-top: 1px solid #ffffff26; }
-.operation-depth .navbar { display: none; }
-.operation-depth .operation-back { display: flex; }
+.desktop-op-back[hidden] { display: none; }
+@media (max-width: 1000px), (pointer: coarse) {
+  .operation-depth .navbar { display: none; }
+  .operation-depth .operation-back { display: flex; }
+  .desktop-op-back { display: none; }
+}
 .op-back-btn { display: flex; justify-content: center; align-items: center; gap: 13px; min-width: 174px; height: 46px; padding: 0 26px; border: 1px solid #8dabc2; border-bottom: 3px solid #405568; border-radius: 7px; background: linear-gradient(#334b60, #1b2c3c); color: #f1f7ff; font-weight: 700; box-shadow: 0 3px 8px #0008; }
 .op-back-btn i { width: 10px; height: 10px; border-left: 3px solid currentColor; border-bottom: 3px solid currentColor; transform: rotate(45deg); }
 .op-back-btn:active { transform: translateY(2px); }
