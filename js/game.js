@@ -446,16 +446,16 @@
     const b = G.bg, aspect = innerWidth / innerHeight;
     const viewHeight = Math.max(8.5, Math.min(10.5, 11 / aspect));
     const groundFrac = hudFrac >= 0 ? Math.max(0.24, Math.min(0.44, hudFrac + 0.06)) : aspect < 1 ? 0.38 : 0.37;
-    const H1 = Math.max((viewHeight * (1 - groundFrac) + 0.2) / (1 - b.gf), (0.2 + viewHeight * groundFrac) / b.gf);
     const widestHeight = viewHeight / zMin();
-    const bottom = Math.min(-H1 * b.gf, -widestHeight * groundFrac - 0.2);
-    const top = Math.max(H1 * (1 - b.gf), widestHeight * (1 - groundFrac) + 0.2);
-    const H = top - bottom;
+    // Fit the actual source picture to the widest view, not the default view.
+    // UVs must stay inside the picture: clamping outside it stretches tree trunks
+    // and buildings into vertical streaks above the image at low zoom.
+    const H = Math.max((widestHeight * (1 - groundFrac) + 0.2) / (1 - b.gf), (0.2 + widestHeight * groundFrac) / b.gf);
     const width = G.len + 40;
     b.tex.wrapT = THREE.ClampToEdgeWrapping;
-    b.tex.repeat.set(width / H1, H / H1);
-    b.tex.offset.y = bottom / H1 + b.gf;
-    for (const m of [b.mesh, b.tint]) { m.scale.set(width, H, 1); m.position.set(G.len / 2, (top + bottom) / 2, -5); }
+    b.tex.repeat.set(width / H, 1);
+    b.tex.offset.y = 0;
+    for (const m of [b.mesh, b.tint]) { m.scale.set(width, H, 1); m.position.set(G.len / 2, H * (0.5 - b.gf), -5); }
   }
 
   function addShadow(parent, x, y, w) {
