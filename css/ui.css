@@ -748,17 +748,48 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 
 
 
-/* battle money: at the left of the deploy cards (what deploying spends), not in the top bar */
-.deck-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; max-width: 820px; margin: 0 auto; }
-.deck-wrap .deck { margin: 0; min-width: 0; }
-.deck-wrap .money { flex: none; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding: 6px 12px; min-width: 116px; box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 210, 0, 0.45); border-left: 4px solid var(--y); font-size: 26px; line-height: 1.05; }
-.deck-wrap .money .mlbl { font-family: var(--ko); font-style: normal; font-weight: 700; font-size: 11px; color: #ddd; text-shadow: none; }
-.deck-wrap .money i { display: none; }
-.deck-wrap .money small:last-child { font-size: 14px; }
-.deck-wrap .money.full::after { margin: 2px 0 0; }
+/* battle power (전력): a gauge bar on top of the deploy cards (phones and PC alike) */
+.deck-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; max-width: 760px; margin: 0 auto; }
+.deck-wrap .deck { margin: 0; min-width: 0; flex: 1; }
+.power { position: relative; display: flex; align-items: center; gap: 10px; padding: 5px 14px; box-sizing: border-box; overflow: hidden;
+  font-size: 24px; line-height: 1; text-shadow: none;
+  background: linear-gradient(160deg, rgba(40, 32, 6, 0.92), rgba(10, 10, 12, 0.92) 60%);
+  border: 1px solid rgba(255, 210, 0, 0.5); clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
+.power::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--y); box-shadow: 0 0 10px var(--y); }
+.power .pw-head { display: flex; align-items: center; gap: 5px; font-family: var(--ko); font-style: normal; font-size: 13px; color: #f3e3a0; letter-spacing: 1px; }
+.power .pw-ico { width: 16px; height: 16px; background: var(--y); -webkit-mask: var(--s-i_power) center / contain no-repeat; mask: var(--s-i_power) center / contain no-repeat; filter: drop-shadow(0 0 4px #ffd200); }
+.power .pw-num { display: flex; align-items: baseline; gap: 3px; font-family: var(--en); font-weight: 900; font-style: italic; color: var(--y); text-shadow: 0 0 12px rgba(255, 204, 0, 0.45); min-width: 4.5em; }
+.power .pw-num small { font-size: 13px; color: #c9a940; font-style: italic; }
+.power .pw-bar { flex: 1; height: 7px; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 210, 0, 0.25); transform: skewX(-20deg); }
+.power .pw-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ffb300, #ffe066); box-shadow: 0 0 8px #ffd200; }
+.power.full { animation: none; }
+.power.full .pw-bar i { animation: pwfull 0.5s infinite alternate; }
+.power.full::after { content: 'MAX'; font-family: var(--en); font-size: 10px; font-weight: 900; font-style: italic; color: #111; background: var(--y); padding: 0 4px; margin: 0; }
+@keyframes pwfull { to { filter: brightness(1.5); box-shadow: 0 0 16px #ffd200; } }
+@media (max-width: 640px) { .power { font-size: 20px; padding: 4px 12px; gap: 8px; } .power .pw-head { font-size: 12px; } .power .pw-num small { font-size: 12px; } .power .pw-bar { height: 6px; } }
+
+/* deck row + swap button (phones only: two pages of five) */
+.deck-row { flex: 1; min-width: 0; display: flex; gap: 6px; align-items: stretch; }
+.swap { display: none; }
 @media (max-width: 640px) {
-  .deck-wrap { flex-direction: column; align-items: stretch; gap: 4px; }
-  .deck-wrap .money { flex-direction: row; align-items: baseline; gap: 6px; min-width: 0; align-self: flex-start; padding: 2px 10px; font-size: 20px; }
-  .deck-wrap .money small:last-child { font-size: 13px; }
+  .deck { grid-template-columns: repeat(5, 1fr); }
+  .deck[data-page="0"] .slot[data-page="1"], .deck[data-page="1"] .slot[data-page="0"] { display: none; }
+  .swap.on { display: flex; flex: none; width: 44px; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    background: rgba(0, 0, 0, 0.75); border: 1px solid rgba(255, 210, 0, 0.5); color: var(--y); clip-path: polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
+  .swap i { font-style: normal; font-size: 20px; line-height: 1; }
+  .swap b { font-family: var(--en); font-size: 11px; color: #ddd; }
+  .swap.ready { background: rgba(80, 64, 0, 0.9); box-shadow: inset 0 0 0 2px var(--y); animation: swapready 0.6s infinite alternate; }
+  .swap:active { transform: scale(0.94); }
+}
+@keyframes swapready { to { box-shadow: inset 0 0 0 2px var(--y), 0 0 12px var(--y); } }
+/* phones: worker · 전력 gauge · cannon share the top row, the five cards (+ swap) take the full width below */
+@media (max-width: 640px) {
+  .hud-bottom { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "w p c" "d d d"; align-items: center; gap: 6px 8px; padding: 6px 8px max(6px, env(safe-area-inset-bottom)); }
+  .deck-wrap { display: contents; }
+  #btnWorker { grid-area: w; width: 56px; height: 56px; }
+  #btnCannon { grid-area: c; width: 56px; height: 56px; }
+  .side-btn .lbl { font-size: 8px; } .side-btn .lv { font-size: 12px; } .side-btn .cost { font-size: 11px; }
+  .power { grid-area: p; }
+  .deck-row { grid-area: d; }
+  .deck-row .deck { max-width: none; }
 }

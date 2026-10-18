@@ -175,8 +175,8 @@
     blitz: { name: '기습', tip: '시작과 동시에 돌격 · 적 이동 속도 +25%' },
     siege: { name: '포위전', tip: '요새 체력 1.5배 · 적 출현은 느림 · 보상 1.3배' },
     emp: { name: 'EMP', tip: '오르카 포격 충전 속도 40%' },
-    poor: { name: '보급 차단', tip: '자금 수입 -25%' },
-    rich: { name: '보급 지원', tip: '시작 자금 500 · 적 강도 +10%' },
+    poor: { name: '보급 차단', tip: '전력 충전 -25%' },
+    rich: { name: '보급 지원', tip: '시작 전력 500 · 적 강도 +10%' },
   };
   const CHAPTER_MODS = [
     ['', '', 'swarm', '', '', 'air', 'rich', '', 'swarm', ''],
@@ -277,8 +277,8 @@
   const INF_BUFFS = [
     { id: 'atk', name: '화력 증강', tip: '아군 공격 +12%' },
     { id: 'hp', name: '장갑 보강', tip: '아군 체력 +15%' },
-    { id: 'money', name: '보급 선적', tip: '시작 자금 +300' },
-    { id: 'income', name: '생산 라인', tip: '자금 수입 +15%' },
+    { id: 'money', name: '보급 선적', tip: '시작 전력 +300' },
+    { id: 'income', name: '생산 라인', tip: '전력 충전 +15%' },
     { id: 'cannon', name: '포격 개량', tip: '오르카 포격 충전 -20%' },
     { id: 'cd', name: '긴급 출격', tip: '재배치 시간 -12%' },
   ];
@@ -334,7 +334,7 @@
     { id: 'shore', kind: '인연', name: '해안 자매', need: '브라우니 + 레프리콘 + 노움', tip: '세 대원 체력 · 공격 +12%', pair: ['brownie', 'leprechaun', 'gnome'], test: (us) => has(us, 'brownie', 'leprechaun', 'gnome') },
     { id: 'command', kind: '인연', name: '지휘 체계', need: '라비아타 + 발키리', tip: '전원 체력 +8%', pair: ['labiata', 'valkyrie'], test: (us) => has(us, 'labiata', 'valkyrie') },
     { id: 'grunt', kind: '각오', name: '보병의 긍지', need: 'SS 없이 편성', tip: '전원 공격 +20% · 체력 +15%', test: (us) => us.length >= 5 && !us.some((u) => u.rank === 'SS') },
-    { id: 'lean', kind: '각오', name: '소수 정예', need: '편성 6명 이하', tip: '재배치 시간 -30% · 작업 효율 시작 Lv2', test: (us) => us.length > 0 && us.length <= 6 },
+    { id: 'lean', kind: '각오', name: '소수 정예', need: '편성 6명 이하', tip: '재배치 시간 -30% · 발전 효율 시작 Lv2', test: (us) => us.length > 0 && us.length <= 6 },
   ];
   const synergiesOf = (units) => SYNERGIES.filter((sy) => sy.test(units)).map((sy) => sy.id);
 

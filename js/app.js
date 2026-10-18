@@ -74,7 +74,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.21'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.22'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -911,14 +911,25 @@
     setTimeout(() => el.remove(), 2300);
   }
 
+  // phones: the deck shows five cards at a time, the swap button flips between 1-5 and 6-10 (as in Battle Cats)
+  let deckPage = 0;
+  function setDeckPage(p) {
+    deckPage = p;
+    $('deck').dataset.page = p;
+    $('swapPage').textContent = `${p + 1}/2`;
+  }
+  $('btnSwap').onpointerdown = (e) => { e.preventDefault(); AUDIO.play('click', 0.4, 1.3); setDeckPage(deckPage ? 0 : 1); };
   function buildDeck(deck) {
     const el = $('deck');
+    setDeckPage(0);
+    $('btnSwap').classList.toggle('on', deck.length > 5);
     el.innerHTML = '';
     deckEls = [];
     for (let i = 0; i < 10; i++) {
       const s = deck[i];
       const b = document.createElement('button');
       b.className = 'slot' + (s ? ` r-${s.def.rank}` : ' empty');
+      b.dataset.page = i < 5 ? 0 : 1; // phones show one row of five at a time (the swap button flips)
       if (s) {
         b.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt="">${rk(s.def.rank)}<div class="cd"></div><div class="c">${s.def.cost}</div><div class="snm">${s.def.name.replace(/ .*/, '')}</div>` +
           (s.def.rank === 'SS' || s.def.rank === 'S' ? '<span class="sk" title="스킬 충전 (차면 자동 발동)"><i></i></span>' : '');
@@ -1031,7 +1042,7 @@
   // each step: target element, text, done(G) — advanced from the HUD sync
   const TUT = [
     { el: () => document.querySelector('#deck .slot'), text: (G) => `<b>${G.deck[0].def.name}</b> 버튼을 눌러 출격! 대원은 앞으로 걸어가 사거리 안의 적을 원작 공격 모션으로 공격합니다.`, done: (G) => G.allies.length > 0 },
-    { el: () => $('btnWorker'), text: '자금은 계속 차오릅니다. <b>작업 효율</b>을 올리면 더 빨리, 더 많이 모입니다.', done: (G, t) => G.worker > 0 || t > 14 },
+    { el: () => $('btnWorker'), text: '<b>전력</b>은 계속 차오릅니다. <b>발전 효율</b>을 올리면 더 빨리, 더 많이 모입니다.', done: (G, t) => G.worker > 0 || t > 14 },
     { el: () => $('deck'), text: '비용과 재배치 시간을 보며 섞어 내보내세요. <b>레프리콘</b>은 튼튼한 벽, <b>노움</b>은 범위 포격입니다.', done: (G, t) => t > 9 },
     { el: () => $('btnCannon'), text: '<b>오르카 포격</b> 준비 완료! 눌러서 앞의 철충을 한꺼번에 밀어내세요.', wait: (G) => G.cannon >= D.CANNON.charge, done: (G) => G.cannon < D.CANNON.charge },
     { el: () => $('timer'), text: '화면을 끌거나 상단 미니맵을 눌러 전장을 볼 수 있습니다. <b>10분 안에</b> 철충 요새를 부수면 승리!', done: (G, t) => t > 8 },
@@ -1129,14 +1140,14 @@
     modal('작전 안내', `<div class="help">
       <h4>전투</h4><p>왼쪽 오르카 기지에서 대원을 내보내 오른쪽 철충 요새를 부수면 승리. 기지가 무너지거나 10분이 지나면 패배합니다.
       대원은 걷다가 사거리 안에 적이 오면 멈춰 공격하고, 체력이 깎이면 뒤로 밀려납니다(넉백).</p>
-      <h4>자금 · 포격</h4><p>자금은 시간이 지나면 차오르고 적을 쓰러뜨리면 더 들어옵니다. 작업 효율을 올리면 수입과 지갑이 커집니다.
+      <h4>전력 · 포격</h4><p>전력은 시간이 지나면 차오르고 적을 쓰러뜨리면 더 들어옵니다. 발전 효율을 올리면 충전 속도와 최대 전력이 커집니다.
       오르카 포격은 충전되면 기지 앞 적을 모두 때리고 밀어냅니다.</p>
       <h4>편성</h4><p>최대 10명, 편성 코스트 ${D.DECK_CAP} 이하(B ${D.DECK_COST.B} · A ${D.DECK_COST.A} · S ${D.DECK_COST.S} · SS ${D.DECK_COST.SS}).
       싼 벽 유닛과 화력 유닛을 섞는 것이 기본입니다.</p>
       <h4>성장</h4><p>XP로 레벨 업(체력 · 공격 +20%/레벨). 같은 대원을 다시 얻으면 코어 링크(최대 5, 링크당 +8%, 풀 링크 재배치 -15%).</p>
       <h4>재화</h4><p><b>부품</b>: 모든 승리에서 획득 → 제조(가챠). <b>참치</b>: 첫 클리어 · 새 기록에서 획득 → 원하는 대원 확정 영입.</p>
       <h4>별점 · 콘텐츠</h4><p>6분 안에 이기면 ★2, 기지 체력도 80% 이상 지키면 ★3. 노말 챕터를 깨면 하드가, 8-10을 깨면 무한 전장이 열립니다.</p>
-      <h4>조작</h4><p>대원 버튼 / 1~0 배치 · E 작업 효율 · F / Space 포격 · 드래그 · 휠 · 방향키 · 미니맵 이동 · P / Esc 일시정지</p></div>`,
+      <h4>조작</h4><p>대원 버튼 / 1~0 배치 · E 발전 효율 · F / Space 포격 · 드래그 · 휠 · 방향키 · 미니맵 이동 · P / Esc 일시정지</p></div>`,
     [['확인', closeModal]], true);
   }
   $('btnOpt').onclick = () => { AUDIO.play('click', 0.5); openSettings(); };
@@ -1153,6 +1164,8 @@
     if (m !== lastMoney) { $('money').textContent = m; lastMoney = m; }
     $('wallet').textContent = GAME.wallet();
     document.querySelector('.money').classList.toggle('full', G.money >= GAME.wallet() - 1);
+    $('powerFill').style.width = Math.min(100, (G.money / GAME.wallet()) * 100) + '%'; // the power gauge
+    let otherReady = false;
     deckEls.forEach((d, i) => {
       if (!d) return;
       const cd = G.cds[i];
@@ -1160,6 +1173,7 @@
       const poor = G.money < d.def.cost;
       d.b.classList.toggle('poor', poor);
       const busy = GAME.onField(d.def); // an SS already fighting: the card waits for it
+      if (!poor && cd <= 0 && !busy && (i < 5 ? 0 : 1) !== deckPage) otherReady = true;
       d.b.classList.toggle('busy', busy);
       d.b.classList.toggle('ready', !poor && cd <= 0 && !busy);
       if (d.sk) { // SS: the skill chip shows the best charge among the deployed copies
@@ -1171,6 +1185,7 @@
         // the first time a skill is ready: one hint
       }
     });
+    $('btnSwap').classList.toggle('ready', otherReady); // a card on the other page is ready
     const wmax = G.worker >= D.WORKER.cost.length;
     $('workerLv').textContent = wmax ? 'MAX' : G.worker + 1;
     $('workerCost').textContent = wmax ? '최대' : D.WORKER.cost[G.worker];
@@ -1201,7 +1216,7 @@
     GAME.setPaused(on);
     if (!on) return closeModal();
     const st = GAME.state ? GAME.state.st : D.STAGES[0];
-    modal('일시정지', '<b>조작</b><br>대원 버튼 / 숫자키 1~0 · 배치<br>E · 작업 효율 강화 &nbsp; F / Space · 오르카 포격<br>드래그 · 휠 · 방향키 · 미니맵 · 전장 이동', [
+    modal('일시정지', '<b>조작</b><br>대원 버튼 / 숫자키 1~0 · 배치<br>E · 발전 효율 강화 &nbsp; F / Space · 오르카 포격<br>드래그 · 휠 · 방향키 · 미니맵 · 전장 이동', [
       ['계속하기', () => pause(false)],
       ['설정', () => openSettings(() => pause(true)), 'd'],
       ['재시작', () => { closeModal(); GAME.stop(); launch(st); }, 'd'],

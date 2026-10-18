@@ -152,13 +152,20 @@
   </div>
   <div class="hud-bottom">
     <button id="btnWorker" class="side-btn worker">
-      <div class="lbl">작업 효율</div>
+      <div class="lbl">발전 효율</div>
       <div class="lv">LV <b id="workerLv">1</b></div>
       <div class="cost" id="workerCost">80</div>
     </button>
     <div class="deck-wrap">
-      <div class="money"><small class="mlbl">자금</small><i></i><span id="money">0</span><small>/<span id="wallet">0</span></small></div>
-      <div id="deck" class="deck"></div>
+      <div class="money power" title="전력: 대원 출격에 사용">
+        <div class="pw-head"><i class="pw-ico"></i><b>전력</b></div>
+        <div class="pw-num"><span id="money">0</span><small>/<span id="wallet">0</span></small></div>
+        <div class="pw-bar"><i id="powerFill"></i></div>
+      </div>
+      <div class="deck-row">
+        <div id="deck" class="deck"></div>
+        <button id="btnSwap" class="swap" aria-label="대원 전환"><i>⇄</i><b id="swapPage">1/2</b></button>
+      </div>
     </div>
     <button id="btnCannon" class="side-btn cannon">
       <div class="charge" id="cannonFill"></div>
