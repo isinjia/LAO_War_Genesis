@@ -97,15 +97,28 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.41'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.42'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
   if (window.UIA) $('logo').src = UIA.logo.u;
   // a commander who hasn't finished the tutorial goes straight into it: the story intro, then 1-1 with the coach,
   // with the squad set up for it (the three starters, in the order the coach talks about them)
+  // 설정 > 전체화면 (off by default): browsers allow it only from a tap, so it is asked for here and when switched on
+  const fsEl = document.documentElement;
+  const fsOk = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
+  const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function enterFs() {
+    if (!fsOk || fsOn()) return;
+    try { const p = (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl, { navigationUI: 'hide' }); if (p && p.catch) p.catch(() => {}); } catch (e) { /* refused */ }
+  }
+  function exitFs() {
+    if (!fsOn()) return;
+    try { const p = (document.exitFullscreen || document.webkitExitFullscreen).call(document); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
+  }
   $('btnStart').onclick = () => {
     AUDIO.play('click', 1, 0.8);
+    if (save.fullscreen) enterFs();
     if (!save.tut && save.cleared === 0) {
       D.STARTERS.forEach((id) => { save.owned[id] = 1; });
       save.deck = D.STARTERS.slice();
@@ -1395,6 +1408,8 @@
     modal('설정', row('bgm', '배경음') + row('sfx', '효과음') + row('voice', '음성') +
       `<div class="opt-row opt-toggle"><span>스토리 다시 보기</span><button id="optStory" class="tgl${save.storyAlways ? ' on' : ''}">${save.storyAlways ? 'ON' : 'OFF'}</button>
         <small>ON: 스테이지 스토리를 매번 보여 줍니다 · OFF: 한 번 본 스토리는 건너뜁니다</small></div>` +
+      (fsOk ? `<div class="opt-row opt-toggle"><span>전체화면</span><button id="optFs" class="tgl${save.fullscreen ? ' on' : ''}">${save.fullscreen ? 'ON' : 'OFF'}</button>
+        <small>ON: 주소창 없이 화면 전체로 플레이합니다 (작전 개시 때 자동 전환)</small></div>` : '') +
       `<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.<span style="float:right;color:var(--dim)">${VERSION}</span></div>`, [
       ['확인', back || closeModal],
       ['도움말', () => openHelp(), 'd'],
@@ -1410,6 +1425,11 @@
     $('optStory').onclick = () => {
       save.storyAlways = !save.storyAlways; persist(); AUDIO.play('click', 0.6, 1.15);
       $('optStory').classList.toggle('on', save.storyAlways); $('optStory').textContent = save.storyAlways ? 'ON' : 'OFF';
+    };
+    if (fsOk) $('optFs').onclick = () => {
+      save.fullscreen = !save.fullscreen; persist(); AUDIO.play('click', 0.6, 1.15);
+      $('optFs').classList.toggle('on', save.fullscreen); $('optFs').textContent = save.fullscreen ? 'ON' : 'OFF';
+      if (save.fullscreen) enterFs(); else exitFs();
     };
     document.querySelectorAll('.opt-row input').forEach((inp) => {
       inp.oninput = () => { AUDIO.setVolume(inp.dataset.k, inp.value / 100); inp.nextElementSibling.textContent = inp.value; };

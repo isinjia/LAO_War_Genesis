@@ -1034,3 +1034,7 @@ body.carddrag #deckEdit .crc.drop-hover { animation: none !important; }
   @media (max-width: 1000px) { .sinfo { max-height: 44dvh; } }
   @media (max-width: 640px) { .detail .art { max-height: 32dvh; } .st-char { height: 66dvh; } }
 }
+/* the 전력 gauge is exactly as wide as the cards below it (+ the swap button), never wider */
+.deck-wrap { max-width: 640px; }
+.deck-wrap .deck { max-width: none; }
+body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and its gap */
