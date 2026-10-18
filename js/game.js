@@ -441,14 +441,18 @@
   // the picture spans the view height with its walkable band on the lane (y = 0); it repeats (mirrored) along x
   function fitBg() {
     if (!G || !G.bg) return;
-    // sized for the unzoomed view, so it scales with the field; zoomed out it grows only if the sky would not reach
-    // the top (below the lane the foreground strip and the HUD cover it)
+    // Keep image texels at a fixed world scale. Extend the edge pixels when
+    // zooming out instead of enlarging the image to cover the camera again.
     const b = G.bg, top1 = (camBottom + VH) * zoom + 0.2;
     const H1 = Math.max(top1 / (1 - b.gf), (0.2 - camBottom * zoom) / b.gf);
-    const H = Math.max(H1, (camBottom + VH + 0.2) / (1 - b.gf));
+    const bottom = Math.min(-H1 * b.gf, camBottom - 0.2);
+    const top = Math.max(H1 * (1 - b.gf), camBottom + VH + 0.2);
+    const H = top - bottom;
     const width = G.len + 40;
-    b.tex.repeat.set(width / H, 1);
-    for (const m of [b.mesh, b.tint]) { m.scale.set(width, H, 1); m.position.set(G.len / 2, H / 2 - H * b.gf, -5); }
+    b.tex.wrapT = THREE.ClampToEdgeWrapping;
+    b.tex.repeat.set(width / H1, H / H1);
+    b.tex.offset.y = bottom / H1 + b.gf;
+    for (const m of [b.mesh, b.tint]) { m.scale.set(width, H, 1); m.position.set(G.len / 2, (top + bottom) / 2, -5); }
   }
 
   function addShadow(parent, x, y, w) {
