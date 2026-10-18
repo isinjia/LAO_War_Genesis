@@ -754,3 +754,9 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 .pull-own b { display: flex; align-items: center; gap: 4px; font-family: var(--en); font-size: 17px; color: #fff; }
 .pull-own .parts-i { width: 18px; height: 18px; }
 @media (max-width: 420px) { .pull-own { min-width: 70px; padding: 4px 8px; } .pull-own b { font-size: 15px; } }
+/* the parts box reads as part of the pull row: same height as the buttons, a large figure */
+.pull-own { height: 64px; box-sizing: border-box; min-width: 130px; padding: 6px 14px; background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 210, 0, 0.45); border-left: 4px solid var(--y); }
+.pull-own small { font-size: 12px; color: #ddd; font-weight: 700; }
+.pull-own b { font-size: 24px; color: var(--y); }
+.pull-own .parts-i { width: 24px; height: 24px; }
+@media (max-width: 640px) { .pull-own { min-width: 92px; padding: 6px 8px; } .pull-own b { font-size: 18px; } .pull-own .parts-i { width: 18px; height: 18px; } }
