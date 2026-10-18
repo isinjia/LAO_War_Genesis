@@ -1022,3 +1022,15 @@ body.carddrag #deckEdit .crc.drop-hover { animation: none !important; }
   .si-close::after { transform: rotate(-45deg); }
   .sinfo .si-stars { margin-right: 36px; }
 }
+/* mobile Chrome: vh counts the height as if the address bar were hidden; dvh is what is actually visible */
+@supports (height: 1dvh) {
+  .pwin { max-height: 92dvh; }
+  .gres-solo img { max-height: 72dvh; }
+  .detail .art { max-height: 54dvh; }
+  .st-char { height: 92dvh; }
+  .st-char.portrait { bottom: 34dvh; }
+  .title-box { bottom: 8dvh; }
+  .hud::before, .hud::after { height: 11dvh; }
+  @media (max-width: 1000px) { .sinfo { max-height: 44dvh; } }
+  @media (max-width: 640px) { .detail .art { max-height: 32dvh; } .st-char { height: 66dvh; } }
+}

@@ -16,7 +16,7 @@
   const UNIT_SCALE = 1.2; // drawn size over the data heights (reach / hit points use the data heights)
 
   let renderer, scene, camera, overlay, octx, dpr = 1;
-  let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1; // hudFrac: the share of the screen the bottom HUD covers
+  let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1, hudTop = 0; // hudTop: the top bar's bottom edge (px) // hudFrac: the share of the screen the bottom HUD covers
   let G = null; // the running battle
   let last = 0;
   const tex = {};
@@ -1503,6 +1503,7 @@
       let [sx, sy] = toScreen(x, y);
       if (sx < -120 || sx > innerWidth + 120) return;
       sx = Math.max(60, Math.min(innerWidth - 60, sx)); // the camera clamp can leave a base at the very edge: keep its label readable
+      sy = Math.max(sy, hudTop + 30); // short screens: the label stays under the top bar (stage name / buttons)
       g.textAlign = 'center';
       g.font = "700 15px Exo2, Godo, sans-serif";
       g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,0.85)';
@@ -1566,7 +1567,7 @@
   });
 
   window.GAME = {
-    setHudInset(f) { if (Math.abs(f - hudFrac) > 0.005) { hudFrac = f; resize(); } },
+    setHudInset(f, top) { hudTop = top || 0; if (Math.abs(f - hudFrac) > 0.005) { hudFrac = f; resize(); } },
     init, preload, start, stop, deploy, upgradeWorker, fireCannon, toast,
     get state() { return G; },
     setSpeed(s) { if (G && !(G.over && G.st.finale)) G.speed = s; },

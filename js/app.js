@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.40'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.41'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -1190,7 +1190,9 @@
       const z = Math.max(0.55, budget / h); // cards stay ~55px tall: still easy to tap
       hb.style.zoom = z.toFixed(3); top.style.zoom = Math.max(0.8, z).toFixed(3);
     }
-    if (GAME.setHudInset) GAME.setHudInset(hb.getBoundingClientRect().height / H);
+    // the top bar's content edge (its gradient padding may overlap): base labels are kept below it
+    const tb = Math.max(...[...top.children].map((e) => e.getBoundingClientRect().bottom), 0);
+    if (GAME.setHudInset) GAME.setHudInset(hb.getBoundingClientRect().height / H, tb + 2);
   }
   let fitT = 0; // rotate / resize: fit now and again once the size has settled
   const refit = () => { if (!$('hud').classList.contains('show')) return; fitHud(); clearTimeout(fitT); fitT = setTimeout(fitHud, 250); };
