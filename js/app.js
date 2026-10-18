@@ -74,6 +74,8 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
+  const VERSION = 'V0.15'; // shown at the title's bottom right and in the settings
+  $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
   if (window.UIA) $('logo').src = UIA.logo.u;
@@ -979,7 +981,7 @@
     modal('설정', row('bgm', '배경음') + row('sfx', '효과음') + row('voice', '음성') +
       `<div class="opt-row opt-toggle"><span>스토리 다시 보기</span><button id="optStory" class="tgl${save.storyAlways ? ' on' : ''}">${save.storyAlways ? 'ON' : 'OFF'}</button>
         <small>ON: 스테이지 스토리를 매번 보여 줍니다 · OFF: 한 번 본 스토리는 건너뜁니다</small></div>` +
-      '<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.</div>', [
+      `<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.<span style="float:right;color:var(--dim)">${VERSION}</span></div>`, [
       ['확인', back || closeModal],
       ['도움말', () => openHelp(), 'd'],
       ['세이브 내보내기 / 불러오기', () => openSaveIO(), 'd'],
