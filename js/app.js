@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.30'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.31'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -679,9 +679,9 @@
     AUDIO.play('click', 0.45, 1.2);
     const have = owned(u.id), inDeck = save.deck.includes(u.id), lv = have ? lvOf(u.id) : 0;
     const need = have && lv < D.MAX_LV ? D.cardsNeed(u.rank, lv) : 0, cost = have ? D.xpNeed(u.rank, lv) : 0;
-    const upgradable = have && need && cardsOf(u.id) >= need && save.xp >= cost;
+    const upgradable = have && need && cardsOf(u.id) >= need; // enough copies: the button shows even when XP is short (cost in red)
     const btns = [];
-    if (upgradable) btns.push(['up', `<b>업그레이드</b><small><i class="xp-i"></i>${fmt(cost)}</small>`]);
+    if (upgradable) btns.push(['up', `<b>업그레이드</b><small class="${save.xp < cost ? 'short' : ''}"><i class="xp-i"></i>${fmt(cost)}</small>`]);
     else btns.push(['info', '<b>정보</b>']);
     if (have) btns.push(inDeck ? ['remove', '<b>제거</b>'] : ['use', '<b>사용</b>']);
     m.innerHTML = btns.map(([k, h]) => `<button class="cm-${k}" data-k="${k}">${h}</button>`).join('');
@@ -703,7 +703,8 @@
     if (k === 'info') { closeCardMenu(); return openDetail(u); }
     if (k === 'up') {
       const lv = lvOf(u.id), need = D.cardsNeed(u.rank, lv), cost = D.xpNeed(u.rank, lv);
-      if (cardsOf(u.id) < need || save.xp < cost) return GAME.toast('카드나 XP가 부족합니다');
+      if (cardsOf(u.id) < need) return GAME.toast('카드가 부족합니다');
+      if (save.xp < cost) return GAME.toast(`XP가 부족합니다 (${fmt(save.xp)} / ${fmt(cost)})`);
       save.xp -= cost; save.cards[u.id] = cardsOf(u.id) - need; save.lv[u.id] = lv + 1; persist();
       AUDIO.play('levelup'); closeCardMenu(); refresh();
       GAME.toast(`${u.name} 레벨 ${lv + 1}!`);

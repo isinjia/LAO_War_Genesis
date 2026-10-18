@@ -951,3 +951,5 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 /* replace mode: the deck cards wiggle, waiting for the one to swap out */
 .crc.swap-target { animation: wiggle 0.5s ease-in-out infinite; }
 @keyframes wiggle { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+
+.card-menu small.short { color: #ff6a6a; text-shadow: 0 0 2px #000, 1px 1px 0 #000; } /* not enough XP */
