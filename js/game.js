@@ -435,8 +435,9 @@
   // the picture spans the view height with its walkable band on the lane (y = 0); it repeats (mirrored) along x
   function fitBg() {
     if (!G || !G.bg) return;
-    const b = G.bg, top = camBottom + VH + 0.2;
-    const H = Math.max(top / (1 - b.gf), (0.2 - camBottom) / b.gf);
+    // sized for the unzoomed view: zooming in then magnifies the picture with the field (zooming out still fills the view)
+    const zf = Math.max(1, zoom), b = G.bg, top = (camBottom + VH) * zf + 0.2;
+    const H = Math.max(top / (1 - b.gf), (0.2 - camBottom * zf) / b.gf);
     const width = G.len + 40;
     b.tex.repeat.set(width / H, 1);
     for (const m of [b.mesh, b.tint]) { m.scale.set(width, H, 1); m.position.set(G.len / 2, H / 2 - H * b.gf, -5); }
