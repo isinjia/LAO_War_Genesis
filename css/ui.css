@@ -953,3 +953,14 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 @keyframes wiggle { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
 
 .card-menu small.short { color: #ff6a6a; text-shadow: 0 0 2px #000, 1px 1px 0 #000; } /* not enough XP */
+
+/* drag and drop */
+.crc { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.crc img { -webkit-user-drag: none; pointer-events: none; }
+.drag-ghost { position: fixed !important; left: 0; top: 0; z-index: 60; margin: 0; pointer-events: none; opacity: 0.95;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.6), 0 0 0 2px #ffd23e !important; transition: none !important; animation: none !important; }
+.crc.dragging { opacity: 0.35; }
+.crc.drop-hover { box-shadow: 0 0 0 3px #ffd23e, 0 0 16px rgba(255, 210, 62, 0.7) !important; transform: scale(1.05); }
+.crc.empty.drop-hover { background: rgba(255, 210, 62, 0.15); }
+#squadList.drop-hover { outline: 2px dashed #ef5b5b; outline-offset: 4px; border-radius: 8px; }
+body.carddrag, body.carddrag * { cursor: grabbing !important; }

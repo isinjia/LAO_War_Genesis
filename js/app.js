@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.31'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.32'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -614,7 +614,7 @@
     const b = document.createElement('button');
     b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (ready ? ' up' : '') + (have && need && n >= need ? ' full' : '');
     b.dataset.id = u.id;
-    b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt=""><i class="crc-cost">${u.cost}</i>${rk(u.rank)}` +
+    b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt="" draggable="false"><i class="crc-cost">${u.cost}</i>${rk(u.rank)}` +
       `</div>` +
       `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
       (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-xp crc-name">${u.name}</div>`);
@@ -640,9 +640,10 @@
     grid.innerHTML = '';
     for (let i = 0; i < DECK_MAX; i++) {
       const id = save.deck[i];
-      if (id) { const c = crCard(D.UNIT[id], () => (swapIn ? swapInto(i) : cardMenu(D.UNIT[id], c))); if (swapIn) c.classList.add('swap-target'); grid.appendChild(c); }
+      if (id) { const c = crCard(D.UNIT[id], () => (swapIn ? swapInto(i) : cardMenu(D.UNIT[id], c))); if (swapIn) c.classList.add('swap-target'); c.dataset.slot = i; grid.appendChild(c); }
       else { // the same frame as a card (art / level / bar), so the grid never changes height
         const e = document.createElement('div'); e.className = 'crc empty';
+        e.dataset.slot = i;
         e.innerHTML = '<div class="crc-art"><i>+</i></div><div class="crc-lv">&nbsp;</div><div class="crc-xp ghost"></div>'; grid.appendChild(e);
       }
     }
@@ -741,6 +742,99 @@
     if (swapIn && !t.closest('#deckEdit .crc')) { swapIn = null; renderSquad(); }
   }, true);
   document.addEventListener('scroll', () => closeCardMenu(), true);
+
+  // drag and drop: a deck card onto another slot moves / swaps it, onto the collection removes it;
+  // a collection card onto a deck slot adds it (empty slot) or replaces that card.
+  // Mouse: drag after a few pixels. Touch: hold a moment, then drag (a quick swipe still scrolls).
+  const drag = { el: null, ghost: null, id: null, from: -1, x0: 0, y0: 0, timer: 0, on: false, hover: null, eaten: false };
+  function dragEnd() {
+    clearTimeout(drag.timer);
+    if (drag.ghost) drag.ghost.remove();
+    if (drag.el) drag.el.classList.remove('dragging');
+    if (drag.hover) drag.hover.classList.remove('drop-hover');
+    document.body.classList.remove('carddrag');
+    Object.assign(drag, { el: null, ghost: null, id: null, from: -1, on: false, hover: null });
+  }
+  function dragStart() {
+    drag.on = true; drag.eaten = true;
+    closeCardMenu(); swapIn = null;
+    const r = drag.el.getBoundingClientRect(), g = drag.el.cloneNode(true);
+    g.classList.add('drag-ghost'); g.classList.remove('sel');
+    Object.assign(g.style, { width: r.width + 'px', height: r.height + 'px' });
+    drag.ox = drag.x0 - r.left; drag.oy = drag.y0 - r.top;
+    document.body.appendChild(g); drag.ghost = g;
+    drag.el.classList.add('dragging'); document.body.classList.add('carddrag');
+    if (navigator.vibrate) try { navigator.vibrate(15); } catch (e) { /* ignore */ }
+    AUDIO.play('click', 0.4, 1.4);
+  }
+  function dropTarget(x, y) {
+    const t = document.elementFromPoint(x, y);
+    if (!t) return null;
+    const slot = t.closest('#deckEdit .crc');
+    if (slot) return slot;
+    if (drag.from >= 0 && t.closest('#squadList, .cr-sec, #rankFilter')) return $('squadList'); // remove from the deck
+    return null;
+  }
+  function dropOn(tg) {
+    const deck = save.deck.slice(), id = drag.id;
+    if (tg.id === 'squadList') { // deck card back to the collection
+      if (deck.length <= 1) return GAME.toast('최소 1명은 편성해야 합니다');
+      save.deck = deck.filter((x) => x !== id);
+    } else {
+      const j = +tg.dataset.slot, at = deck[j];
+      if (drag.from >= 0) { // deck → deck: swap places, or move to the end
+        if (j === drag.from) return;
+        if (at) { deck[j] = id; deck[drag.from] = at; } else { deck.splice(drag.from, 1); deck.push(id); }
+      } else if (deck.includes(id)) { // a deck member dragged from the collection: swap places with that slot
+        const k = deck.indexOf(id);
+        if (!at || k === j) return;
+        deck[j] = id; deck[k] = at;
+      } else if (at) { // replace
+        deck[j] = id;
+      } else { // add
+        if (deck.length >= DECK_MAX) return;
+        deck.push(id);
+      }
+      if (deckCost(deck) > D.DECK_CAP) return GAME.toast(`편성 코스트 초과 (${deckCost(deck)} > ${D.DECK_CAP})`);
+      save.deck = deck;
+    }
+    persist(); AUDIO.play('click', 0.5, 1.1);
+  }
+  addEventListener('pointerdown', (e) => {
+    drag.eaten = false; // a drag that ended without a click must not eat this tap's click
+    if (e.button > 0 || lobbyTut() || drag.el) return;
+    const c = e.target instanceof Element && e.target.closest('#deckEdit .crc:not(.empty), #squadList .crc:not(.none)');
+    if (!c) return;
+    Object.assign(drag, { el: c, id: c.dataset.id, from: c.dataset.slot != null ? +c.dataset.slot : -1, x0: e.clientX, y0: e.clientY, pid: e.pointerId, touch: e.pointerType !== 'mouse', eaten: false });
+    if (drag.touch) drag.timer = setTimeout(() => { if (drag.el) dragStart(); }, 260);
+  });
+  addEventListener('pointermove', (e) => {
+    if (!drag.el || e.pointerId !== drag.pid) return;
+    if (!drag.on) {
+      const d = Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0);
+      if (drag.touch) { if (d > 10) dragEnd(); return; } // moved before the hold: it is a scroll
+      if (d < 6) return;
+      dragStart();
+    }
+    drag.ghost.style.transform = `translate(${e.clientX - drag.ox}px, ${e.clientY - drag.oy}px) rotate(-4deg) scale(1.06)`;
+    const tg = dropTarget(e.clientX, e.clientY);
+    if (tg !== drag.hover) {
+      if (drag.hover) drag.hover.classList.remove('drop-hover');
+      drag.hover = tg; if (tg && tg !== drag.el) tg.classList.add('drop-hover');
+    }
+  });
+  addEventListener('pointerup', (e) => {
+    if (!drag.el || e.pointerId !== drag.pid) return;
+    const was = drag.on, tg = was && dropTarget(e.clientX, e.clientY);
+    if (tg && tg !== drag.el) dropOn(tg);
+    dragEnd();
+    if (was) renderSquad();
+  });
+  addEventListener('pointercancel', () => { if (drag.el) { const was = drag.on; dragEnd(); if (was) renderSquad(); } });
+  // while dragging: no page scroll, no long-press menu, and the click that ends a drag opens nothing
+  addEventListener('touchmove', (e) => { if (drag.on) e.preventDefault(); }, { passive: false });
+  addEventListener('contextmenu', (e) => { if (drag.el) e.preventDefault(); });
+  addEventListener('click', (e) => { if (drag.eaten) { drag.eaten = false; e.stopPropagation(); e.preventDefault(); } }, true);
 
   function openSynergies() {
     const on = new Set(D.synergiesOf(save.deck.map((id) => D.UNIT[id])));
