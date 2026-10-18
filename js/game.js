@@ -231,7 +231,7 @@
   }
 
   function stop() {
-    document.body.classList.remove('cine');
+    document.body.classList.remove('cine', 'finale-on');
     { const el = document.getElementById('finale'); if (el) el.className = 'finale'; }
     AUDIO.ambience(null);
     if (!G) return;
@@ -640,7 +640,19 @@
 
   function update(dt) {
     G.t += dt;
-    if (G.over) { G.overT += dt; updateFx(dt); return; }
+    if (G.over) { // the battle is decided: the fallen still finish their knockback and fade out
+      G.overT += dt;
+      for (const list of [G.allies, G.enemies]) {
+        for (let i = list.length - 1; i >= 0; i--) {
+          const f = list[i];
+          if (!f.dead) continue;
+          stepFighter(f, dt);
+          if (f.state === 'gone') { disposeFighter(f); list.splice(i, 1); }
+        }
+      }
+      updateFx(dt);
+      return;
+    }
     // economy
     G.money = Math.min(wallet(), G.money + D.WORKER.rate[G.worker] * (G.st.incomeK || 1) * (1 + 0.15 * buffN(G.st, 'income')) * dt);
     G.cds = G.cds.map((c) => Math.max(0, c - dt));
@@ -685,6 +697,15 @@
     }
     if (f.state === 'fade') {
       f.deadT += dt;
+      if (f.boss) { // a boss burns red and sinks into the ground over two seconds
+        const u = Math.min(1, f.deadT / 2);
+        f.hop = -u * u * 1.4;
+        if (f.sd) { f.sd.setTint(1.8 - u * 0.8, 0.55, 0.45); f.sd.setOpacity(1 - Math.max(0, u - 0.4) / 0.6); }
+        f.shadow.material.opacity = 1 - u;
+        if (f.deadT > 0.3 && !f.sunk) { f.sunk = true; sheet('aura', f.x, f.dy + 1.5, 0xff5533, 5, 1.2); }
+        if (f.deadT > 2.05) f.state = 'gone';
+        return;
+      }
       const a = Math.max(0, 1 - Math.max(0, f.deadT - 0.5) / 0.5);
       if (f.sd) f.sd.setOpacity(a);
       f.shadow.material.opacity = a;
@@ -793,7 +814,7 @@
   // then the operation title before the result
   function finale() {
     const g = G;
-    document.body.classList.add('cine');
+    document.body.classList.add('cine', 'finale-on');
     for (let i = 0; i < 18; i++) setTimeout(() => {
       if (G !== g) return;
       const x = G.len - 2 + Math.random() * 4, y = Math.random() * 4.5;
@@ -1193,7 +1214,7 @@
       if (f.sd) {
         const fl = f.flashT > 0 ? 1.9 : 1;
         if (f.slowT > 0 && !f.dead) f.sd.setTint(0.65 * fl, 0.85 * fl, 1.25 * fl);
-        else f.sd.setTint(fl, fl, fl);
+        else if (!(f.boss && f.state === 'fade')) f.sd.setTint(fl, fl, fl); // a falling boss keeps its burn
         f.sdAcc = (f.sdAcc || 0) + dt;
         if (!lod || ((lodFrame + i) & 1)) { f.sd.update(f.sdAcc); f.sdAcc = 0; }
       }
