@@ -64,6 +64,23 @@
       gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
       g.fillStyle = gr; g.fillRect(0, 0, s, s);
     });
+    // the Orca cannon's beam body: horizontal energy streaks that tile along x (scrolled while it fires)
+    tex.energy = canvasTex([256, 64], (g, w, h) => {
+      h = h || 64; w = w || 256;
+      const v = g.createLinearGradient(0, 0, 0, h);
+      v.addColorStop(0, 'rgba(255,255,255,0)'); v.addColorStop(0.5, 'rgba(255,255,255,0.55)'); v.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = v; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 70; i++) {
+        const y = h / 2 + (Math.random() - 0.5) * h * 0.8 * Math.random(), len = 20 + Math.random() * 90, x = Math.random() * w;
+        const a = 0.25 + Math.random() * 0.75, th = 0.6 + Math.random() * 2.2;
+        for (const dx of [0, -w]) { // drawn twice so it wraps seamlessly
+          const gr = g.createLinearGradient(x + dx, 0, x + dx + len, 0);
+          gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, `rgba(255,255,255,${a})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+          g.fillStyle = gr; g.fillRect(x + dx, y - th / 2, len, th);
+        }
+      }
+    });
+    tex.energy.wrapS = THREE.RepeatWrapping;
     tex.base = canvasTex([256, 384], drawOrcaBase);
     // original effect sprite sheets (tools/build_assets.py FXTEX): IMG.fx_<key>, frame grid in IMG._fxmeta
     tex.fx = {};
@@ -873,43 +890,91 @@
     text(-0.7, 3.6, '작업 효율 LV ' + (G.worker + 1), '#5dff9b');
   }
 
+  // ── Orca cannon: a charge at the barrel, then a layered laser that sweeps the lane, then a fade ──
+  const CAN = { x: 0.55, y: 0.85, charge: 0.35, sweep: 0.45, hold: 0.35, fade: 0.4 };
   function fireCannon() {
     if (!G || G.over || G.cannon < D.CANNON.charge || G.cannonFire) return;
     G.cannon = 0;
-    G.cannonFire = { t: 0, hit: new Set() };
-    ring(0.6, 1.0, 0x7fe8ff, 6, 0.6);
-    sheet('burst', 0.8, 1.2, 0xbff4ff, 3, 0.25);
-    hitstop(0.06);
-    AUDIO.play('beam');
-    AUDIO.play('laserBig');
-    shake(0.15, 0.5);
+    G.cannonFire = { t: 0, hit: new Set(), fired: false, nextArc: 0 };
+    AUDIO.play('charge', 0.8);
+    // energy pulled into the barrel
+    for (let i = 0; i < 14; i++) {
+      const m = sprite(tex.glow, i % 3 ? 0x7fe8ff : 0xffffff);
+      const ang = Math.random() * Math.PI * 2, r = 1.2 + Math.random() * 1.4, s0 = 0.18 + Math.random() * 0.22;
+      addFx(m, CAN.charge, (u) => { const k = 1 - u * u; m.position.set(CAN.x + Math.cos(ang) * r * k, CAN.y + Math.sin(ang) * r * k * 0.7, 0); m.scale.set(s0, s0, 1); m.material.opacity = 0.3 + u * 0.7; });
+    }
+    const orb = sprite(tex.glow, 0xbff4ff);
+    orb.position.set(CAN.x, CAN.y, 0);
+    addFx(orb, CAN.charge + 0.05, (u) => { const s = 0.4 + u * 1.8 + Math.sin(u * 40) * 0.08; orb.scale.set(s, s, 1); orb.material.opacity = 0.4 + u * 0.6; });
+    ring(CAN.x, CAN.y, 0x7fe8ff, 3.2, CAN.charge);
   }
 
+  function cannonLayer(map, color, order) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map, color, transparent: true, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false }));
+    m.renderOrder = order;
+    G.root.add(m);
+    return m;
+  }
   function updateCannon(dt) {
     const c = G.cannonFire;
     if (!c) return;
     c.t += dt;
-    const reachX = D.CANNON.reach;
-    const head = 0.5 + Math.min(1, c.t / 0.45) * reachX; // the sweep runs along the lane
-    if (!c.beam) {
-      c.beam = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: tex.beam, color: 0x7fe8ff, transparent: true, blending: THREE.AdditiveBlending, depthTest: false }));
-      c.beam.renderOrder = 2000;
-      G.root.add(c.beam);
+    const t = c.t - CAN.charge; // time since the shot left the barrel
+    if (t < 0) return;
+    const end = CAN.sweep + CAN.hold + CAN.fade;
+    if (!c.fired) { // the shot: muzzle blast, recoil shake
+      c.fired = true;
+      sheet('burst', CAN.x + 0.3, CAN.y, 0xffffff, 3.2, 0.25); sheet('flash', CAN.x + 0.2, CAN.y, 0x9ff0ff, 2.6, 0.18);
+      ring(CAN.x, CAN.y, 0xbff4ff, 5, 0.45);
+      hitstop(0.06); shake(0.25, 0.6);
+      AUDIO.play('beam'); AUDIO.play('laserBig');
+      c.glow = cannonLayer(tex.beam, 0x2fb8ff, 1998);   // the wide halo
+      c.body = cannonLayer(tex.energy, 0x7fe8ff, 1999); // the beam with streaming energy
+      c.core = cannonLayer(tex.beam, 0xffffff, 2000);   // the white-hot core
+      c.flare = cannonLayer(tex.glow, 0xdffbff, 2001);  // the travelling tip
+      c.muzzle = cannonLayer(tex.glow, 0xbff4ff, 2001); // the barrel stays lit while it fires
+      c.trail = cannonLayer(tex.beam, 0x38c8ff, 1997);  // the lane glows hot under the beam
     }
-    c.beam.scale.set(head - 0.5, 0.75 + Math.sin(c.t * 40) * 0.08, 1);
-    c.beam.position.set(0.5 + (head - 0.5) / 2, 0.8, 0);
-    c.beam.material.opacity = (c.t < 0.5 ? 0.9 : Math.max(0, 0.9 - (c.t - 0.5) / 0.45));
+    const reachX = D.CANNON.reach;
+    const head = CAN.x + Math.min(1, t / CAN.sweep) * reachX;
+    const len = Math.max(0.01, head - CAN.x), cx = CAN.x + len / 2;
+    const fade = t < CAN.sweep + CAN.hold ? 1 : Math.max(0, 1 - (t - CAN.sweep - CAN.hold) / CAN.fade);
+    const thin = 0.25 + 0.75 * fade; // the beam narrows as it dies
+    const fl = 1 + Math.sin(c.t * 60) * 0.06 + (Math.random() - 0.5) * 0.06;
+    c.glow.scale.set(len + 0.6, 2.4 * thin * fl, 1); c.glow.position.set(cx, CAN.y, 0); c.glow.material.opacity = 0.35 * fade;
+    c.body.scale.set(len, 1.0 * thin * fl, 1); c.body.position.set(cx, CAN.y, 0); c.body.material.opacity = 0.95 * fade;
+    c.body.material.map.repeat.set(len / 3, 1); c.body.material.map.offset.x = -c.t * 4; // energy streams outward
+    c.core.scale.set(len, 0.28 * thin * (1 + Math.sin(c.t * 90) * 0.15), 1); c.core.position.set(cx, CAN.y, 0); c.core.material.opacity = fade;
+    const fs = (t < CAN.sweep ? 1.6 : 1.1) * thin * fl;
+    c.flare.scale.set(fs * 1.4, fs, 1); c.flare.position.set(head, CAN.y, 0); c.flare.material.opacity = fade;
+    c.trail.scale.set(len, 0.45, 1); c.trail.position.set(cx, 0.12, 0); c.trail.material.opacity = 0.45 * fade;
+    const ms = 1.3 * thin * fl;
+    c.muzzle.scale.set(ms, ms, 1); c.muzzle.position.set(CAN.x + 0.1, CAN.y, 0); c.muzzle.material.opacity = 0.9 * fade;
+    // while the head travels: sparks thrown off it
+    if (t < CAN.sweep) {
+      if (Math.random() < 0.6) debris(head, CAN.y, 2, 0xbff4ff);
+    }
+    // electric arcs crawling along the beam
+    if (fade > 0.3 && c.t >= c.nextArc) {
+      c.nextArc = c.t + 0.06;
+      const x0 = CAN.x + Math.random() * len * 0.9, x1 = Math.min(head, x0 + 0.6 + Math.random() * 1.2);
+      bolt(x0, CAN.y + (Math.random() - 0.5) * 0.5, x1, CAN.y + (Math.random() - 0.5) * 0.5, 0xcff6ff);
+    }
     const dmg = D.CANNON.dmg * Math.min(3, G.st.pow || 1); // grows with the campaign, not with hard / infinite
     for (const e of G.enemies) {
       if (e.dead || c.hit.has(e) || e.x > head) continue;
       c.hit.add(e);
       damage(e, dmg);
       text(e.x, e.dy + e.h + 0.2, fmtDmg(dmg), '#9ee8ff', 1.1);
-      sheet('bolt', e.x, aimY(e) + e.h * 0.1, 0x9fe8ff, 1.6, 0.3);
+      sheet('bolt', e.x, aimY(e) + e.h * 0.1, 0x9fe8ff, 1.8, 0.3);
+      sheet('burst', e.x, aimY(e), 0xffffff, 1.6, 0.2);
       if (!e.dead) knockback(e, 1.6);
-      sheet('blue', e.x, aimY(e), 0xbff4ff, 1.8, 0.35);
+      sheet('blue', e.x, aimY(e), 0xbff4ff, 2.0, 0.4);
     }
-    if (c.t > 0.95) { G.root.remove(c.beam); c.beam.material.dispose(); c.beam.geometry.dispose(); G.cannonFire = null; }
+    if (t > end) {
+      for (const k of ['glow', 'body', 'core', 'flare', 'muzzle', 'trail']) { const m = c[k]; G.root.remove(m); m.material.dispose(); m.geometry.dispose(); }
+      G.cannonFire = null;
+    }
   }
 
   // ── effects ────────────────────────────────────────────

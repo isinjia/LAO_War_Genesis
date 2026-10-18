@@ -793,3 +793,22 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
   .deck-row { grid-area: d; }
   .deck-row .deck { max-width: none; }
 }
+/* 전력 gauge v2: battery cells. Dim empty cells, lit cells with a vertical sheen and a glow, a light sweep across the charge */
+.power .pw-bar { height: 13px; transform: skewX(-24deg); background: none; box-shadow: none; position: relative; }
+.power .pw-bar::before { content: ''; position: absolute; inset: 0; /* the empty cells */
+  background: repeating-linear-gradient(90deg, rgba(255, 210, 0, 0.13) 0 8px, transparent 8px 11px);
+  box-shadow: inset 0 -1px 0 rgba(255, 210, 0, 0.15); }
+.power .pw-bar i { position: relative; height: 100%; overflow: hidden; box-shadow: none;
+  background: linear-gradient(180deg, #fff6c2 0%, #ffd400 38%, #ffae00 72%, #c96f00 100%);
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 11px); mask: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 11px);
+  filter: drop-shadow(0 0 5px rgba(255, 196, 0, 0.85)); }
+.power .pw-bar i::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40px; left: -40px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent); animation: pwsweep 1.8s linear infinite; }
+@keyframes pwsweep { to { left: 100%; } }
+.power.full .pw-bar i { animation: pwfull2 0.45s infinite alternate; }
+@keyframes pwfull2 { to { filter: drop-shadow(0 0 10px #ffe066) brightness(1.25); } }
+@media (max-width: 640px) {
+  .power .pw-bar { height: 11px; }
+  .power .pw-bar::before { background: repeating-linear-gradient(90deg, rgba(255, 210, 0, 0.13) 0 6px, transparent 6px 8px); }
+  .power .pw-bar i { -webkit-mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px); }
+}
