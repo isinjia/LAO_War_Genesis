@@ -571,7 +571,7 @@
   // enemy traits: flyers are out of reach for short-range units (walls / melee)
   const ANTI_AIR = 2.4;
   // flyers keep a clear band above the ground fight (their shadow stays on the lane)
-  const FLY_H = 1.9;
+  const FLY_H = 3.2;
   const aimY = (o) => o.dy + (o.def.fly ? FLY_H : 0) + o.h * 0.5; // the middle of the body as drawn
   const canHit = (f, o) => !(o.def.fly && f.ally && f.def.range < ANTI_AIR);
   function target(f) {
