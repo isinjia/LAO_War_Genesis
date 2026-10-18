@@ -313,7 +313,7 @@
     }
     addShadow(G.root, -0.7, 0, 3.6);
 
-    // enemy base: the Fortress rig, still
+    // enemy base: the Iron Worm nest rig (Nest_B07), still
     const id = 'e_' + D.BASE_RIG;
     const c = SD.create(id);
     if (c) {
@@ -325,7 +325,7 @@
       h.position.set(G.len + 0.9, -0.15, 0);
       h.add(c.root);
       c.mesh.renderOrder = 20;
-      c.setTint(0.85, 0.75, 0.75);
+      c.setTint(0.95, 0.9, 0.9);
       c.play('idle', null, true);
       G.root.add(h);
       G.baseRig = c; G.baseHolder = h;

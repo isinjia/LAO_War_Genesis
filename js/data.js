@@ -144,7 +144,7 @@
     shield: { name: '보호막', tip: '체력 일부만큼 보호막을 먼저 깎아야 함' },
     artillery: { name: '포격', tip: '사거리 2배 거리에서 기지를 포격(피해 50%) · 빨리 처치해야 함' },
   };
-  const BASE_RIG = 'Fortress_N'; // the enemy base: the Fortress rig, standing still
+  const BASE_RIG = 'Nest_B07'; // the enemy base: the Iron Worm nest (Nest_B07), standing still
 
   // ── campaign: 8 chapters x 10 stages; the 5th stage brings an elite (mid-boss), the 10th the chapter boss ──
   // pool: the chapter's worms, weakest first (the first two come endlessly, the rest in limited numbers)
