@@ -32,9 +32,14 @@
   save.deck = (save.deck || []).filter((id) => save.owned[id] && D.UNIT[id]);
   while (deckCost(save.deck) > D.DECK_CAP) save.deck.splice(save.deck.reduce((m, id, i, a) => (D.DECK_COST[D.UNIT[id].rank] > D.DECK_COST[D.UNIT[a[m]].rank] ? i : m), 0), 1);
   if (!save.deck.length) save.deck = autoDeck();
+  // three deck presets (덱 1 / 2 / 3); save.deck is the active one, copied into save.decks on every save
+  if (!Array.isArray(save.decks) || save.decks.length !== 3) save.decks = [save.deck.slice(), [], []];
+  save.deckIx = save.deckIx || 0;
+  save.decks = save.decks.map((d) => (d || []).filter((id) => save.owned[id] && D.UNIT[id]));
   let noSave = false; // ?unlock=1 test runs never write the real save
   let saveWarned = false;
   const persist = () => {
+    if (save.decks) save.decks[save.deckIx || 0] = save.deck.slice();
     if (noSave) return;
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {
       if (!saveWarned) { saveWarned = true; GAME.toast('저장 실패 — 브라우저 저장소를 확인하세요 (설정 > 세이브 내보내기)', true); }
@@ -74,7 +79,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.26'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.27'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -585,40 +590,67 @@
   let filter = 'ALL';
   const linkOf = (id) => (save.link && save.link[id]) || 0;
   const linkHtml = (n) => `<span class="links">${[0, 1, 2, 3, 4].map((k) => `<i class="${k < n ? 'on' : ''}"></i>`).join('')}</span>`;
+  // a card in the 덱 구성 style: rank frame, 전력 cost, level, the XP towards the next level
+  function crCard(u, onClick) {
+    const have = owned(u.id), inDeck = save.deck.includes(u.id), lv = lvOf(u.id);
+    const need = lv < D.MAX_LV ? D.lvCost(lv) : 0, prog = need ? Math.min(1, save.xp / need) : 1;
+    const b = document.createElement('button');
+    b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (have && need && save.xp >= need ? ' up' : '');
+    b.dataset.id = u.id;
+    b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt=""><i class="crc-cost">${u.cost}</i>${rk(u.rank)}` +
+      (have ? linkHtml(linkOf(u.id)) : '') + `</div>` +
+      `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
+      (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(Math.min(save.xp, need))}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-name">${u.name}</div>`);
+    b.title = `${u.name} (${u.rank} · 편성 코스트 ${D.DECK_COST[u.rank]})`;
+    b.onclick = onClick;
+    return b;
+  }
   function renderSquad() {
     const cost = deckCost(save.deck);
-    $('deckCount').innerHTML = `${save.deck.length}/${DECK_MAX} · 코스트 <em class="${cost > D.DECK_CAP - 3 ? 'hi' : ''}">${cost}/${D.DECK_CAP}</em>`;
-    const row = $('deckEdit');
-    row.innerHTML = '';
+    // presets
+    const tabs = $('deckTabs');
+    tabs.innerHTML = [0, 1, 2].map((k) => `<button class="${k === save.deckIx ? 'on' : ''}" data-k="${k}">${k + 1}</button>`).join('');
+    tabs.querySelectorAll('button').forEach((b) => { b.onclick = () => {
+      const k = +b.dataset.k;
+      if (k === save.deckIx) return;
+      save.decks[save.deckIx] = save.deck.slice();
+      save.deckIx = k;
+      save.deck = save.decks[k].length ? save.decks[k].slice() : autoDeck();
+      persist(); AUDIO.play('click', 0.5, 1.35); renderSquad();
+    }; });
+    // the deck: ten cards, five a row
+    const grid = $('deckEdit');
+    grid.innerHTML = '';
     for (let i = 0; i < DECK_MAX; i++) {
       const id = save.deck[i];
-      const s = document.createElement('button');
-      s.className = 'dslot' + (id ? ' on' : '');
-      if (id) {
-        const u = D.UNIT[id];
-        s.innerHTML = `<img src="${IMG['u_' + id]}" alt="">${rk(u.rank)}<span class="dc">${D.DECK_COST[u.rank]}</span><i class="rb" style="background:var(--r${u.rank})"></i>`;
-        s.title = u.name;
-        s.onclick = () => {
-          if (save.deck.length <= 1) return GAME.toast('최소 1명은 편성해야 합니다');
-          save.deck.splice(i, 1); persist(); renderSquad(); AUDIO.play('click', 0.45, 0.7);
-        };
-      }
-      row.appendChild(s);
+      if (id) grid.appendChild(crCard(D.UNIT[id], () => openDetail(D.UNIT[id])));
+      else { const e = document.createElement('div'); e.className = 'crc empty'; e.innerHTML = '<i>+</i>'; grid.appendChild(e); }
     }
-    const on = new Set(D.synergiesOf(save.deck.map((id) => D.UNIT[id])));
-    $('synList').innerHTML = `<div class="sec-title"><b>편성 시너지</b><small>편성 구성에 따라 전투에서 자동 적용</small></div>` +
-      ['유형', '인연', '각오'].map((k) => `<div class="sy-k">${k}${k === '각오' ? ' <small>무언가를 포기하면 열리는 시너지</small>' : k === '인연' ? ' <small>함께 편성하면 강해지는 대원</small>' : ''}</div>` +
-        D.SYNERGIES.filter((sy) => sy.kind === k).map((sy) => `<div class="sy${on.has(sy.id) ? ' on' : ''}${sy.kind === '각오' ? ' vow' : ''}"><i></i><b>${sy.name}</b><span>${sy.need}</span><small>${sy.tip}</small></div>`).join('')).join('');
+    const avg = save.deck.length ? Math.round(save.deck.reduce((a, id) => a + D.UNIT[id].cost, 0) / save.deck.length) : 0;
+    $('deckAvg').innerHTML = `<i class="pw"></i>평균 전력 <b>${avg}</b>`;
+    $('deckCount').innerHTML = `${save.deck.length}/${DECK_MAX} · 편성 코스트 <em class="${cost > D.DECK_CAP - 3 ? 'hi' : ''}">${cost}/${D.DECK_CAP}</em>`;
+    // synergies: a small button; the full list opens on demand
+    const on = D.synergiesOf(save.deck.map((id) => D.UNIT[id]));
+    $('synBtn').innerHTML = `시너지 <b>${on.length}</b> ›`;
+    $('synBtn').onclick = () => { AUDIO.play('click', 0.5); openSynergies(); };
+    // the collection
     const fl = $('rankFilter');
     const have = D.UNITS.filter((u) => owned(u.id)).length;
     fl.innerHTML = ['ALL', ...D.RANK_ORDER].map((r) => `<button data-r="${r}" class="${filter === r ? 'on' : ''}">${r === 'ALL' ? '전체' : rk(r) + r}</button>`).join('') +
-      `<span class="count">편성 코스트 B${D.DECK_COST.B} · A${D.DECK_COST.A} · S${D.DECK_COST.S} · SS${D.DECK_COST.SS} &nbsp; 보유 ${have} / ${D.UNITS.length}</span>`;
+      `<span class="count">보유 ${have} / ${D.UNITS.length} · 보유 XP ${fmt(save.xp)}</span>`;
     fl.querySelectorAll('button').forEach((b) => { b.onclick = () => { filter = b.dataset.r; renderSquad(); }; });
     const box = $('squadList');
     box.innerHTML = '';
     D.UNITS.filter((u) => filter === 'ALL' || u.rank === filter)
       .sort((a, b) => (owned(b.id) - owned(a.id)) || (rankIx(b) - rankIx(a)) || (a.cost - b.cost))
-      .forEach((u) => box.appendChild(unitCard(u, () => openDetail(u))));
+      .forEach((u) => box.appendChild(crCard(u, () => openDetail(u))));
+  }
+  function openSynergies() {
+    const on = new Set(D.synergiesOf(save.deck.map((id) => D.UNIT[id])));
+    modal('편성 시너지', `<div class="syn" style="margin:0">` +
+      ['유형', '인연', '각오'].map((k) => `<div class="sy-k">${k}</div>` +
+        D.SYNERGIES.filter((sy) => sy.kind === k).map((sy) => `<div class="sy${on.has(sy.id) ? ' on' : ''}${sy.kind === '각오' ? ' vow' : ''}"><i></i><b>${sy.name}</b><span>${sy.need}</span><small>${sy.tip}</small></div>`).join('')).join('') +
+      `</div>`, [['닫기', closeModal, 'd']], true);
   }
 
   function unitCard(u, onClick, price) {
@@ -959,7 +991,7 @@
   const LT = [
     { pane: 'gacha', el: () => (gtab === 'making' ? $('pull10') : document.querySelector('.gtab[data-g="making"]')),
       text: '전투에서 얻은 <b>부품</b>으로 새 대원을 <b>제조</b>합니다. <b>10회 제조</b>를 눌러 보세요!', done: () => !!save.tutPulled },
-    { pane: 'squad', el: () => modalBtn('편성') || document.querySelector(`#squadList .ucard[data-id="${TUT_ADD}"]`),
+    { pane: 'squad', el: () => modalBtn('편성') || document.querySelector(`#squadList .crc[data-id="${TUT_ADD}"]`),
       text: () => (modalBtn('편성') ? '<b>편성</b>을 눌러 발키리를 출격 대원에 넣으세요.' : '새로 합류한 <b>발키리</b>를 눌러 편성에 넣어 봅시다.'),
       done: () => save.deck.includes(TUT_ADD) },
     { pane: 'missions', el: () => document.querySelector('#missionList .mis[data-mid="tut1"] button'),

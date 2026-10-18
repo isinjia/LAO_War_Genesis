@@ -58,13 +58,14 @@
 
   <!-- squad -->
   <div id="pSquad" class="pane">
-    <div class="deck-edit">
-      <div class="sec-title"><b>출격 편성</b><span id="deckCount">0/10</span><small>카드를 눌러 상세 · 편성 칸을 누르면 해제</small></div>
-      <div id="deckEdit" class="deck-row"></div>
+    <div class="cr-deck">
+      <div class="cr-head"><b>덱 구성</b><div class="cr-tabs" id="deckTabs"></div><button class="cr-syn" id="synBtn"></button></div>
+      <div id="deckEdit" class="cr-grid"></div>
+      <div class="cr-foot"><span class="cr-avg" id="deckAvg"></span><span class="cr-cost" id="deckCount"></span></div>
     </div>
-    <div class="syn" id="synList"></div>
+    <div class="cr-sec"><b>보유 대원</b><small>카드를 눌러 상세 · 편성 · 강화</small></div>
     <div class="filter" id="rankFilter"></div>
-    <div id="squadList" class="roster"></div>
+    <div id="squadList" class="roster cr-roster"></div>
   </div>
 
   <!-- missions -->
