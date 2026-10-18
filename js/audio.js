@@ -7,6 +7,8 @@
   const VOL = { get sfx() { return BASE.sfx * SET.sfx; }, get bgm() { return BASE.bgm * SET.bgm; }, get voice() { return BASE.voice * SET.voice; } };
 
   let ctx = null, sfxGain = null, unlocked = false;
+  let away = false; // the page lost focus (another window / tab / app): everything is silent until it comes back
+  const lines = new Set(); // voice elements playing (paused on blur)
   const buffers = {}, loading = {}, last = {}, live = {};
   const MAX_LIVE = 6; // copies of one sound at once
 
@@ -45,7 +47,8 @@
 
   // interface and jingle sounds keep their exact pitch
   const STEADY = new Set(['click', 'purchase', 'rankUp', 'fail', 'start', 'win', 'clear', 'lose', 'warning', 'pull', 'levelup', 'pickSS']);
-  function play(key, vol = 1, rate = 0) { // rate: a fixed pitch (interface variants of one sound)
+  function play(key, vol = 1, rate = 0) {
+    if (away) return; // rate: a fixed pitch (interface variants of one sound)
     if (!unlocked || !window.SND || !SND[key]) return;
     const now = performance.now();
     if (now - (last[key] || 0) < 40) return; // one volley on one frame plays once
@@ -80,7 +83,7 @@
     bgm = new Audio(src);
     bgm.loop = key !== 'defeat';
     bgm.volume = 0;
-    if (unlocked) bgm.play().catch(() => {});
+    if (unlocked && !away) bgm.play().catch(() => {});
     fade(bgm, VOL.bgm, 600);
   }
   function fade(el, to, ms, done) {
@@ -99,6 +102,7 @@
   let ducking = 0;
   function voiceOver(src) {
     const el = new Audio(src);
+    lines.add(el); el.addEventListener('ended', () => lines.delete(el));
     el.volume = VOL.voice;
     el.play().catch(() => {});
     if (!bgm) return;
@@ -107,13 +111,14 @@
     el.onended = el.onpause = el.onerror = () => { if (done) return; done = true; if (--ducking <= 0) { ducking = 0; if (bgm) fade(bgm, VOL.bgm, 500); } };
   }
   function voice(src, bark) {
-    if (!src || !unlocked) return;
+    if (!src || !unlocked || away) return;
     if (bark === 'over') return voiceOver(src);
     const now = performance.now();
     if (bark && voiceEl && !voiceEl.ended && !voiceEl.paused) return;
     if (bark && now - voiceAt < 6000) return; // barks stay occasional
     if (voiceEl) voiceEl.pause();
     voiceEl = new Audio(src);
+    lines.add(voiceEl); { const el = voiceEl; el.addEventListener('ended', () => lines.delete(el)); }
     voiceEl.volume = VOL.voice;
     voiceEl.play().catch(() => {});
     voiceAt = now;
@@ -131,12 +136,29 @@
 
   // browsers start audio only after a user gesture
   const unlock = () => {
+    away = false;
     if (ensureCtx() && ctx.state === 'suspended') ctx.resume();
     if (unlocked) return;
     unlocked = true;
     if (bgm) bgm.play().catch(() => {});
     preload(['click', 'deploy', 'rifle', 'mg', 'cannon', 'swing', 'expS', 'expB', 'levelup', 'genA', 'genS', 'genSS', 'pickSS', 'charge', 'warning']);
   };
+  // focus: leaving the page silences it (effects, ambience, music, lines); coming back resumes the music and effects
+  function setAway(a) {
+    if (a === away) return;
+    away = a;
+    if (away) {
+      if (ctx && ctx.state === 'running') ctx.suspend();
+      if (bgm) bgm.pause();
+      lines.forEach((el) => el.pause()); lines.clear(); // a line cut off mid-way isn't picked up again
+    } else if (unlocked) {
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      if (bgm) bgm.play().catch(() => {});
+    }
+  }
+  addEventListener('blur', () => setAway(true));
+  addEventListener('focus', () => setAway(false));
+  document.addEventListener('visibilitychange', () => setAway(document.hidden || !document.hasFocus()));
   addEventListener('pointerdown', unlock, { capture: true });
   addEventListener('keydown', unlock, { capture: true });
 
@@ -169,6 +191,6 @@
 
   // tests: what is running (the context, loaded effects, the ambience bed and its level, the music element)
   const state = () => ({ ctx: ctx && ctx.state, unlocked, buffers: Object.keys(buffers).length, live: Object.values(live).reduce((a, n) => a + n, 0),
-    ambience: amb ? +amb.g.gain.value.toFixed(3) : null, bgm: bgm ? { src: bgm.src.split('/').pop(), paused: bgm.paused, volume: +bgm.volume.toFixed(2) } : null });
+    away, ambience: amb ? +amb.g.gain.value.toFixed(3) : null, bgm: bgm ? { src: bgm.src.split('/').pop(), paused: bgm.paused, volume: +bgm.volume.toFixed(2) } : null });
   window.AUDIO = { play, music, voice, setVolume, preload, ambience, state, volume: (k) => SET[k] };
 })();
