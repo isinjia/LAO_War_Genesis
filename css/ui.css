@@ -1011,3 +1011,15 @@ body.carddrag #deckEdit .crc.drop-hover { animation: none !important; }
 .tut-skip:hover::before { background: linear-gradient(180deg, rgba(60, 64, 76, 0.98), rgba(22, 24, 32, 0.98)); }
 .tut-skip:active { transform: translateY(1px); }
 @media (max-width: 640px) { .tut-skip { top: 56px; } .tut-skip .ts-txt b { font-size: 15px; } .tut-skip .ts-txt small { font-size: 10px; } }
+/* narrow screens: the stage sheet stays hidden until a stage is tapped; ✕ or a tap on the map closes it */
+.si-close { display: none; }
+@media (max-width: 1000px) {
+  #pStages .sinfo { transform: translateY(calc(100% + 90px)); visibility: hidden; transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.3, 1), visibility 0s 0.24s; }
+  #pStages .sinfo.open { transform: none; visibility: visible; transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.3, 1); }
+  #stagePath.sheet-off .node.sel { transform: translate(-50%, -50%); filter: none; }
+  .si-close { display: block; position: absolute; right: 8px; top: 8px; width: 30px; height: 30px; border-radius: 50%; z-index: 2;
+    background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); }
+  .si-close::before, .si-close::after { content: ''; position: absolute; left: 8px; right: 8px; top: 50%; height: 2px; margin-top: -1px; background: #ddd; transform: rotate(45deg); }
+  .si-close::after { transform: rotate(-45deg); }
+  .sinfo .si-stars { margin-right: 36px; }
+}

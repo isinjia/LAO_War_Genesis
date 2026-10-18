@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.37'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.38'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -120,6 +120,10 @@
 
   // ── lobby ──────────────────────────────────────────────
   let pane = 'campaign', chapterOpen = -1, selStage = -1;
+  // phones / narrow screens: the stage info is a sheet that opens only when a stage is tapped
+  let sheetOpen = false;
+  const sheetMode = () => matchMedia('(max-width: 1000px)').matches;
+  const infoShown = () => !sheetMode() || sheetOpen;
   document.querySelectorAll('.nav').forEach((b) => { b.onclick = () => { AUDIO.play('click', 0.5, 1.35); setPane(b.dataset.pane); }; });
   $('btnBack').onclick = () => {
     AUDIO.play('click', 0.5);
@@ -243,7 +247,7 @@
         <div class="txt"><div class="no">${isHard() ? 'HARD ' : ''}CHAPTER ${pad2(c + 1)}</div><div class="nm">${ch.title}</div><div class="sb">${ch.sub}</div>
         <div class="prog"><i style="width:${(n / D.PER_CH) * 100}%"></i></div></div>
         ${locked ? '<div class="lock"><i></i></div>' : ''}`;
-      if (!locked) b.onclick = () => { AUDIO.play('click'); chapterOpen = c; selStage = -1; refresh(); };
+      if (!locked) b.onclick = () => { AUDIO.play('click'); chapterOpen = c; selStage = -1; sheetOpen = false; refresh(); };
       box.appendChild(b);
     });
     // daily operation: after chapter 1
@@ -387,10 +391,13 @@
       n.innerHTML = (s.last ? '<span class="tag">BOSS</span>' : s.elite ? '<span class="tag elite">정예</span>' : s.mod ? `<span class="tag mod">${D.MODS[s.mod].name}</span>` : '') +
         `<span class="code">${s.code}</span><span class="stars">${[0, 1, 2].map((k) => `<i class="${k < stars ? 'on' : ''}"></i>`).join('')}</span>` +
         (!isHard() && storyBefore(s) && !save.seen[storyBefore(s)] && !locked ? '<i class="story-dot"></i>' : '');
-      if (!locked) n.onclick = () => { AUDIO.play('click', 0.5, 1.15); selStage = s.ix; renderStages(); };
+      if (!locked) n.onclick = () => { AUDIO.play('click', 0.5, 1.15); selStage = s.ix; sheetOpen = true; renderStages(); };
       path.appendChild(n);
     });
     renderStageInfo(list()[selStage]);
+    $('stageInfo').classList.toggle('open', sheetOpen);
+    path.classList.toggle('sheet-off', !sheetOpen);
+    path.onclick = (e) => { if (sheetOpen && !e.target.closest('.node')) { sheetOpen = false; renderStages(); } }; // tap the map: close
   }
 
   function renderStageInfo(s) {
@@ -410,7 +417,9 @@
       <div class="si-label">${first ? '첫 클리어 보상' : '반복 보상'}</div>
       <div class="si-rewards">${rwHtml(D.reward(s, first ? 'first' : 'win'))}
         ${unit && first && !owned(unit.id) ? `<span class="rw unit"><img src="${IMG['u_' + unit.id]}" alt="">${rk(unit.rank)} ${unit.name} 합류</span>` : ''}</div>
-      <div class="si-go"><button class="btn lg${s.hard ? ' o' : ''}" id="btnGo">출격</button></div>`;
+      <div class="si-go"><button class="btn lg${s.hard ? ' o' : ''}" id="btnGo">출격</button></div>
+      <button class="si-close" id="siClose" aria-label="닫기"></button>`;
+    $('siClose').onclick = () => { AUDIO.play('click', 0.4, 0.8); sheetOpen = false; renderStages(); };
     $('btnGo').onclick = () => { AUDIO.play('click', 1, 0.78); startStage(s); };
   }
 
@@ -1213,8 +1222,8 @@
     { pane: 'missions', el: () => document.querySelector('#missionList .mis[data-mid="tut1"] button'),
       text: '<b>임무</b>를 달성하면 보상을 받습니다. <b>받기</b>를 눌러 보세요!', done: () => !!(save.claimed || {}).tut1 },
     { pane: 'campaign', el: () => (chapterOpen !== 0 ? document.querySelector('#chapterList .chap[data-ch="0"]')
-      : selStage !== 1 ? document.querySelector('#pStages .node[data-ix="1"]') : $('btnGo')),
-      text: () => (chapterOpen !== 0 ? '준비 완료! <b>CHAPTER 1</b>로 돌아갑니다.' : selStage !== 1 ? '다음 작전 <b>1-2</b>를 선택하세요.' : '<b>출격</b>! 이제부터는 사령관의 판단에 맡깁니다.'),
+      : selStage !== 1 || !infoShown() ? document.querySelector('#pStages .node[data-ix="1"]') : $('btnGo')),
+      text: () => (chapterOpen !== 0 ? '준비 완료! <b>CHAPTER 1</b>로 돌아갑니다.' : selStage !== 1 || !infoShown() ? '다음 작전 <b>1-2</b>를 선택하세요.' : '<b>출격</b>! 이제부터는 사령관의 판단에 맡깁니다.'),
       done: () => !!save.tut },
   ];
   const PANE_NAME = { gacha: '제조', squad: '대원', missions: '임무', campaign: '작전' };
