@@ -398,7 +398,8 @@
 
   function startStage(s) {
     const key = storyBefore(s);
-    if (key && !save.seen[key]) playStory(key, () => launch(s));
+    // 설정 > 스토리 다시 보기: on, every stage story plays each time; off, only the ones never seen
+    if (key && (!save.seen[key] || save.storyAlways)) playStory(key, () => launch(s));
     else launch(s);
   }
 
@@ -407,9 +408,7 @@
   function playStory(key, done) {
     const sc = STORY.S[key];
     if (!sc) { if (done) done(); return; }
-    save.seen[key] = 1;
-    persist();
-    story = { sc, i: -1, done, typing: null, side: 'L', slots: { L: null, R: null } };
+    story = { key, sc, i: -1, done, typing: null, side: 'L', slots: { L: null, R: null } };
     AUDIO.music(sc.bgm || (key === 'c8_outro' ? 'ending' : /_boss$/.test(key) ? 'thrill' : /_outro$/.test(key) ? 'talk2' : 'talk'));
     $('stBg').style.backgroundImage = `url(${IMG[sc.bg] || IMG.bg_title})`;
     ['stL', 'stR'].forEach((id) => { $(id).className = 'st-char ' + id.slice(2); $(id).removeAttribute('src'); });
@@ -530,6 +529,9 @@
     if (st.typing) clearInterval(st.typing);
     story = null;
     $('story').classList.remove('show');
+    // seen once it has been read to the end (or skipped on purpose): leaving the game mid-scene plays it again next time
+    save.seen[st.key] = 1;
+    persist();
     if (st.sc === STORY.S.c8_outro && !st.skipped) return credits(st.done);
     if (st.done) st.done();
     else if ($('lobby').classList.contains('show')) { AUDIO.music('lobby'); refresh(); }
@@ -975,6 +977,8 @@
   function openSettings(back) {
     const row = (k, label) => `<div class="opt-row"><span>${label}</span><input type="range" min="0" max="100" value="${Math.round(AUDIO.volume(k) * 100)}" data-k="${k}"><b>${Math.round(AUDIO.volume(k) * 100)}</b></div>`;
     modal('설정', row('bgm', '배경음') + row('sfx', '효과음') + row('voice', '음성') +
+      `<div class="opt-row opt-toggle"><span>스토리 다시 보기</span><button id="optStory" class="tgl${save.storyAlways ? ' on' : ''}">${save.storyAlways ? 'ON' : 'OFF'}</button>
+        <small>ON: 스테이지 스토리를 매번 보여 줍니다 · OFF: 한 번 본 스토리는 건너뜁니다</small></div>` +
       '<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.</div>', [
       ['확인', back || closeModal],
       ['도움말', () => openHelp(), 'd'],
@@ -987,6 +991,10 @@
         ]);
       }, 'd'],
     ]);
+    $('optStory').onclick = () => {
+      save.storyAlways = !save.storyAlways; persist(); AUDIO.play('click', 0.6, 1.15);
+      $('optStory').classList.toggle('on', save.storyAlways); $('optStory').textContent = save.storyAlways ? 'ON' : 'OFF';
+    };
     document.querySelectorAll('.opt-row input').forEach((inp) => {
       inp.oninput = () => { AUDIO.setVolume(inp.dataset.k, inp.value / 100); inp.nextElementSibling.textContent = inp.value; };
       inp.onchange = () => AUDIO.play('click', 0.6);
@@ -1209,6 +1217,6 @@
       : D.STAGES.find((s) => s.code === v) || D.HARD.find((s) => s.code === v) || D.STAGES[Math.max(0, Math.min(D.STAGES.length - 1, +v - 1))];
     launch(st);
   }
-  window.APP = { save, launch, openLobby, pull, playStory, pickBuff, openDaily, titleCard };
+  window.APP = { save, launch, openLobby, pull, playStory, pickBuff, openDaily, titleCard, tutorial: () => !!tut };
   if (q.get('smoke')) { const sc = document.createElement('script'); sc.src = 'tools/smoke.js'; document.head.appendChild(sc); }
 })();
