@@ -16,7 +16,7 @@
   const UNIT_SCALE = 1.2; // drawn size over the data heights (reach / hit points use the data heights)
 
   let renderer, scene, camera, overlay, octx, dpr = 1;
-  let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1, hudTop = 0, zoom = 1; // zoom: wheel / pinch (0.8 = wider, 2 = closer) // hudTop: the top bar's bottom edge (px) // hudFrac: the share of the screen the bottom HUD covers
+  let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1, hudTop = 0, zoom = 1; // zoom: wheel / pinch (zMin() = the whole lane, 2 = closer) // hudTop: the top bar's bottom edge (px) // hudFrac: the share of the screen the bottom HUD covers
   let G = null; // the running battle
   let last = 0;
   const tex = {};
@@ -149,7 +149,13 @@
     view();
   }
   // the view size for the screen and the zoom: the lane keeps its height on screen, only the scale changes
-  const ZMIN = 0.8, ZMAX = 2;
+  const ZMAX = 2;
+  // the widest zoom shows the whole lane, both bases (landscape); portrait stops at 0.45 so units stay visible
+  function zMin() {
+    if (!G) return 0.8;
+    const aspect = innerWidth / innerHeight, vw1 = Math.max(8.5, Math.min(10.5, 11 / aspect)) * aspect;
+    return Math.min(0.8, Math.max(0.45, vw1 / (G.len + 5.4)));
+  }
   function view() {
     const w = innerWidth, h = innerHeight, aspect = w / h;
     VH = Math.max(8.5, Math.min(10.5, 11 / aspect)) / zoom; // portrait phones: a bit more height, units stay readable
@@ -163,7 +169,7 @@
 
   // zoom about a screen x (the cursor / the pinch centre): the world point under it stays put
   function setZoom(z, sx = innerWidth / 2) {
-    z = Math.max(ZMIN, Math.min(ZMAX, z));
+    z = Math.max(zMin(), Math.min(ZMAX, z));
     if (Math.abs(z - zoom) < 1e-4) return;
     const f = sx / innerWidth - 0.5, wx = camX + f * VW;
     zoom = z; view();
@@ -435,9 +441,11 @@
   // the picture spans the view height with its walkable band on the lane (y = 0); it repeats (mirrored) along x
   function fitBg() {
     if (!G || !G.bg) return;
-    // sized for the unzoomed view: zooming in then magnifies the picture with the field (zooming out still fills the view)
-    const zf = Math.max(1, zoom), b = G.bg, top = (camBottom + VH) * zf + 0.2;
-    const H = Math.max(top / (1 - b.gf), (0.2 - camBottom * zf) / b.gf);
+    // sized for the unzoomed view, so it scales with the field; zoomed out it grows only if the sky would not reach
+    // the top (below the lane the foreground strip and the HUD cover it)
+    const b = G.bg, top1 = (camBottom + VH) * zoom + 0.2;
+    const H1 = Math.max(top1 / (1 - b.gf), (0.2 - camBottom * zoom) / b.gf);
+    const H = Math.max(H1, (camBottom + VH + 0.2) / (1 - b.gf));
     const width = G.len + 40;
     b.tex.repeat.set(width / H, 1);
     for (const m of [b.mesh, b.tint]) { m.scale.set(width, H, 1); m.position.set(G.len / 2, H / 2 - H * b.gf, -5); }
