@@ -95,8 +95,20 @@
 
   // character lines (gacha / joining / battle barks): one at a time; barks never cut a line in progress
   let voiceEl = null, voiceAt = 0;
+  // deploy lines: every time, each on its own element, freely overlapping; the music ducks while any is playing
+  let ducking = 0;
+  function voiceOver(src) {
+    const el = new Audio(src);
+    el.volume = VOL.voice;
+    el.play().catch(() => {});
+    if (!bgm) return;
+    ducking++; bgm.volume = VOL.bgm * 0.45;
+    let done = false;
+    el.onended = el.onpause = el.onerror = () => { if (done) return; done = true; if (--ducking <= 0) { ducking = 0; if (bgm) fade(bgm, VOL.bgm, 500); } };
+  }
   function voice(src, bark) {
     if (!src || !unlocked) return;
+    if (bark === 'over') return voiceOver(src);
     const now = performance.now();
     if (bark && voiceEl && !voiceEl.ended && !voiceEl.paused) return;
     if (bark && now - voiceAt < 6000) return; // barks stay occasional

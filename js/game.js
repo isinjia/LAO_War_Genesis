@@ -475,7 +475,7 @@
     burst(0.9, f.dy + f.h * 0.4, 0x48d8ff, 1.4, 0.35);
     if (def.rank === 'SS') { sheet('aura', 0.9, f.dy + f.h * 0.7, 0xffd200, f.h * 2.2, 0.6); ring(0.9, f.dy + 0.1, 0xffd200, 3, 0.5); shake(0.08, 0.2); }
     AUDIO.play('deploy', 0.6);
-    if (window.BARK && BARK[def.id] && Math.random() < (def.rank === 'SS' ? 0.8 : 0.35)) AUDIO.voice(BARK[def.id].deploy, true);
+    if (window.BARK && BARK[def.id]) AUDIO.voice(BARK[def.id].deploy, 'over'); // every deploy, overlapping
     return true;
   }
 
@@ -581,7 +581,10 @@
       if (a.skill && f.ally && shots === 0) { text(o.x, aimY(o) + o.h * 0.5 + 0.2, fmtDmg(a.per), '#fff2a8', 1.2); hitstop(0.05); }
       if (f.def.slow) { o.slowT = f.def.slow[1] * (o.boss ? 0.5 : 1) * (f.slowMul || 1); o.slowK = f.def.slow[0]; }
       // the original projectile / effect (one or two per volley), else the effect sheets
-      if (!(orig && shots < 2 && origShot(f, orig, o.x, aimY(o), mz))) hitFx(f, o.x, aimY(o), mz);
+      if (orig && shots < 2 && origShot(f, orig, o.x, aimY(o), mz)) {
+        // the original bullet is small and quick: a flash at the barrel shows where it left
+        if (orig.bullet && shots === 0) sheet('flash', mz[0] + f.dir * 0.08, mz[1], f.def.color || 0xffd27a, 0.7, 0.08);
+      } else hitFx(f, o.x, aimY(o), mz);
       shots++;
       any = true;
     };
@@ -1076,7 +1079,7 @@
     _mv.set(W[i] * px + W[i + 3] * py + W[i + 6] * pz + W[i + 9],
       W[i + 1] * px + W[i + 4] * py + W[i + 7] * pz + W[i + 10],
       W[i + 2] * px + W[i + 5] * py + W[i + 8] * pz + W[i + 11]);
-    f.sd.root.localToWorld(_mv);
+    f.sd.mesh.localToWorld(_mv); // the body mesh, which carries the attack clips' root-motion pin offset
     return G.root.worldToLocal(_mv);
   }
   const WEAPON = /gun|rifle|revolver|pistol|cannon|launcher|bazooka|weapon|barrel/i;
@@ -1105,7 +1108,7 @@
     }
     if (!best) return null;
     _mv.set(best[0], best[1], 0);
-    sd.root.localToWorld(_mv);
+    sd.mesh.localToWorld(_mv);
     G.root.worldToLocal(_mv);
     return [_mv.x, _mv.y];
   }
