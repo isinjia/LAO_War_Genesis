@@ -84,8 +84,8 @@
         <div class="rates" id="rates"></div>
         <div class="pity" id="pity"></div>
         <div class="pull-btns">
-          <button id="pull1" class="btn d">1회 제조<small><i class="parts-i"></i>300</small></button>
-          <button id="pull10" class="btn">10회 제조<small><i class="parts-i"></i>3000 · S 이상 확정</small></button>
+          <button id="pull1" class="btn d">1회 제조<small><i class="parts-i"></i>500</small></button>
+          <button id="pull10" class="btn">10회 제조<small><i class="parts-i"></i>5000 · S 이상 확정</small></button>
         </div>
       </div>
     </div>
@@ -141,6 +141,7 @@
 
 <!-- battle HUD -->
 <section id="hud" class="screen hud">
+  <div id="finale" class="finale"><small>OPERATION COMPLETE</small><b>철의 왕자 격파</b><span>해안에서 시작된 전쟁이 끝났습니다</span></div>
   <div class="hud-top">
     <div class="stage-name"><b id="hudCode"></b><span id="hudStage"></span></div>
     <div class="timer" id="timer">10:00</div>
@@ -152,6 +153,7 @@
   </div>
   <div class="hud-bottom">
     <div id="skillBar" class="skill-bar"></div>
+    <div id="skHint" class="sk-hint">SKILL 준비! 빛나는 버튼을 눌러 스킬 명령</div>
     <button id="btnWorker" class="side-btn worker">
       <div class="lbl">작업 효율</div>
       <div class="lv">LV <b id="workerLv">1</b></div>
@@ -182,6 +184,7 @@
 
 <script src="js/vendor/three.min.js"></script>
 <script src="js/assets.js"></script>
+<script src="js/faces.js"></script>
 <script src="js/anim_events.js"></script>
 <script src="js/data.js"></script>
 <script src="js/story.js"></script>

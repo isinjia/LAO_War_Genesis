@@ -77,12 +77,12 @@
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
   if (window.UIA) $('logo').src = UIA.logo.u;
-  $('btnStart').onclick = () => { AUDIO.play('click'); openLobby('campaign'); };
+  $('btnStart').onclick = () => { AUDIO.play('click', 1, 0.8); openLobby('campaign'); };
   AUDIO.music('title');
 
   // ── lobby ──────────────────────────────────────────────
   let pane = 'campaign', chapterOpen = -1, selStage = -1;
-  document.querySelectorAll('.nav').forEach((b) => { b.onclick = () => { AUDIO.play('click', 0.5); setPane(b.dataset.pane); }; });
+  document.querySelectorAll('.nav').forEach((b) => { b.onclick = () => { AUDIO.play('click', 0.5, 1.35); setPane(b.dataset.pane); }; });
   $('btnBack').onclick = () => {
     AUDIO.play('click', 0.5);
     if (pane === 'campaign' && chapterOpen >= 0) { chapterOpen = -1; refresh(); }
@@ -189,7 +189,7 @@
     tg.innerHTML = `<button data-m="normal" class="${isHard() ? '' : 'on'}">NORMAL</button>` +
       `<button data-m="hard" class="hard ${isHard() ? 'on' : ''}">HARD</button>` +
       `<small>${isHard() ? '하드: 철충 강도 2배 이상 · 보상 1.6배 · 노말 챕터를 깨면 열림' : '노말 캠페인 · 스토리'}</small>`;
-    tg.querySelectorAll('button').forEach((b) => { b.onclick = () => { mode = b.dataset.m; AUDIO.play('click', 0.5); renderChapters(); }; });
+    tg.querySelectorAll('button').forEach((b) => { b.onclick = () => { mode = b.dataset.m; AUDIO.play('click', 0.5, 1.35); renderChapters(); }; });
     box.appendChild(tg);
     D.CHAPTERS.forEach((ch, c) => {
       const locked = chapterLocked(c);
@@ -212,7 +212,7 @@
     const dOpen = save.cleared >= D.PER_CH;
     dly.className = 'chap daily' + (dOpen ? '' : ' locked');
     dly.innerHTML = `<div class="img" style="background-image:url(${IMG[D.CHAPTERS[today % 8].bg]})"></div><i class="bar-top"></i>
-      <span class="pc">${save.dailyDone === today ? '오늘 완료' : '참치 300 · 부품 1500'}</span>
+      <span class="pc">${save.dailyDone === today ? '오늘 완료' : '참치 300 · 부품 1000'}</span>
       <div class="txt"><div class="no">DAILY OPERATION</div><div class="nm">일일 작전</div><div class="sb">매일 바뀌는 조건과 고정 편성 · 하루 한 번 보상</div></div>
       ${dOpen ? '' : '<div class="lock"><i></i><span>1장 클리어 후 개방</span></div>'}`;
     if (dOpen) dly.onclick = () => { AUDIO.play('click'); openDaily(today); };
@@ -346,7 +346,7 @@
       n.innerHTML = (s.last ? '<span class="tag">BOSS</span>' : s.elite ? '<span class="tag elite">정예</span>' : s.mod ? `<span class="tag mod">${D.MODS[s.mod].name}</span>` : '') +
         `<span class="code">${s.code}</span><span class="stars">${[0, 1, 2].map((k) => `<i class="${k < stars ? 'on' : ''}"></i>`).join('')}</span>` +
         (!isHard() && storyBefore(s) && !save.seen[storyBefore(s)] && !locked ? '<i class="story-dot"></i>' : '');
-      if (!locked) n.onclick = () => { AUDIO.play('click', 0.5); selStage = s.ix; renderStages(); };
+      if (!locked) n.onclick = () => { AUDIO.play('click', 0.5, 1.15); selStage = s.ix; renderStages(); };
       path.appendChild(n);
     });
     renderStageInfo(list()[selStage]);
@@ -370,7 +370,7 @@
       <div class="si-rewards">${rwHtml(D.reward(s, first ? 'first' : 'win'))}
         ${unit && first && !owned(unit.id) ? `<span class="rw unit"><img src="${IMG['u_' + unit.id]}" alt="">${rk(unit.rank)} ${unit.name} 합류</span>` : ''}</div>
       <div class="si-go"><button class="btn lg${s.hard ? ' o' : ''}" id="btnGo">출격</button></div>`;
-    $('btnGo').onclick = () => { AUDIO.play('click'); startStage(s); };
+    $('btnGo').onclick = () => { AUDIO.play('click', 1, 0.78); startStage(s); };
   }
 
   // story before a normal stage: the chapter's intro (x-1), elite (x-5) or boss (x-10) scene
@@ -404,6 +404,56 @@
     nextLine();
   }
 
+  // story expressions: where the illustration has a matching face set (js/faces.js), the face changes with the line's mood
+  const MOODS = [
+    ['angry', /(용서|젠장|감히|망쳐|이놈|비켜|화가|으윽|당장)/, ['Anger', 'Anger2', 'Serious', 'Resolve']],
+    ['surprised', /(\?!|!\?|뭐라고|설마|어떻게|놀라|저게 뭐|왜 여기)/, ['Surprised', 'Question', 'What', 'Exiting']],
+    ['sad', /(^…|미안|슬퍼|울어|돌아오지|잃|못 했|아파|힘들)/, ['Sad', 'Worry', 'CloseEye', 'Apologize']],
+    ['shy', /(부끄|칭찬|쑥스|꽤 잘했|어땠어요)/, ['Shy', 'Embarrass', 'Smile']],
+    ['happy', /(좋아|고마|다행|최고|하하|헤헤|잘했|축하|기뻐|간단하네|놀이터)/, ['BigSmile', 'Happy', 'Smile', 'Smile2']],
+    ['serious', /(집중|조심|경계|명심|확인해|맡는다|버틴다|각오)/, ['Serious', 'Resolve', 'Blunt', 'Idle']],
+    // otherwise the punctuation: a question, a trailing-off line, an exclamation
+    ['ask', /\?/, ['Question', 'Surprised', 'What']],
+    ['trail', /…/, ['CloseEye', 'Worry', 'Sad', 'eyeshalf']],
+    ['exclaim', /!/, ['Resolve', 'Serious']],
+  ];
+  function faceFor(who, text, stage) {
+    const f = window.FACES && FACES[who];
+    if (!f || !hasFull(who)) return null;
+    if (stage && stage.face) return f.e[stage.face] ? stage.face : null;
+    for (const [, re, list] of MOODS) if (re.test(text)) { const e = list.find((x) => f.e[x]); if (e) return e; }
+    return f.e.Idle ? 'Idle' : null;
+  }
+  const faceCache = {};
+  // the illustration with the face pasted in, drawn once per (character, expression)
+  function faceArt(who, ex) {
+    const key = who + '/' + ex;
+    if (faceCache[key]) return faceCache[key];
+    faceCache[key] = new Promise((res) => {
+      const f = FACES[who], a = new Image(), b = new Image();
+      let n = 0;
+      const go = () => {
+        if (++n < 2) return;
+        try {
+          const c = document.createElement('canvas');
+          c.width = a.naturalWidth; c.height = a.naturalHeight;
+          const g = c.getContext('2d');
+          g.drawImage(a, 0, 0);
+          g.drawImage(b, f.x * c.width, f.y * c.height, f.w * c.width, f.h * c.height);
+          res(c.toDataURL('image/webp', 0.9));
+        } catch (e) { res(null); }
+      };
+      a.onload = b.onload = go; a.onerror = b.onerror = () => res(null);
+      a.src = FULL[who]; b.src = f.e[ex];
+    });
+    return faceCache[key];
+  }
+  function setFace(el, who, ex) {
+    el.dataset.face = ex || '';
+    if (!ex) return;
+    faceArt(who, ex).then((url) => { if (url && el.dataset.face === ex && story && story.slots[el.id.slice(2)] === who) el.src = url; });
+  }
+
   function nextLine() {
     const st = story;
     if (!st) return;
@@ -426,9 +476,12 @@
       if (st.slots[side] !== who) {
         st.slots[side] = who;
         el.src = art(who);
+        el.dataset.face = '';
         el.classList.toggle('portrait', !hasFull(who));
         el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); // slides in
       }
+      const ex = faceFor(who, text, stage);
+      if (ex !== (el.dataset.face || null)) setFace(el, who, ex);
       el.classList.add('show');
       el.classList.remove('dim');
       el.classList.remove('talk'); void el.offsetWidth; el.classList.add('talk'); // a little hop as they speak
@@ -519,14 +572,15 @@
         s.title = u.name;
         s.onclick = () => {
           if (save.deck.length <= 1) return GAME.toast('최소 1명은 편성해야 합니다');
-          save.deck.splice(i, 1); persist(); renderSquad(); AUDIO.play('click', 0.4);
+          save.deck.splice(i, 1); persist(); renderSquad(); AUDIO.play('click', 0.45, 0.7);
         };
       }
       row.appendChild(s);
     }
     const on = new Set(D.synergiesOf(save.deck.map((id) => D.UNIT[id])));
     $('synList').innerHTML = `<div class="sec-title"><b>편성 시너지</b><small>편성 구성에 따라 전투에서 자동 적용</small></div>` +
-      D.SYNERGIES.map((sy) => `<div class="sy${on.has(sy.id) ? ' on' : ''}"><i></i><b>${sy.name}</b><span>${sy.need}</span><small>${sy.tip}</small></div>`).join('');
+      ['유형', '인연', '각오'].map((k) => `<div class="sy-k">${k}${k === '각오' ? ' <small>무언가를 포기하면 열리는 시너지</small>' : k === '인연' ? ' <small>함께 편성하면 강해지는 대원</small>' : ''}</div>` +
+        D.SYNERGIES.filter((sy) => sy.kind === k).map((sy) => `<div class="sy${on.has(sy.id) ? ' on' : ''}${sy.kind === '각오' ? ' vow' : ''}"><i></i><b>${sy.name}</b><span>${sy.need}</span><small>${sy.tip}</small></div>`).join('')).join('');
     const fl = $('rankFilter');
     const have = D.UNITS.filter((u) => owned(u.id)).length;
     fl.innerHTML = ['ALL', ...D.RANK_ORDER].map((r) => `<button data-r="${r}" class="${filter === r ? 'on' : ''}">${r === 'ALL' ? '전체' : rk(r) + r}</button>`).join('') +
@@ -609,7 +663,7 @@
   const FEATURABLE = SS.filter((u) => window.FULL && FULL[u.id]); // the banner needs a full-body illustration
   const featured = () => FEATURABLE[Math.floor(Date.now() / 86400000) % FEATURABLE.length]; // changes daily
   let gtab = 'making';
-  document.querySelectorAll('.gtab').forEach((b) => { b.onclick = () => { gtab = b.dataset.g; AUDIO.play('click', 0.5); renderGacha(); }; });
+  document.querySelectorAll('.gtab').forEach((b) => { b.onclick = () => { gtab = b.dataset.g; AUDIO.play('click', 0.5, 1.35); renderGacha(); }; });
 
   function renderGacha() {
     document.querySelectorAll('.gtab').forEach((b) => b.classList.toggle('on', b.dataset.g === gtab));
@@ -994,7 +1048,7 @@
         d.skb.classList.toggle('full', k >= 1);
         d.skb.style.setProperty('--p', Math.max(0, Math.min(1, k)));
         // the first time a skill is ready: one hint
-        if (k >= 1 && !save.tutSkill && !tut) { save.tutSkill = 1; persist(); GAME.toast('SKILL 준비! 편성 칸 위의 빛나는 SKILL 버튼을 누르세요', false, 3200); }
+        if (k >= 1 && !save.tutSkill && !tut) { save.tutSkill = 1; persist(); $('skHint').classList.add('show'); setTimeout(() => $('skHint').classList.remove('show'), 4500); AUDIO.play('rankUp', 0.5); }
       }
     });
     const wmax = G.worker >= D.WORKER.cost.length;
@@ -1122,7 +1176,7 @@
       const b = document.createElement('button');
       b.className = 'btn' + (style ? ' ' + style : '');
       b.textContent = label;
-      b.onclick = () => { AUDIO.play('click', 0.5); fn(); };
+      b.onclick = () => { AUDIO.play('click', 0.55, 0.85); fn(); };
       box.appendChild(b);
     });
     $('modal').classList.add('show');

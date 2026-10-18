@@ -43,7 +43,9 @@
     a.play().catch(() => {});
   }
 
-  function play(key, vol = 1) {
+  // interface and jingle sounds keep their exact pitch
+  const STEADY = new Set(['click', 'purchase', 'rankUp', 'fail', 'start', 'win', 'clear', 'lose', 'warning', 'pull', 'levelup', 'pickSS']);
+  function play(key, vol = 1, rate = 0) { // rate: a fixed pitch (interface variants of one sound)
     if (!unlocked || !window.SND || !SND[key]) return;
     const now = performance.now();
     if (now - (last[key] || 0) < 40) return; // one volley on one frame plays once
@@ -55,7 +57,11 @@
     const src = ctx.createBufferSource();
     src.buffer = buf;
     const g = ctx.createGain();
-    g.gain.value = Math.min(1.5, vol);
+    // battle sounds repeat a lot: each one plays a little higher or lower and louder or softer, so volleys don't drone
+    const vary = !STEADY.has(key);
+    if (rate) src.playbackRate.value = rate;
+    else if (vary) src.playbackRate.value = 0.94 + Math.random() * 0.12;
+    g.gain.value = Math.min(1.5, vol * (vary ? 0.9 + Math.random() * 0.2 : 1));
     src.connect(g).connect(sfxGain);
     live[key] = (live[key] || 0) + 1;
     src.onended = () => { live[key]--; };
@@ -107,6 +113,7 @@
     SET[kind] = Math.max(0, Math.min(1, v));
     try { localStorage.setItem('lao_war_genesis_audio', JSON.stringify(SET)); } catch (e) { /* private mode */ }
     if (kind === 'bgm' && bgm) bgm.volume = VOL.bgm;
+    if (kind === 'bgm' && amb) amb.g.gain.value = 0.16 * VOL.bgm;
     if (kind === 'sfx' && sfxGain) sfxGain.gain.value = VOL.sfx;
   }
 
@@ -121,5 +128,32 @@
   addEventListener('pointerdown', unlock, { capture: true });
   addEventListener('keydown', unlock, { capture: true });
 
-  window.AUDIO = { play, music, voice, setVolume, preload, volume: (k) => SET[k] };
+  // ambience under the battle (the source has none): filtered noise shaped per field, with a slow swell.
+  // field: wind through grass, city: distant traffic-less hum and wind between towers, base: machinery hum
+  let amb = null;
+  function ambience(kind) {
+    if (amb) { const a = amb; amb = null; a.g.gain.setTargetAtTime(0, ctx.currentTime, 0.4); setTimeout(() => a.nodes.forEach((n) => { try { n.stop && n.stop(); n.disconnect(); } catch (e) { /* gone */ } }), 1500); }
+    if (!kind || !ensureCtx()) return;
+    const len = ctx.sampleRate * 4, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    let b = 0;
+    for (let i = 0; i < len; i++) { b = 0.985 * b + 0.015 * (Math.random() * 2 - 1); d[i] = b * 6; } // brown-ish noise
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const f = ctx.createBiquadFilter(); f.type = kind === 'bg_base' ? 'lowpass' : 'bandpass';
+    f.frequency.value = kind === 'bg_field' ? 520 : kind === 'bg_city' ? 340 : 260; f.Q.value = kind === 'bg_base' ? 0.7 : 0.9;
+    const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.07; lg.gain.value = f.frequency.value * 0.45; // gusts
+    lfo.connect(lg).connect(f.frequency);
+    const g = ctx.createGain(); g.gain.value = 0;
+    src.connect(f).connect(g);
+    const nodes = [src, lfo, f, lg];
+    if (kind !== 'bg_field') { // a low hum
+      const o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = kind === 'bg_base' ? 55 : 48; og.gain.value = kind === 'bg_base' ? 0.25 : 0.12;
+      o.connect(og).connect(g); o.start(); nodes.push(o, og);
+    }
+    g.connect(ctx.destination);
+    src.start(); lfo.start();
+    g.gain.setTargetAtTime(0.16 * VOL.bgm, ctx.currentTime, 1.2);
+    amb = { g, nodes };
+  }
+
+  window.AUDIO = { play, music, voice, setVolume, preload, ambience, volume: (k) => SET[k] };
 })();

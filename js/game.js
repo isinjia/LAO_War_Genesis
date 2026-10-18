@@ -146,6 +146,7 @@
     camera.left = camX - VW / 2 + sx; camera.right = camX + VW / 2 + sx;
     camera.bottom = camBottom + sy; camera.top = camBottom + VH + sy;
     camera.updateProjectionMatrix();
+    placeFg();
   }
   const toScreen = (x, y) => [((x - camera.left) / (camera.right - camera.left)) * innerWidth, (1 - (y - camera.bottom) / (camera.top - camera.bottom)) * innerHeight];
 
@@ -219,16 +220,20 @@
       bossDone: !st.boss, rushDone: !st.rush, userCam: false, root: new THREE.Group(),
     };
     G.base.hp = G.base.max = Math.round(3000 * st.pow / 100) * 100;
+    if (G.syn.has('lean')) G.worker = 1; // 소수 정예: work efficiency starts at Lv2
     scene.add(G.root);
     buildField();
     camX = -100; clampCam(); updateCam();
     AUDIO.music(battleMusic(st));
+    AUDIO.ambience(st.bg);
     AUDIO.preload([...new Set(deck.map((d) => d.def.sfx)), 'expS', 'expM', 'gun', 'swing', 'cannon', 'beam', 'laserBig', 'warning', 'win']);
     AUDIO.play('start');
   }
 
   function stop() {
     document.body.classList.remove('cine');
+    { const el = document.getElementById('finale'); if (el) el.className = 'finale'; }
+    AUDIO.ambience(null);
     if (!G) return;
     [...G.allies, ...G.enemies].forEach(disposeFighter);
     G.bfx.forEach((b) => b.inst.dispose()); G.sfx.forEach((f) => f.dispose());
@@ -252,6 +257,9 @@
     tint.renderOrder = 1;
     G.root.add(tint);
     G.bg = { mesh: bg, tint, tex: t, gf: BG_GROUND[key] || 0.28 };
+    G.fg = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: fgTexture(key), transparent: true, depthTest: false, depthWrite: false }));
+    G.fg.renderOrder = 1400; // in front of the fighters, under the effects
+    G.root.add(G.fg);
     // the walkable lane: a soft dark band with a faint edge, so the fighting line reads on every background
     const lane = new THREE.Mesh(new THREE.PlaneGeometry(G.len + 8, 1.6), new THREE.MeshBasicMaterial({ map: tex.beam, color: 0x000000, transparent: true, opacity: 0.32, depthTest: false }));
     lane.position.set(G.len / 2, 0, -4); lane.renderOrder = 2;
@@ -303,6 +311,67 @@
       G.baseRig = c; G.baseHolder = h;
     }
     addShadow(G.root, G.len + 0.9, 0, 3.6);
+  }
+
+  // foreground: dark silhouettes (rubble, girders, crates, grass by background) along the bottom of the view,
+  // drawn once on a canvas and scrolled a little faster than the lane, so the space under the fight has depth
+  function fgTexture(kind) {
+    const W = 2048, H = 512, c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    let seed = kind.length * 977;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const base = H * 0.62;
+    // two tones tinted to the stage: a lighter back row, a darker front row; the ground below fades only part way
+    const TONE = { bg_field: ['#1d2a14', '#0c1409', '20,30,12'], bg_city: ['#1c2430', '#0b0f15', '12,16,22'], bg_base: ['#1e242c', '#0c0f13', '12,15,19'] }[kind] || ['#1c2430', '#0b0f15', '12,16,22'];
+    const grd = g.createLinearGradient(0, base - 40, 0, H);
+    grd.addColorStop(0, `rgba(${TONE[2]},0)`); grd.addColorStop(0.4, `rgba(${TONE[2]},0.45)`); grd.addColorStop(1, `rgba(${TONE[2]},0.68)`);
+    g.fillStyle = grd; g.fillRect(0, base - 40, W, H);
+    g.fillStyle = TONE[0];
+    for (let x = -40; x < W; x += 120 + rnd() * 200) { // back row
+      const w = 160 + rnd() * 260, h = 50 + rnd() * 70;
+      g.beginPath(); g.moveTo(x, H); for (let k = 0; k <= 8; k++) { const t = k / 8; g.lineTo(x + w * t, base + 10 - h * Math.sin(Math.PI * t)); } g.lineTo(x + w, H); g.fill();
+    }
+    g.fillStyle = TONE[1];
+    const lump = (x, w, h) => { g.beginPath(); g.moveTo(x, H); for (let k = 0; k <= 8; k++) { const t = k / 8; g.lineTo(x + w * t, base + 30 - h * Math.sin(Math.PI * t) * (0.75 + rnd() * 0.5)); } g.lineTo(x + w, H); g.fill(); };
+    for (let x = -60; x < W; x += 90 + rnd() * 160) lump(x, 140 + rnd() * 220, 30 + rnd() * 70); // the ground line
+    for (let i = 0; i < 9; i++) {
+      const x = (i + rnd() * 0.6) * (W / 9);
+      if (kind === 'bg_field') { // grass tufts and stones
+        for (let k = 0; k < 14; k++) { const gx = x + rnd() * 120, h = 40 + rnd() * 110; g.beginPath(); g.moveTo(gx - 6, base + 40); g.quadraticCurveTo(gx + rnd() * 30 - 15, base + 40 - h * 0.6, gx + rnd() * 40 - 20, base + 40 - h); g.lineTo(gx + 6, base + 40); g.fill(); }
+        lump(x + 60, 110 + rnd() * 60, 60 + rnd() * 30);
+      } else if (kind === 'bg_city') { // rubble, bent girders, a cone
+        lump(x, 160, 70 + rnd() * 50);
+        g.save(); g.translate(x + 70, base + 20); g.rotate(-0.5 - rnd() * 0.6); g.fillRect(-8, -150 - rnd() * 80, 16, 170); g.fillRect(-30, -150, 60, 12); g.restore();
+        if (rnd() < 0.5) { g.beginPath(); g.moveTo(x + 140, base + 40); g.lineTo(x + 160, base - 30); g.lineTo(x + 180, base + 40); g.fill(); }
+      } else { // crates, pipes and a hazard rail
+        const w = 90 + rnd() * 60, h = 70 + rnd() * 60;
+        g.fillRect(x, base + 40 - h, w, h + 200); g.fillRect(x + w * 0.6, base + 40 - h - 50, w * 0.6, h + 250);
+        g.fillRect(x - 40, base - 10, 260, 14);
+        g.fillStyle = 'rgba(255,204,0,0.18)'; for (let k = 0; k < 6; k++) g.fillRect(x - 40 + k * 44, base - 10, 22, 14); g.fillStyle = TONE[1];
+      }
+    }
+    // a faint rim of light on the top edges (the battlefield glow)
+    g.globalCompositeOperation = 'source-atop';
+    const rim = g.createLinearGradient(0, base - 200, 0, base + 60);
+    rim.addColorStop(0, 'rgba(120,170,220,0.22)'); rim.addColorStop(0.6, 'rgba(120,170,220,0.04)'); rim.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rim; g.fillRect(0, 0, W, base + 60);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping;
+    t.ownedByField = true;
+    return t;
+  }
+  function placeFg() {
+    if (!G || !G.fg) return;
+    // one picture = 1.25 world units tall with its ground line 38% up: the silhouettes stay under the fighters' feet;
+    // the plane reaches down to the bottom of the view and the picture's dark bottom row is stretched (clamped) there
+    const ground = -1.75, h = 1.25, top = ground + h * 0.62, Hp = Math.max(h, top - camBottom + 0.2);
+    const width = G.len + 60;
+    G.fg.scale.set(width, Hp, 1);
+    G.fg.position.set(G.len / 2 - camX * 0.18, top - Hp / 2, 0); // scrolls 18% faster than the lane
+    const m = G.fg.material.map;
+    m.repeat.set(width / (h * 4), Hp / h);
+    m.offset.set(0, 1 - Hp / h);
   }
 
   // the picture spans the view height with its walkable band on the lane (y = 0); it repeats (mirrored) along x
@@ -375,16 +444,25 @@
     if (G.allies.length >= 40) { toast('필드가 가득 찼습니다'); return false; }
     G.money -= def.cost;
     const link = slot.link || 0; // core link: duplicates make the unit stronger
-    G.cds[i] = def.cd * D.linkCd(link) * Math.pow(0.88, buffN(G.st, 'cd'));
+    G.cds[i] = def.cd * D.linkCd(link) * Math.pow(0.88, buffN(G.st, 'cd')) * (G.syn.has('lean') ? 0.7 : 1) *
+      (G.syn.has('tide') && (def.id === 'undine' || def.id === 'thetis') ? 0.75 : 1);
     const f = makeFighter(1, def, def.id, 0.9, D.lvMul(slot.lv) * D.linkMul(link));
     f.atk *= 1 + 0.12 * buffN(G.st, 'atk'); f.hp = f.maxHp = f.maxHp * (1 + 0.15 * buffN(G.st, 'hp'));
     // squad synergies (data.js SYNERGIES)
     const t = def.type;
-    if (G.syn.has('bulwark') && (t === 'wall' || t === 'melee')) f.hp = f.maxHp = f.maxHp * 1.2;
-    if (G.syn.has('chain') && t === 'chain') f.atk *= 1.2;
-    if (G.syn.has('volley') && t === 'single') f.atk *= 1.15;
-    if (G.syn.has('eagle') && t === 'snipe') f.range = def.range + 0.6;
-    if (G.syn.has('ace') && f.manual) f.skillCharge *= 0.85;
+    const S = G.syn, id = def.id;
+    if (S.has('bulwark') && (t === 'wall' || t === 'melee')) f.hp = f.maxHp = f.maxHp * (S.has('bulwark2') ? 1.4 : 1.2);
+    if (S.has('bulwark2') && (t === 'wall' || t === 'melee')) f.kbRes = 0.5;
+    if (S.has('chain') && t === 'chain') f.atk *= 1.2;
+    if (S.has('volley') && t === 'single') f.atk *= S.has('volley2') ? 1.3 : 1.15;
+    if (S.has('eagle') && t === 'snipe') f.range = def.range + 0.6;
+    if (S.has('ace') && f.manual) f.skillCharge *= 0.85;
+    if (S.has('flame') && (id === 'impet' || id === 'phoenix')) f.atk *= 1.25;
+    if (S.has('tide') && (id === 'undine' || id === 'thetis')) f.slowMul = 1.5;
+    if (S.has('wings') && (id === 'raven' || id === 'hraesvelgr')) { f.range = (f.range || def.range) + 0.5; f.atk *= 1.1; }
+    if (S.has('shore') && (id === 'brownie' || id === 'leprechaun' || id === 'gnome')) { f.atk *= 1.12; f.hp = f.maxHp = f.maxHp * 1.12; }
+    if (S.has('command')) f.hp = f.maxHp = f.maxHp * 1.08;
+    if (S.has('grunt')) { f.atk *= 1.2; f.hp = f.maxHp = f.maxHp * 1.15; }
     G.deploys++;
     G.allies.push(f);
     burst(0.9, f.dy + f.h * 0.4, 0x48d8ff, 1.4, 0.35);
@@ -450,6 +528,7 @@
     if (!hits.length) hits = [cycle * (f.ally ? 0.4 : 0.45)];
     if (hits.length > 8) { const k = hits.length / 8; hits = Array.from({ length: 8 }, (_, i) => hits[Math.floor(i * k)]); }
     const mult = ordered ? SKILL[f.def.rank].mult : skill ? 2.6 : 1;
+    if (ordered) telegraph(f, hits[0] || cycle * 0.4);
     f.act = { t: 0, cycle, hits, i: 0, per: (f.atk * mult) / hits.length, skill };
     f.cool = Math.max(f.def.rate, cycle);
     f.state = 'atk';
@@ -473,7 +552,7 @@
     const hitOne = (o) => {
       damage(o, a.per, f);
       if (a.skill && f.ally && shots === 0) { text(o.x, o.dy + o.h + 0.2, fmtDmg(a.per), '#fff2a8', 1.2); hitstop(0.05); }
-      if (f.def.slow) { o.slowT = f.def.slow[1] * (o.boss ? 0.5 : 1); o.slowK = f.def.slow[0]; }
+      if (f.def.slow) { o.slowT = f.def.slow[1] * (o.boss ? 0.5 : 1) * (f.slowMul || 1); o.slowK = f.def.slow[0]; }
       // the original projectile / effect (one or two per volley), else the effect sheets
       if (!(orig && shots < 2 && origShot(f, orig, o.x, o.dy + o.h * 0.5))) hitFx(f, o.x, o.dy + o.h * 0.5);
       shots++;
@@ -524,6 +603,7 @@
   }
 
   function knockback(o, dist, dur = 0.5) {
+    dist *= 1 - (o.kbRes || 0); // 철벽 전열 II
     if (o.dead && o.state !== 'dying') return;
     const lo = 0.4, hi = G.len - 0.4;
     o.act = null;
@@ -698,6 +778,7 @@
       const mvp = G.allies.filter((a) => !a.dead).sort((a, b) => b.def.cost - a.def.cost)[0];
       if (mvp && window.BARK && BARK[mvp.def.id]) setTimeout(() => AUDIO.voice(BARK[mvp.def.id].win), 700);
       panTo(G.len - VW * 0.35);
+      if (G.st.finale) finale();
     } else {
       for (let i = 0; i < 6; i++) setTimeout(() => { if (!G) return; const x = -0.7 + (Math.random() - 0.5) * 2, y = 0.5 + Math.random() * 3.5; sheet('burst', x, y, 0xff7744, 2.4, 0.25); sheet('smoke', x, y, 0xff6633, 3, 0.7, { grow: 0.5 }); shake(0.25, 0.25); }, i * 220);
       AUDIO.play('expB'); AUDIO.music('defeat'); hitstop(0.2);
@@ -705,7 +786,22 @@
       panTo(0);
     }
     const g = G; // only this battle's result: a restart during the ending must not receive it
-    setTimeout(() => { if (G === g && G.hooks.onEnd) G.hooks.onEnd(kind); }, 2600);
+    setTimeout(() => { if (G === g && G.hooks.onEnd) G.hooks.onEnd(kind); }, kind === 'win' && G.st.finale ? 7600 : 2600);
+  }
+
+  // the last battle (8-10): the fortress goes down in a chain of blasts under letterbox bars, a white-out,
+  // then the operation title before the result
+  function finale() {
+    const g = G;
+    document.body.classList.add('cine');
+    for (let i = 0; i < 18; i++) setTimeout(() => {
+      if (G !== g) return;
+      const x = G.len - 2 + Math.random() * 4, y = Math.random() * 4.5;
+      sheet('burst', x, y, 0xffd27a, 2 + Math.random() * 1.6, 0.3); sheet('smoke', x, y, 0xffb070, 3, 0.9, { grow: 0.6 });
+      debris(x, y, 6, 0xffc060); shake(0.3, 0.35); if (i % 3 === 0) AUDIO.play('expB', 0.7);
+    }, 400 + i * 190);
+    setTimeout(() => { if (G !== g) return; const el = document.getElementById('finale'); el.classList.add('flash'); AUDIO.play('expB'); shake(0.8, 1.2); hitstop(0.3); }, 4000);
+    setTimeout(() => { if (G !== g) return; document.getElementById('finale').classList.add('show'); }, 4500);
   }
 
   // ── economy / cannon ───────────────────────────────────
@@ -817,6 +913,22 @@
     const m = sprite(tex.glow, color);
     m.position.set(x, y, 0);
     addFx(m, life, (u) => { const s = size * (0.4 + u * 0.8); m.scale.set(s, s, 1); m.material.opacity = 1 - u; });
+  }
+  // an ordered skill marks its strike zone on the ground (the unit's whole reach) until the hit lands
+  function telegraph(f, life) {
+    const len = Math.max(1, f.def.range), cx = f.x + f.dir * len / 2, T = Math.max(0.9, life + 0.4);
+    const band = sprite(tex.beam, 0xffd200); // the zone: a soft band on the ground, under 40% so the units stay visible
+    band.position.set(cx, f.dy - 0.05, 0);
+    addFx(band, T, (u) => { band.scale.set(len * (0.3 + 0.7 * Math.min(1, u * 4)), 0.75, 1); band.material.opacity = 0.38 * (u < 0.8 ? 1 : (1 - u) * 5); });
+    for (const k of [0, 1]) { // bright edges at both ends of the zone
+      const e = sprite(tex.beam, 0xffe680);
+      e.position.set(f.x + f.dir * len * k, f.dy - 0.05, 0);
+      e.rotation.z = Math.PI / 2;
+      addFx(e, T, (u) => { e.scale.set(0.9, 0.12, 1); e.material.opacity = 0.75 * (u < 0.8 ? 1 : (1 - u) * 5); });
+    }
+    const end = sprite(tex.ring, 0xffd200);
+    end.position.set(f.x + f.dir * len, f.dy, 0);
+    addFx(end, T, (u) => { const k = 2.4 * (1 - u) + 0.5; end.scale.set(k, k * 0.45, 1); end.material.opacity = 0.35 + u * 0.4; });
   }
   function ring(x, y, color, size, life) {
     const m = sprite(tex.ring, color);

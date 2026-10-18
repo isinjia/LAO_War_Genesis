@@ -101,11 +101,11 @@
   // gacha: rates per rank, a 10-pull guarantees S or better, and PITY pulls without SS guarantee one.
   // The featured SS (changes daily) takes half of the SS draws. Duplicates turn into XP.
   const GACHA = {
-    cost1: 300, cost10: 3000, rates: { B: 0.45, A: 0.32, S: 0.18, SS: 0.05 }, pity: 50, featuredShare: 0.5,
-    dupeXp: { B: 100, A: 300, S: 800, SS: 3000 }, startParts: 3000, startTuna: 300,
+    cost1: 500, cost10: 5000, rates: { B: 0.47, A: 0.32, S: 0.18, SS: 0.03 }, pity: 80, featuredShare: 0.5, // tools/econ_sim.js: ~12 SS in 4 weeks
+    dupeXp: { B: 100, A: 300, S: 800, SS: 3000 }, startParts: 5000, startTuna: 300,
   };
   const SHOP_PRICE = { B: 150, A: 400, S: 1000, SS: 3000 }; // tuna, recruit shop (a link for an owned unit)
-  const SHOP_NEW_SS = 6000; // a new SS recruited outright costs double: the making stays the main way to meet SS
+  const SHOP_NEW_SS = 10000; // a new SS recruited outright costs double: the making stays the main way to meet SS
 
   // core link (as in the original): every duplicate of an owned unit links one more core, up to LINK_MAX.
   // Each link: +8% hp / atk; a full link adds +10% more and 15% shorter redeploy. Duplicates past full link become XP.
@@ -250,9 +250,10 @@
 
   // ── after the campaign ──
   // hard: every campaign stage again, much stronger worms (opens per chapter once its normal 10 stages are cleared)
+  STAGES[STAGES.length - 1].finale = true; // the war's last battle ends with its own sequence (game.js finale)
   const HARD = STAGES.map((st) => Object.assign({}, st, {
-    hard: true, ix: st.ix, code: 'H' + st.code, pow: Math.round((st.pow * 1.8 + 1.0) * 100) / 100,
-    baseHp: Math.round(st.baseHp * 1.5 / 100) * 100, xp: Math.round(st.xp * 1.5),
+    hard: true, finale: false, ix: st.ix, code: 'H' + st.code, pow: Math.round((st.pow * 1.8 + 1.0) * 100) / 100,
+    baseHp: Math.round(st.baseHp * 1.5 / 100) * 100, xp: Math.round(st.xp * 2.4), // hard levels the squad for H8 in about 3-4 weeks
     spawns: st.spawns.map((x) => (x[3] ? [x[0], x[1], x[2], x[3] + 1, x[4]] : x)),
     boss: st.boss && Object.assign({}, st.boss, { mag: st.boss.mag * 1.2 }),
   }));
@@ -291,7 +292,7 @@
     const base = STAGES[Math.floor(rnd() * top)];
     const mods = Object.keys(MODS);
     const st = Object.assign({}, base, { spawns: base.spawns.map((x) => x.slice()), rush: { at: base.rush.at, spawns: base.rush.spawns.map((x) => x.slice()) } });
-    delete st.mod; delete st.cannonK; delete st.incomeK; delete st.startMoney; delete st.enemySpd; delete st.bonus;
+    delete st.finale; delete st.mod; delete st.cannonK; delete st.incomeK; delete st.startMoney; delete st.enemySpd; delete st.bonus;
     applyMod(st, mods[Math.floor(rnd() * mods.length)], CHAPTERS[base.chapter], base.chapter, base.no - 1);
     const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
     const pick = (list, n) => shuffle(list).slice(0, n);
@@ -314,15 +315,26 @@
   }
 
   // squad synergies: active when the formation holds the right mix (shown on the squad screen, applied in battle)
+  // squad synergies: type groups (with a second tier), story pairs, and two that ask for a sacrifice (no SS / a small squad)
+  const has = (us, ...ids) => ids.every((id) => us.some((u) => u.id === id));
+  const nType = (us, ...ts) => us.filter((u) => ts.includes(u.type)).length;
   const SYNERGIES = [
-    { id: 'chill', name: '냉각 포격', need: '둔화·기절형 + 포격 범위형', tip: '둔화·기절된 적이 받는 피해 +20%',
+    { id: 'chill', kind: '유형', name: '냉각 포격', need: '둔화·기절형 + 포격 범위형', tip: '둔화·기절된 적이 받는 피해 +20%',
       test: (us) => us.some((u) => u.type === 'slow' || u.type === 'stun') && us.some((u) => u.type === 'splash') },
-    { id: 'bulwark', name: '철벽 전열', need: '방벽·근접형 2명 이상', tip: '방벽·근접형 체력 +20%',
-      test: (us) => us.filter((u) => u.type === 'wall' || u.type === 'melee').length >= 2 },
-    { id: 'chain', name: '전격 연쇄', need: '전격형 2명 이상', tip: '전격형 공격 +20%', test: (us) => us.filter((u) => u.type === 'chain').length >= 2 },
-    { id: 'eagle', name: '매의 눈', need: '저격형 2명 이상', tip: '저격형 사거리 +0.6', test: (us) => us.filter((u) => u.type === 'snipe').length >= 2 },
-    { id: 'volley', name: '집중 포화', need: '사격형 3명 이상', tip: '사격형 공격 +15%', test: (us) => us.filter((u) => u.type === 'single').length >= 3 },
-    { id: 'ace', name: '에이스 편대', need: 'S·SS 3명 이상', tip: '스킬 충전 시간 -15%', test: (us) => us.filter((u) => u.rank === 'S' || u.rank === 'SS').length >= 3 },
+    { id: 'bulwark', kind: '유형', name: '철벽 전열', need: '방벽·근접형 3명 이상', tip: '방벽·근접형 체력 +20%', test: (us) => nType(us, 'wall', 'melee') >= 3 },
+    { id: 'bulwark2', kind: '유형', name: '철벽 전열 II', need: '방벽·근접형 5명 이상', tip: '방벽·근접형 체력 +20% 추가 · 넉백 저항', test: (us) => nType(us, 'wall', 'melee') >= 5 },
+    { id: 'chain', kind: '유형', name: '전격 연쇄', need: '전격형 2명 이상', tip: '전격형 공격 +20%', test: (us) => nType(us, 'chain') >= 2 },
+    { id: 'eagle', kind: '유형', name: '매의 눈', need: '저격형 2명 이상', tip: '저격형 사거리 +0.6', test: (us) => nType(us, 'snipe') >= 2 },
+    { id: 'volley', kind: '유형', name: '집중 포화', need: '사격형 3명 이상', tip: '사격형 공격 +15%', test: (us) => nType(us, 'single') >= 3 },
+    { id: 'volley2', kind: '유형', name: '집중 포화 II', need: '사격형 5명 이상', tip: '사격형 공격 +15% 추가', test: (us) => nType(us, 'single') >= 5 },
+    { id: 'ace', kind: '유형', name: '에이스 편대', need: 'S·SS 3명 이상', tip: '스킬 충전 시간 -15%', test: (us) => us.filter((u) => u.rank === 'S' || u.rank === 'SS').length >= 3 },
+    { id: 'flame', kind: '인연', name: '불꽃 듀오', need: '임펫 + 피닉스', tip: '두 대원 공격 +25%', pair: ['impet', 'phoenix'], test: (us) => has(us, 'impet', 'phoenix') },
+    { id: 'tide', kind: '인연', name: '해류 지원', need: '운디네 + 테티스', tip: '두 대원 재배치 -25% · 둔화 시간 +50%', pair: ['undine', 'thetis'], test: (us) => has(us, 'undine', 'thetis') },
+    { id: 'wings', kind: '인연', name: '검은 날개', need: '레이븐 + 흐레스벨그', tip: '두 대원 사거리 +0.5 · 공격 +10%', pair: ['raven', 'hraesvelgr'], test: (us) => has(us, 'raven', 'hraesvelgr') },
+    { id: 'shore', kind: '인연', name: '해안 자매', need: '브라우니 + 레프리콘 + 노움', tip: '세 대원 체력 · 공격 +12%', pair: ['brownie', 'leprechaun', 'gnome'], test: (us) => has(us, 'brownie', 'leprechaun', 'gnome') },
+    { id: 'command', kind: '인연', name: '지휘 체계', need: '라비아타 + 발키리', tip: '전원 체력 +8%', pair: ['labiata', 'valkyrie'], test: (us) => has(us, 'labiata', 'valkyrie') },
+    { id: 'grunt', kind: '각오', name: '보병의 긍지', need: 'SS 없이 편성', tip: '전원 공격 +20% · 체력 +15%', test: (us) => us.length >= 5 && !us.some((u) => u.rank === 'SS') },
+    { id: 'lean', kind: '각오', name: '소수 정예', need: '편성 6명 이하', tip: '재배치 시간 -30% · 작업 효율 시작 Lv2', test: (us) => us.length > 0 && us.length <= 6 },
   ];
   const synergiesOf = (units) => SYNERGIES.filter((sy) => sy.test(units)).map((sy) => sy.id);
 
@@ -346,12 +358,12 @@
   // rewards for a stage result. kind: 'first' (first clear), 'win' (repeat clear), 'lose'
   function reward(st, kind) {
     if (kind === 'lose') return { xp: Math.round(st.xp * 0.1), parts: 60, tuna: 0 };
-    if (st.daily) return kind === 'first' ? { xp: st.xp, parts: 1500, tuna: 300 } : { xp: Math.round(st.xp / 3), parts: 200, tuna: 0 };
+    if (st.daily) return kind === 'first' ? { xp: st.xp, parts: 1000, tuna: 300 } : { xp: Math.round(st.xp / 3), parts: 200, tuna: 0 };
     if (st.infinite) return { xp: st.xp, parts: 1200 + 120 * st.floor, tuna: kind === 'first' ? 150 + 20 * st.floor : 0 };
     const g = st.ix, k = st.hard ? 1.6 : 1, boss = st.last ? 5 : 1;
     return {
       xp: kind === 'first' ? st.xp : Math.round(st.xp / 2),
-      parts: Math.round((150 + 10 * g) * k * (st.bonus || 1) / 10) * 10,
+      parts: Math.round((150 + 10 * g) * k * (st.bonus || 1) * (kind === 'first' ? 1 : 0.5) / 10) * 10, // replays pay half
       tuna: kind === 'first' ? Math.round((30 + 3 * g) * k * boss / 10) * 10 : 0,
     };
   }
@@ -359,18 +371,18 @@
   // repeatable missions: counters reset each day (UTC, same day as the daily operation) and each week (from Monday)
   const PERIODIC = {
     day: [
-      { id: 'd_win', name: '전투 승리 3회', desc: '어떤 전투든 승리', key: 'wins', n: 3, reward: { tuna: 0, parts: 600 } },
-      { id: 'd_kill', name: '철충 150기 격파', desc: '오늘 쓰러뜨린 철충', key: 'kills', n: 150, reward: { tuna: 0, parts: 400 } },
-      { id: 'd_skill', name: '스킬 명령 5회', desc: 'S·SS 스킬을 직접 명령', key: 'skills', n: 5, reward: { tuna: 30, parts: 200 } },
+      { id: 'd_win', name: '전투 승리 3회', desc: '어떤 전투든 승리', key: 'wins', n: 3, reward: { tuna: 0, parts: 300 } },
+      { id: 'd_kill', name: '철충 150기 격파', desc: '오늘 쓰러뜨린 철충', key: 'kills', n: 150, reward: { tuna: 0, parts: 200 } },
+      { id: 'd_skill', name: '스킬 명령 5회', desc: 'S·SS 스킬을 직접 명령', key: 'skills', n: 5, reward: { tuna: 30, parts: 100 } },
       { id: 'd_star', name: '★3 승리 1회', desc: '6분 안에, 기지 체력 80% 이상으로 승리', key: 'star3', n: 1, reward: { tuna: 50, parts: 0 } },
-      { id: 'd_op', name: '일일 작전 완료', desc: '오늘의 일일 작전 승리', key: 'daily', n: 1, reward: { tuna: 70, parts: 300 } },
+      { id: 'd_op', name: '일일 작전 완료', desc: '오늘의 일일 작전 승리', key: 'daily', n: 1, reward: { tuna: 70, parts: 150 } },
     ],
     week: [
-      { id: 'w_win', name: '전투 승리 25회', desc: '이번 주 승리', key: 'wins', n: 25, reward: { tuna: 150, parts: 3000 } },
-      { id: 'w_kill', name: '철충 1,500기 격파', desc: '이번 주 쓰러뜨린 철충', key: 'kills', n: 1500, reward: { tuna: 0, parts: 2500 } },
+      { id: 'w_win', name: '전투 승리 25회', desc: '이번 주 승리', key: 'wins', n: 25, reward: { tuna: 150, parts: 1500 } },
+      { id: 'w_kill', name: '철충 1,500기 격파', desc: '이번 주 쓰러뜨린 철충', key: 'kills', n: 1500, reward: { tuna: 0, parts: 1250 } },
       { id: 'w_star', name: '★3 승리 10회', desc: '이번 주 ★3 승리', key: 'star3', n: 10, reward: { tuna: 200, parts: 0 } },
-      { id: 'w_hard', name: '하드 · 무한 전장 승리 5회', desc: '하드 스테이지나 무한 전장 층 돌파', key: 'elite', n: 5, reward: { tuna: 200, parts: 1000 } },
-      { id: 'w_op', name: '일일 작전 5회', desc: '이번 주 일일 작전 승리', key: 'daily', n: 5, reward: { tuna: 300, parts: 1500 } },
+      { id: 'w_hard', name: '하드 · 무한 전장 승리 5회', desc: '하드 스테이지나 무한 전장 층 돌파', key: 'elite', n: 5, reward: { tuna: 200, parts: 500 } },
+      { id: 'w_op', name: '일일 작전 5회', desc: '이번 주 일일 작전 승리', key: 'daily', n: 5, reward: { tuna: 300, parts: 750 } },
     ],
   };
   const dayNo = (now = Date.now()) => Math.floor(now / 86400000);
