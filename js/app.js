@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.33'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.34'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -745,7 +745,7 @@
 
   // drag and drop: a deck card onto another slot moves / swaps it, onto the collection removes it;
   // a collection card onto a deck slot adds it (empty slot) or replaces that card.
-  // Mouse: drag after a few pixels. Touch: hold a moment, then drag (a quick swipe still scrolls).
+  // Hold a moment (or, with a mouse, just drag) to pick a card up (a quick swipe still scrolls).
   const drag = { el: null, ghost: null, id: null, from: -1, x0: 0, y0: 0, timer: 0, on: false, hover: null, eaten: false };
   function dragEnd() {
     clearTimeout(drag.timer);
@@ -763,6 +763,7 @@
     Object.assign(g.style, { width: r.width + 'px', height: r.height + 'px' });
     drag.ox = drag.x0 - r.left; drag.oy = drag.y0 - r.top;
     document.body.appendChild(g); drag.ghost = g;
+    g.style.transform = `translate(${r.left}px, ${r.top}px) rotate(-4deg) scale(1.06)`;
     drag.el.classList.add('dragging'); document.body.classList.add('carddrag');
     if (navigator.vibrate) try { navigator.vibrate(15); } catch (e) { /* ignore */ }
     AUDIO.play('click', 0.4, 1.4);
@@ -806,7 +807,7 @@
     const c = e.target instanceof Element && e.target.closest('#deckEdit .crc:not(.empty), #squadList .crc:not(.none)');
     if (!c) return;
     Object.assign(drag, { el: c, id: c.dataset.id, from: c.dataset.slot != null ? +c.dataset.slot : -1, x0: e.clientX, y0: e.clientY, pid: e.pointerId, touch: e.pointerType !== 'mouse', eaten: false });
-    if (drag.touch) drag.timer = setTimeout(() => { if (drag.el) dragStart(); }, 260);
+    drag.timer = setTimeout(() => { if (drag.el && !drag.on) dragStart(); }, 260); // a hold picks the card up right away
   });
   addEventListener('pointermove', (e) => {
     if (!drag.el || e.pointerId !== drag.pid) return;
@@ -814,7 +815,7 @@
       const d = Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0);
       if (drag.touch) { if (d > 10) dragEnd(); return; } // moved before the hold: it is a scroll
       if (d < 6) return;
-      dragStart();
+      clearTimeout(drag.timer); dragStart();
     }
     drag.ghost.style.transform = `translate(${e.clientX - drag.ox}px, ${e.clientY - drag.oy}px) rotate(-4deg) scale(1.06)`;
     const tg = dropTarget(e.clientX, e.clientY);

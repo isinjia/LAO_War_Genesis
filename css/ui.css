@@ -969,4 +969,4 @@ body.carddrag #deckEdit .crc:not(.dragging):not(.empty) { animation: dragwig 0.3
 body.carddrag #deckEdit .crc:nth-child(2n):not(.dragging):not(.empty) { animation-delay: -0.16s; }
 body.carddrag #deckEdit .crc:nth-child(3n):not(.dragging):not(.empty) { animation-duration: 0.36s; }
 body.carddrag #deckEdit .crc.drop-hover { animation: none !important; }
-@keyframes dragwig { from { transform: rotate(-2.5deg) translateX(-1px); } to { transform: rotate(2.5deg) translateX(1px); } }
+@keyframes dragwig { from { transform: rotate(-1.25deg) translateX(-0.5px); } to { transform: rotate(1.25deg) translateX(0.5px); } }
