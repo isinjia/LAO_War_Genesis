@@ -522,7 +522,8 @@
   function startAttack(f) {
     f.attacks++;
     // SS: the skill fires when the commander orders it (charged, slot button); others every n-th attack
-    const ordered = f.order && f.sd && f.sd.has('skill');
+    // S / SS: the skill fires by itself on the first attack after its charge is full (each copy on the field charges on its own)
+    const ordered = (f.order || (f.manual && f.charge >= f.skillCharge)) && f.sd && f.sd.has('skill');
     const skill = ordered || (!f.manual && f.def.skill && f.attacks % f.def.skill === 0 && f.sd && f.sd.has('skill'));
     if (ordered) { f.order = false; f.charge = 0; G.skillsUsed++; cutIn(f); }
     const name = skill ? 'skill' : 'atk';
@@ -1184,7 +1185,10 @@
   }
 
   // an ordered skill: the HUD shows its cut-in, the battle holds its breath
+  // the full cut-in plays at most every 4 s: several copies (or several S / SS) firing together get one
   function cutIn(f) {
+    if (G.t - (G.lastCut || -99) < 4) { hitstop(0.06); return; }
+    G.lastCut = G.t;
     hitstop(0.25);
     shake(0.2, 0.3);
     if (G.hooks.onSkill) G.hooks.onSkill(f.def);

@@ -897,30 +897,19 @@
   function buildDeck(deck) {
     const el = $('deck');
     el.innerHTML = '';
-    $('skillBar').innerHTML = '';
     deckEls = [];
     for (let i = 0; i < 10; i++) {
       const s = deck[i];
       const b = document.createElement('button');
       b.className = 'slot' + (s ? ` r-${s.def.rank}` : ' empty');
-      let skb = null;
       if (s) {
         b.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt="">${rk(s.def.rank)}<div class="cd"></div><div class="c">${s.def.cost}</div><div class="snm">${s.def.name.replace(/ .*/, '')}</div>` +
-          (s.def.rank === 'SS' || s.def.rank === 'S' ? '<span class="sk" title="스킬 명령"><i></i></span>' : '');
-        // S / SS: a SKILL button of its own in the strip above the deck (full-size touch target, never a deploy by mistake)
-        if (b.querySelector('.sk')) {
-          skb = document.createElement('button');
-          skb.className = `skb r-${s.def.rank}`;
-          skb.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt=""><span>SKILL</span>`;
-          skb.title = `${s.def.name} 스킬 명령`;
-          skb.onpointerdown = (e) => { e.preventDefault(); if (GAME.orderSkill(i)) AUDIO.play('rankUp', 0.8); else AUDIO.play('fail', 0.5); };
-          $('skillBar').appendChild(skb);
-        }
+          (s.def.rank === 'SS' || s.def.rank === 'S' ? '<span class="sk" title="스킬 충전 (차면 자동 발동)"><i></i></span>' : '');
         b.title = `${s.def.name} (${s.def.rank} ${s.def.role})  [${(i + 1) % 10}]`;
         b.onpointerdown = (e) => { e.preventDefault(); GAME.deploy(i); };
       }
       el.appendChild(b);
-      deckEls.push(s ? { b, cd: b.querySelector('.cd'), def: s.def, sk: b.querySelector('.sk'), skb } : null);
+      deckEls.push(s ? { b, cd: b.querySelector('.cd'), def: s.def, sk: b.querySelector('.sk') } : null);
     }
   }
 
@@ -1057,11 +1046,7 @@
         d.sk.classList.toggle('full', k >= 1);
         d.sk.style.setProperty('--p', Math.max(0, Math.min(1, k)));
         d.b.classList.toggle('skready', k >= 1);
-        d.skb.classList.toggle('on', k != null && k >= 0);
-        d.skb.classList.toggle('full', k >= 1);
-        d.skb.style.setProperty('--p', Math.max(0, Math.min(1, k)));
         // the first time a skill is ready: one hint
-        if (k >= 1 && !save.tutSkill && !tut) { save.tutSkill = 1; persist(); $('skHint').classList.add('show'); setTimeout(() => $('skHint').classList.remove('show'), 4500); AUDIO.play('rankUp', 0.5); }
       }
     });
     const wmax = G.worker >= D.WORKER.cost.length;

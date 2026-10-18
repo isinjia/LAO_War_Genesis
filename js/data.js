@@ -346,7 +346,7 @@
     ...[30, 90, 160, 240].map((n, i) => ({ id: 'star' + n, name: `별 ${n}개`, desc: '캠페인 별점 합계', goal: (sv) => [starSum(sv.stars), n], reward: { tuna: 300 + 300 * i, parts: 0 } })),
     ...[500, 2000, 6000].map((n, i) => ({ id: 'kill' + n, name: `철충 ${n.toLocaleString()}기 격파`, desc: '전투에서 쓰러뜨린 철충', goal: (sv) => [st_(sv, 'kills'), n], reward: { tuna: 0, parts: 1000 * (i + 1) } })),
     ...[300, 1500].map((n, i) => ({ id: 'dep' + n, name: `대원 ${n}회 출격`, desc: '전투에서 배치한 횟수', goal: (sv) => [st_(sv, 'deploys'), n], reward: { tuna: 0, parts: 1500 * (i + 1) } })),
-    ...[20, 150].map((n, i) => ({ id: 'skill' + n, name: `스킬 명령 ${n}회`, desc: 'S·SS 스킬을 직접 명령', goal: (sv) => [st_(sv, 'skills'), n], reward: { tuna: 200 * (i + 1), parts: 0 } })),
+    ...[20, 150].map((n, i) => ({ id: 'skill' + n, name: `스킬 발동 ${n}회`, desc: 'S·SS 스킬 사용 (충전되면 자동)', goal: (sv) => [st_(sv, 'skills'), n], reward: { tuna: 200 * (i + 1), parts: 0 } })),
     ...[15, 25, 40].map((n, i) => ({ id: 'own' + n, name: `대원 ${n}명 보유`, desc: '합류한 대원 수', goal: (sv) => [Object.keys(sv.owned || {}).length, n], reward: { tuna: 300 * (i + 1), parts: 0 } })),
     ...[3, 8].map((n, i) => ({ id: 'ss' + n, name: `SS ${n}명 보유`, desc: '합류한 SS 대원 수', goal: (sv) => [Object.keys(sv.owned || {}).filter((id) => UNIT[id] && UNIT[id].rank === 'SS').length, n], reward: { tuna: 500 * (i + 1), parts: 0 } })),
     ...[1, 4, 8].map((n, i) => ({ id: 'hard' + n, name: `하드 ${n}장 돌파`, desc: '하드 모드 챕터 클리어', goal: (sv) => [Math.floor((sv.hardCleared || 0) / PER_CH), n], reward: { tuna: 500 * (i + 1), parts: 1000 * (i + 1) } })),
@@ -373,7 +373,7 @@
     day: [
       { id: 'd_win', name: '전투 승리 3회', desc: '어떤 전투든 승리', key: 'wins', n: 3, reward: { tuna: 0, parts: 300 } },
       { id: 'd_kill', name: '철충 150기 격파', desc: '오늘 쓰러뜨린 철충', key: 'kills', n: 150, reward: { tuna: 0, parts: 200 } },
-      { id: 'd_skill', name: '스킬 명령 5회', desc: 'S·SS 스킬을 직접 명령', key: 'skills', n: 5, reward: { tuna: 30, parts: 100 } },
+      { id: 'd_skill', name: '스킬 발동 5회', desc: 'S·SS 스킬 사용 (충전되면 자동)', key: 'skills', n: 5, reward: { tuna: 30, parts: 100 } },
       { id: 'd_star', name: '★3 승리 1회', desc: '6분 안에, 기지 체력 80% 이상으로 승리', key: 'star3', n: 1, reward: { tuna: 50, parts: 0 } },
       { id: 'd_op', name: '일일 작전 완료', desc: '오늘의 일일 작전 승리', key: 'daily', n: 1, reward: { tuna: 70, parts: 150 } },
     ],
