@@ -772,23 +772,22 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 /* deck row + swap button (phones only, either orientation: two pages of five) */
 .deck-row { flex: 1; min-width: 0; display: flex; gap: 6px; align-items: stretch; }
 .swap { display: none; }
-@media (max-width: 640px), (max-height: 520px) { /* phones, portrait or landscape */
+/* one row of five + swap: body.deck1, set by fitHud() when two rows would cover too much of the battlefield */
   /* the two rows share one grid cell: the active row in front, the other peeking out behind it, dimmed */
-  .deck { display: grid; grid-template-areas: "row"; padding-top: 16px; }
-  .dpage { grid-area: row; transition: transform 0.32s cubic-bezier(0.25, 1.35, 0.5, 1), filter 0.32s, opacity 0.32s; transform-origin: 50% 0; }
-  .deck[data-page="0"] .dpage[data-p="0"], .deck[data-page="1"] .dpage[data-p="1"] { z-index: 2; transform: none; filter: none; }
-  .deck[data-page="0"] .dpage[data-p="1"], .deck[data-page="1"] .dpage[data-p="0"] { z-index: 1; transform: translateY(-16px) scale(0.92); filter: brightness(0.45) saturate(0.5); pointer-events: none; }
+  body.deck1 .deck { display: grid; grid-template-areas: "row"; padding-top: 16px; }
+  body.deck1 .dpage { grid-area: row; transition: transform 0.32s cubic-bezier(0.25, 1.35, 0.5, 1), filter 0.32s, opacity 0.32s; transform-origin: 50% 0; }
+  body.deck1 .deck[data-page="0"] .dpage[data-p="0"], body.deck1 .deck[data-page="1"] .dpage[data-p="1"] { z-index: 2; transform: none; filter: none; }
+  body.deck1 .deck[data-page="0"] .dpage[data-p="1"], body.deck1 .deck[data-page="1"] .dpage[data-p="0"] { z-index: 1; transform: translateY(-16px) scale(0.92); filter: brightness(0.45) saturate(0.5); pointer-events: none; }
   /* the swap: the leaving row drops back while the new one sweeps up and forward */
-  .deck.swapping .dpage { transition-duration: 0.32s; }
-  .deck.swapping[data-page="0"] .dpage[data-p="0"], .deck.swapping[data-page="1"] .dpage[data-p="1"] { animation: rowin 0.32s cubic-bezier(0.25, 1.35, 0.5, 1); }
-  .deck.swapping[data-page="0"] .dpage[data-p="1"], .deck.swapping[data-page="1"] .dpage[data-p="0"] { animation: rowout 0.32s ease-out; }
-  .swap.on { display: flex; flex: none; width: 44px; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  body.deck1 .deck.swapping .dpage { transition-duration: 0.32s; }
+  body.deck1 .deck.swapping[data-page="0"] .dpage[data-p="0"], body.deck1 .deck.swapping[data-page="1"] .dpage[data-p="1"] { animation: rowin 0.32s cubic-bezier(0.25, 1.35, 0.5, 1); }
+  body.deck1 .deck.swapping[data-page="0"] .dpage[data-p="1"], body.deck1 .deck.swapping[data-page="1"] .dpage[data-p="0"] { animation: rowout 0.32s ease-out; }
+  body.deck1 .swap.on { display: flex; flex: none; width: 44px; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     background: rgba(0, 0, 0, 0.75); border: 1px solid rgba(255, 210, 0, 0.5); color: var(--y); clip-path: polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
-  .swap i { font-style: normal; font-size: 20px; line-height: 1; }
-  .swap b { font-family: var(--en); font-size: 11px; color: #ddd; }
-  .swap.ready { background: rgba(80, 64, 0, 0.9); box-shadow: inset 0 0 0 2px var(--y); animation: swapready 0.6s infinite alternate; }
-  .swap:active { transform: scale(0.94); }
-}
+  body.deck1 .swap i { font-style: normal; font-size: 20px; line-height: 1; }
+  body.deck1 .swap b { font-family: var(--en); font-size: 11px; color: #ddd; }
+  body.deck1 .swap.ready { background: rgba(80, 64, 0, 0.9); box-shadow: inset 0 0 0 2px var(--y); animation: swapready 0.6s infinite alternate; }
+  body.deck1 .swap:active { transform: scale(0.94); }
 @keyframes swapready { to { box-shadow: inset 0 0 0 2px var(--y), 0 0 12px var(--y); } }
 /* phones: worker · 전력 gauge · cannon share the top row, the five cards (+ swap) take the full width below */
 @media (max-width: 640px) {
@@ -923,7 +922,7 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 .power.full::after { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); z-index: 1; }
 .power .pw-num { min-width: 5.2em; }
 /* swap button: its place is kept even when the deck has five or fewer */
-@media (max-width: 640px), (max-height: 520px) { .swap { display: flex; visibility: hidden; flex: none; width: 44px; } .swap.on { visibility: visible; } }
+body.deck1 .swap { display: flex; visibility: hidden; flex: none; width: 44px; } body.deck1 .swap.on { visibility: visible; }
 
 /* card bars: readable numbers (bold, outlined, larger) */
 .crc-xp { height: 16px; border-radius: 8px; }

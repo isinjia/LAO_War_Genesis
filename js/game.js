@@ -16,7 +16,7 @@
   const UNIT_SCALE = 1.2; // drawn size over the data heights (reach / hit points use the data heights)
 
   let renderer, scene, camera, overlay, octx, dpr = 1;
-  let VW = 16, VH = 9, camX = 0, camBottom = -2.6;
+  let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1; // hudFrac: the share of the screen the bottom HUD covers
   let G = null; // the running battle
   let last = 0;
   const tex = {};
@@ -149,7 +149,8 @@
     const aspect = w / h;
     VH = Math.max(8.5, Math.min(10.5, 11 / aspect)); // portrait phones: a bit more height, units stay readable
     VW = VH * aspect;
-    camBottom = -VH * (aspect < 1 ? 0.38 : 0.37); // the lane sits above the deploy bar (higher on portrait screens)
+    // the lane sits just above the deploy bar (its measured height when known)
+    camBottom = -VH * (hudFrac >= 0 ? Math.max(0.24, Math.min(0.44, hudFrac + 0.06)) : aspect < 1 ? 0.38 : 0.37);
     clampCam();
     updateCam();
     fitBg();
@@ -1565,6 +1566,7 @@
   });
 
   window.GAME = {
+    setHudInset(f) { if (Math.abs(f - hudFrac) > 0.005) { hudFrac = f; resize(); } },
     init, preload, start, stop, deploy, upgradeWorker, fireCannon, toast,
     get state() { return G; },
     setSpeed(s) { if (G && !(G.over && G.st.finale)) G.speed = s; },

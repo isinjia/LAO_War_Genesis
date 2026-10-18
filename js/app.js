@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.39'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.40'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -1115,6 +1115,7 @@
     });
     buildDeck(deck);
     show('hud');
+    fitHud();
     $('hudCode').textContent = st.code;
     $('hudStage').textContent = st.name;
     $('btnSpeed').firstChild.textContent = 'x1';
@@ -1174,6 +1175,28 @@
     setDeckPage(deckPage ? 0 : 1);
     clearTimeout(d.swapT); d.swapT = setTimeout(() => d.classList.remove('swapping'), 360);
   };
+  // the battle HUD never takes more than its share of the screen: phones and squarish screens (folds) get the
+  // one-row deck with the swap, then the whole bar scales down if it is still too tall; the camera lifts the lane above it
+  function fitHud() {
+    const hb = document.querySelector('.hud-bottom'), top = document.querySelector('.hud-top');
+    if (!hb) return;
+    const W = innerWidth, H = innerHeight, portrait = W < H * 0.9, touch = matchMedia('(pointer: coarse)').matches;
+    const budget = H * (portrait ? 0.4 : touch ? 0.28 : 0.36); // PC keeps both rows (number keys) unless the window is tiny
+    hb.style.zoom = top.style.zoom = '';
+    document.body.classList.toggle('deck1', W <= 640 || H <= 520);
+    if (touch && !document.body.classList.contains('deck1') && hb.offsetHeight > budget) document.body.classList.add('deck1');
+    const h = hb.offsetHeight;
+    if (h > budget) {
+      const z = Math.max(0.55, budget / h); // cards stay ~55px tall: still easy to tap
+      hb.style.zoom = z.toFixed(3); top.style.zoom = Math.max(0.8, z).toFixed(3);
+    }
+    if (GAME.setHudInset) GAME.setHudInset(hb.getBoundingClientRect().height / H);
+  }
+  let fitT = 0; // rotate / resize: fit now and again once the size has settled
+  const refit = () => { if (!$('hud').classList.contains('show')) return; fitHud(); clearTimeout(fitT); fitT = setTimeout(fitHud, 250); };
+  addEventListener('resize', refit);
+  if (window.ResizeObserver) new ResizeObserver(refit).observe($('hud')); // also catches rotations that skip the resize event
+
   function buildDeck(deck) {
     const el = $('deck');
     setDeckPage(0);
@@ -1618,6 +1641,6 @@
       : D.STAGES.find((s) => s.code === v) || D.HARD.find((s) => s.code === v) || D.STAGES[Math.max(0, Math.min(D.STAGES.length - 1, +v - 1))];
     launch(st);
   }
-  window.APP = { save, launch, openLobby, pull, playStory, pickBuff, openDaily, titleCard, tutorial: () => !!tut };
+  window.APP = { save, launch, openLobby, pull, playStory, pickBuff, openDaily, titleCard, fitHud, tutorial: () => !!tut };
   if (q.get('smoke')) { const sc = document.createElement('script'); sc.src = 'tools/smoke.js'; document.head.appendChild(sc); }
 })();
