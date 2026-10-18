@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>LAO 워 제네시스</title>
+<script src="js/ui_assets.js"></script>
+<link rel="stylesheet" href="css/ui.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="overlay"></canvas>
+
+<!-- title -->
+<section id="title" class="screen show">
+  <div class="title-bg"></div>
+  <div class="title-box">
+    <img class="logo" id="logo" alt="LAST ORIGIN">
+    <div class="logo-en">WAR GENESIS</div>
+    <div class="logo-ko">워 제네시스</div>
+    <button id="btnStart" class="btn lg">작전 개시</button>
+    <div class="touch">TOUCH TO START</div>
+  </div>
+  <div class="title-foot">오르카 전선 · 횡스크롤 진지전</div>
+</section>
+
+<!-- lobby: campaign / squad / making -->
+<section id="lobby" class="screen">
+  <div class="lobby-bg" id="lobbyBg"></div>
+  <header class="topbar">
+    <button class="back" id="btnBack" aria-label="뒤로"></button>
+    <div class="tb-title"><b id="tbEn">CAMPAIGN</b><span id="tbKo">작전 지역</span></div>
+    <div class="res">
+      <span class="ri parts" title="부품: 제조"><i></i><b id="partsVal">0</b></span>
+      <span class="ri tuna" title="참치: 확정 영입"><i></i><b id="tunaVal">0</b></span>
+      <span class="ri xp"><i></i><b id="xpVal">0</b></span>
+    </div>
+    <button class="tbtn help" id="btnHelp" aria-label="도움말">?</button>
+    <button class="tbtn opt" id="btnOpt" aria-label="설정"></button>
+  </header>
+
+  <!-- campaign: chapter cards -->
+  <div id="pChapters" class="pane on">
+    <div class="chapters" id="chapterList"></div>
+  </div>
+
+  <!-- one chapter: stage path + stage info -->
+  <div id="pStages" class="pane">
+    <div class="ch-head">
+      <div class="ch-no" id="chNo">CHAPTER 01</div>
+      <div class="ch-title" id="chTitle"></div>
+      <div class="ch-sub" id="chSub"></div>
+      <div class="ch-story" id="chStory"></div>
+    </div>
+    <div class="path" id="stagePath"></div>
+    <div class="sinfo" id="stageInfo"></div>
+  </div>
+
+  <!-- squad -->
+  <div id="pSquad" class="pane">
+    <div class="deck-edit">
+      <div class="sec-title"><b>출격 편성</b><span id="deckCount">0/10</span><small>카드를 눌러 상세 · 편성 칸을 누르면 해제</small></div>
+      <div id="deckEdit" class="deck-row"></div>
+    </div>
+    <div class="syn" id="synList"></div>
+    <div class="filter" id="rankFilter"></div>
+    <div id="squadList" class="roster"></div>
+  </div>
+
+  <!-- missions -->
+  <div id="pMissions" class="pane"><div class="missions" id="missionList"></div></div>
+
+  <!-- making (gacha) -->
+  <div id="pGacha" class="pane">
+    <div class="gtabs"><button class="gtab on" data-g="making">제조 <small>부품</small></button><button class="gtab" data-g="shop">확정 영입 <small>참치</small></button></div>
+    <div id="gMaking">
+    <div class="banner" id="banner">
+      <div class="banner-fx"></div>
+      <img id="bannerArt" alt="">
+      <div class="banner-info">
+        <div class="pickup">SPECIAL MAKING · SS 픽업</div>
+        <div class="pick-name" id="pickName"></div>
+        <div class="pick-desc" id="pickDesc"></div>
+        <div class="rates" id="rates"></div>
+        <div class="pity" id="pity"></div>
+        <div class="pull-btns">
+          <button id="pull1" class="btn d">1회 제조<small><i class="parts-i"></i>300</small></button>
+          <button id="pull10" class="btn">10회 제조<small><i class="parts-i"></i>3000 · S 이상 확정</small></button>
+        </div>
+      </div>
+    </div>
+    <div class="sec-title ss"><b>SS 대원</b><small>제조 · 확정 영입으로만 합류</small></div>
+    <div id="ssList" class="roster small"></div>
+    </div>
+    <div id="gShop" style="display:none">
+      <div class="filter" id="shopFilter"></div>
+      <div id="shopList" class="roster"></div>
+    </div>
+  </div>
+
+  <nav class="navbar">
+    <button class="nav on" data-pane="campaign"><i class="ni world"></i><span>작전</span></button>
+    <button class="nav" data-pane="squad"><i class="ni squad"></i><span>대원</span></button>
+    <button class="nav" data-pane="gacha"><i class="ni making"></i><span>제조</span></button>
+    <button class="nav" data-pane="missions"><i class="ni medal"></i><span>임무</span><b class="nbadge" id="missionBadge"></b></button>
+  </nav>
+</section>
+
+<!-- story -->
+<section id="story" class="story">
+  <div class="st-bg" id="stBg"></div>
+  <img class="st-char L" id="stL" alt="">
+  <img class="st-char R" id="stR" alt="">
+  <button class="st-skip" id="stSkip" aria-label="건너뛰기"></button>
+  <div class="st-box" id="stBox">
+    <div class="st-name" id="stName"></div>
+    <div class="st-text" id="stText"></div>
+    <i class="st-arrow"></i>
+  </div>
+</section>
+
+<section id="credits" class="credits"></section>
+
+<!-- gacha result -->
+<section id="gachaResult" class="gres">
+  <div class="gres-flash" id="gresFlash"></div>
+  <div class="gres-solo" id="gresSolo"><img id="soloArt" alt=""><div class="solo-cap"><i class="rk-i SS"></i><b id="soloName"></b><small id="soloNew"></small></div></div>
+  <div class="gres-grid" id="gresGrid"></div>
+  <div class="gres-btns"><button id="gresSkip" class="btn d">건너뛰기</button><button id="gresOk" class="btn">확인</button></div>
+</section>
+
+<!-- loading -->
+<section id="loading" class="screen">
+  <div class="load-box">
+    <div class="load-code" id="loadCode"></div>
+    <div id="loadTitle" class="load-title">작전 준비 중</div>
+    <div class="bar"><i id="loadBar"></i></div>
+    <div id="loadPct" class="load-pct">0%</div>
+  </div>
+</section>
+
+<!-- battle HUD -->
+<section id="hud" class="screen hud">
+  <div class="hud-top">
+    <div class="stage-name"><b id="hudCode"></b><span id="hudStage"></span></div>
+    <div class="timer" id="timer">10:00</div>
+    <div class="money"><i></i><span id="money">0</span><small>/<span id="wallet">0</span></small></div>
+    <div class="hud-btns">
+      <button id="btnSpeed" class="hb speed"><span>x1</span></button>
+      <button id="btnPause" class="hb pause" aria-label="일시정지"></button>
+    </div>
+  </div>
+  <div class="hud-bottom">
+    <div id="skillBar" class="skill-bar"></div>
+    <button id="btnWorker" class="side-btn worker">
+      <div class="lbl">작업 효율</div>
+      <div class="lv">LV <b id="workerLv">1</b></div>
+      <div class="cost" id="workerCost">80</div>
+    </button>
+    <div id="deck" class="deck"></div>
+    <button id="btnCannon" class="side-btn cannon">
+      <div class="charge" id="cannonFill"></div>
+      <div class="lbl">오르카 포격</div>
+      <div class="cost" id="cannonTxt">충전 중</div>
+    </button>
+  </div>
+  <div class="banner-layer" id="bannerLayer"></div>
+  <div class="cutin" id="cutin"><img id="cutinArt" alt=""><div class="cutin-cap"><i class="rk-i SS"></i><b id="cutinName"></b><span>SKILL</span></div></div>
+  <div class="comm" id="comm"><img id="commImg" alt=""><div><b id="commName"></b><span id="commText"></span></div></div>
+  <div class="coach" id="coach"><div class="coach-text" id="coachText"></div><i class="coach-arrow" id="coachArrow"></i></div>
+</section>
+
+<!-- popup -->
+<div id="modal" class="modal">
+  <div class="pwin">
+    <div class="pwin-title"><span id="modalTitle"></span></div>
+    <div class="pwin-body" id="modalBody"></div>
+    <div id="modalBtns" class="pwin-btns"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script src="js/vendor/three.min.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/anim_events.js"></script>
+<script src="js/data.js"></script>
+<script src="js/story.js"></script>
+<script src="js/sd.js"></script>
+<script src="js/fxbake.js"></script>
+<script src="js/fx/_meta.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

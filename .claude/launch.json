@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "war-genesis",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8790"
+      ],
+      "port": 8790
+    },
+    {
+      "name": "defence-ref",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8766",
+        "--directory",
+        "E:/LAO_MINI_GAME/5_LAO_Defence"
+      ],
+      "port": 8766
+    }
+  ]
+}
