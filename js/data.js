@@ -370,9 +370,9 @@
     ...[50, 200].map((n, i) => ({ id: 'pull' + n, name: `제조 ${n}회`, desc: '대원 제조 횟수', goal: (sv) => [sv.pulls || 0, n], reward: { tuna: 300 * (i + 1), parts: 0 } })),
   ];
 
-  // rewards for a stage result. kind: 'first' (first clear), 'win' (repeat clear), 'lose'
+  // rewards for a stage result. kind: 'first' (first clear), 'win' (repeat clear), 'lose' (nothing)
   function reward(st, kind) {
-    if (kind === 'lose') return { xp: Math.round(st.xp * 0.1), parts: 60, tuna: 0 };
+    if (kind === 'lose') return { xp: 0, parts: 0, tuna: 0 };
     if (st.daily) return kind === 'first' ? { xp: st.xp, parts: 1000, tuna: 300, wild: { A: 5 } } : { xp: Math.round(st.xp / 3), parts: 200, tuna: 0 };
     if (st.infinite) return { xp: st.xp, parts: 1200 + 120 * st.floor, tuna: kind === 'first' ? 150 + 20 * st.floor : 0, wild: kind === 'first' && st.floor % 5 === 0 ? { S: 1 } : null };
     const g = st.ix, k = st.hard ? 1.6 : 1, boss = st.last ? 5 : 1;

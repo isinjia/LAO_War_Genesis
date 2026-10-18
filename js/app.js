@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.45'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.46'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -1558,7 +1558,8 @@
 
   // stars: 1 for the win, 2 within 6 minutes, 3 within 6 minutes with the base at 80% or more
   function result(st, kind) {
-    { const G0 = GAME.state; if (G0) { save.stats = save.stats || {}; for (const [k, v] of [['kills', G0.kills], ['deploys', G0.deploys], ['skills', G0.skillsUsed]]) { save.stats[k] = (save.stats[k] || 0) + (v || 0); bump(k, v || 0); } } }
+    // battle stats (kill / deploy / skill missions) count only for a win: a defeat pays nothing at all
+    if (kind === 'win') { const G0 = GAME.state; if (G0) { save.stats = save.stats || {}; for (const [k, v] of [['kills', G0.kills], ['deploys', G0.deploys], ['skills', G0.skillsUsed]]) { save.stats[k] = (save.stats[k] || 0) + (v || 0); bump(k, v || 0); } } }
     $('comm').classList.remove('show');
     tut = null; $('coach').classList.remove('show'); document.querySelectorAll('.pulse-target').forEach((e) => e.classList.remove('pulse-target'));
     const G = GAME.state;
@@ -1608,14 +1609,12 @@
       modal('', body, btns);
       if (joined && window.VOICE && VOICE[joined.id]) AUDIO.voice(VOICE[joined.id]);
     } else {
-      const r = D.reward(st, 'lose');
       if (st.infinite) { save.infBuffs = []; save.infRun = 0; st.buffs = []; } // the run ends: next time from floor 1
-      gain(r); persist();
+      persist(); // a defeat pays nothing (no XP, parts, wild cards or mission progress)
       const tutorial = tutBattle(st); // the tutorial battle: try again until it is won (or the tutorial is skipped)
       modal('', `<div class="result"><div class="big fail">MISSION FAILED</div>
         <div style="margin:8px 0">${kind === 'timeout' ? '작전 시간(10분)이 초과되었습니다. 전선을 돌파하지 못했습니다.' : '전진기지가 함락되었습니다.'}</div>
-        ${rwRes(r)}
-        <div style="margin-top:10px;font-size:13px">${tutorial ? '튜토리얼 작전입니다. 대원을 꾸준히 출격시키며 다시 도전해 보세요.' : '대원 강화 · 코어 링크 · 편성을 바꿔 다시 도전해 보세요.'}</div></div>`, [
+        <div style="margin-top:10px;font-size:13px">${tutorial ? '튜토리얼 작전입니다. 대원을 꾸준히 출격시키며 다시 도전해 보세요.' : '카드 업그레이드 · 편성을 바꿔 다시 도전해 보세요.'}</div></div>`, [
         ['재도전', () => { closeModal(); GAME.stop(); launch(st.infinite ? Object.assign(D.infiniteFloor(1), { buffs: [] }) : st); }],
         ...(tutorial ? [] : [
           ['대원 강화', () => { closeModal(); GAME.stop(); openLobby('squad'); }, 'd'],
