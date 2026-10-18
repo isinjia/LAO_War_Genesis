@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.51'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.52'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -277,13 +277,15 @@
       const face = D.CHAPTER_REWARD[c];
       const b = document.createElement('button');
       b.className = 'chap' + (locked ? ' locked' : '') + (n >= D.PER_CH ? ' done' : '') + (isHard() ? ' hard' : '');
+      b.disabled = locked;
+      const unlockText = isHard() && save.cleared < ch.first + D.PER_CH ? '해당 노말 챕터 클리어 후 개방' : '이전 챕터 클리어 후 개방';
       b.dataset.ch = c;
       b.innerHTML = `<div class="img" style="background-image:url(${IMG[ch.bg]})"></div>
         ${hasFull(face) ? `<img class="face" src="${FULL[face]}" alt="">` : ''}<i class="bar-top"></i>
         <span class="pc">${n}/${D.PER_CH}</span>
         <div class="txt"><div class="no">${isHard() ? 'HARD ' : ''}CHAPTER ${pad2(c + 1)}</div><div class="nm">${ch.title}</div><div class="sb">${ch.sub}</div>
         <div class="prog"><i style="width:${(n / D.PER_CH) * 100}%"></i></div></div>
-        ${locked ? '<div class="lock"><i></i></div>' : ''}`;
+        ${locked ? `<div class="lock"><i></i><span>${unlockText}</span></div>` : ''}`;
       if (!locked) b.onclick = () => { AUDIO.play('click'); chapterOpen = c; selStage = -1; sheetOpen = false; refresh(); };
       box.appendChild(b);
     });
@@ -403,6 +405,7 @@
       const n = document.createElement('button');
       n.dataset.ix = s.ix;
       n.className = 'node' + (locked ? ' locked' : ' open') + (s.ix === done ? ' cur' : '') + (s.last ? ' boss' : '') + (s.ix === selStage ? ' sel' : '');
+      n.disabled = locked;
       n.style.left = pos[i][0] + '%';
       n.style.top = pos[i][1] + '%';
       n.innerHTML = (s.last ? '<span class="tag">BOSS</span>' : s.elite ? '<span class="tag elite">정예</span>' : s.mod ? `<span class="tag mod">${D.MODS[s.mod].name}</span>` : '') +
