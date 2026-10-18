@@ -16,7 +16,7 @@
   const UNIT_SCALE = 1.2; // drawn size over the data heights (reach / hit points use the data heights)
 
   let renderer, scene, camera, overlay, octx, dpr = 1;
-  let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1, hudTop = 0; // hudTop: the top bar's bottom edge (px) // hudFrac: the share of the screen the bottom HUD covers
+  let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1, hudTop = 0, zoom = 1; // zoom: wheel / pinch (0.8 = wider, 2 = closer) // hudTop: the top bar's bottom edge (px) // hudFrac: the share of the screen the bottom HUD covers
   let G = null; // the running battle
   let last = 0;
   const tex = {};
@@ -146,14 +146,30 @@
     renderer.setSize(w, h, false);
     SD.setOutline(1.4, w, h);
     overlay.width = w * dpr; overlay.height = h * dpr;
-    const aspect = w / h;
-    VH = Math.max(8.5, Math.min(10.5, 11 / aspect)); // portrait phones: a bit more height, units stay readable
+    view();
+  }
+  // the view size for the screen and the zoom: the lane keeps its height on screen, only the scale changes
+  const ZMIN = 0.8, ZMAX = 2;
+  function view() {
+    const w = innerWidth, h = innerHeight, aspect = w / h;
+    VH = Math.max(8.5, Math.min(10.5, 11 / aspect)) / zoom; // portrait phones: a bit more height, units stay readable
     VW = VH * aspect;
     // the lane sits just above the deploy bar (its measured height when known)
     camBottom = -VH * (hudFrac >= 0 ? Math.max(0.24, Math.min(0.44, hudFrac + 0.06)) : aspect < 1 ? 0.38 : 0.37);
     clampCam();
     updateCam();
     fitBg();
+  }
+
+  // zoom about a screen x (the cursor / the pinch centre): the world point under it stays put
+  function setZoom(z, sx = innerWidth / 2) {
+    z = Math.max(ZMIN, Math.min(ZMAX, z));
+    if (Math.abs(z - zoom) < 1e-4) return;
+    const f = sx / innerWidth - 0.5, wx = camX + f * VW;
+    zoom = z; view();
+    camX = wx - f * VW;
+    clampCam(); updateCam();
+    if (G) G.userCam = performance.now();
   }
 
   function clampCam() {
@@ -173,19 +189,40 @@
   // ── input: drag / wheel / keys pan the lane ────────────
   function bindInput() {
     const gl = document.getElementById('gl');
-    let drag = null;
-    gl.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, cam: camX }; G && (G.userCam = performance.now()); });
+    let drag = null, pinch = null;
+    const pts = new Map(); // touches on the field: one drags the lane, two pinch-zoom
+    const two = () => { const [a, b] = [...pts.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2 }; };
+    gl.style.touchAction = 'none';
+    gl.addEventListener('pointerdown', (e) => {
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2) { drag = null; const t = two(); pinch = { d: t.d, z: zoom }; } else if (pts.size === 1) drag = { x: e.clientX, cam: camX };
+      G && (G.userCam = performance.now());
+    });
     addEventListener('pointermove', (e) => {
-      if (!drag || !G) return;
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (!G) return;
+      if (pinch && pts.size >= 2) { const t = two(); setZoom(pinch.z * t.d / Math.max(1, pinch.d), t.x); return; }
+      if (!drag) return;
       camX = drag.cam - (e.clientX - drag.x) / innerWidth * VW;
       clampCam(); updateCam(); G.userCam = performance.now(); // a long drag keeps the camera where the finger put it
     });
-    addEventListener('pointerup', () => { drag = null; });
-    addEventListener('pointercancel', () => { drag = null; });
+    const lift = (e) => {
+      pts.delete(e.pointerId);
+      if (pts.size < 2) pinch = null;
+      if (pts.size === 1) { const p = [...pts.values()][0]; drag = { x: p.x, cam: camX }; } else drag = null; // the finger left behind keeps dragging
+    };
+    addEventListener('pointerup', lift);
+    addEventListener('pointercancel', lift);
     gl.addEventListener('wheel', (e) => {
       if (!G) return;
-      camX += (e.deltaX || e.deltaY) * 0.01; clampCam(); updateCam(); G.userCam = performance.now();
-    }, { passive: true });
+      e.preventDefault();
+      if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { // sideways scroll (trackpad) or shift: pan
+        camX += (e.deltaX || e.deltaY) * 0.01; clampCam(); updateCam(); G.userCam = performance.now();
+        return;
+      }
+      setZoom(zoom * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.001)), e.clientX); // wheel: zoom about the cursor (ctrl = trackpad pinch)
+    }, { passive: false });
     addEventListener('keydown', (e) => {
       if (!G || G.over) return;
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { camX += e.key === 'ArrowLeft' ? -1 : 1; clampCam(); updateCam(); G.userCam = performance.now(); }
@@ -1567,6 +1604,7 @@
   });
 
   window.GAME = {
+    zoom: (z, sx) => (z == null ? zoom : setZoom(z, sx)),
     setHudInset(f, top) { hudTop = top || 0; if (Math.abs(f - hudFrac) > 0.005) { hudFrac = f; resize(); } },
     init, preload, start, stop, deploy, upgradeWorker, fireCannon, toast,
     get state() { return G; },
@@ -1596,6 +1634,8 @@
     muzzle: (f, n = 1) => muzzle(f, n),
     // tests: point the camera at world x (captures in a throttled preview, where the pan barely runs)
     look(x) { if (!G) return; pan = null; G.userCam = performance.now(); camX = x; clampCam(); updateCam(); },
+    // tests: the enemy base rig (part checks)
+    baseRig: () => G && G.baseRig,
     // tests: advance the battle by `sec` simulated seconds without drawing
     sim(sec) { for (let i = 0; i < sec / STEP && G && !G.over; i++) update(STEP); },
   };

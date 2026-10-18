@@ -138,6 +138,7 @@ class Atlas:
         self.tex_ix = {}
         self.sprites = {}       # key -> [tex, x, y, w, h, px, py, ppu]
         self.names = {}         # key -> sprite name
+        self.outlines = {}      # key -> Unity's Tight outline paths (px, relative to the rect centre)
         self.meta_cache = {}
 
     def meta(self, guid):
@@ -188,6 +189,8 @@ class Atlas:
                 align = int(s.get("alignment", 0))
                 px, py = alignment_pivot(align, piv)
                 self.names[key] = str(s.get("name", ""))
+                if int(imp.get("spriteMeshType", 1)) == 1 and s.get("outline"):
+                    self.outlines[key] = (rect, (px, py), [[(num(q["x"]), num(q["y"])) for q in path] for path in s["outline"] if len(path) >= 3])
                 break
         if rect is None:
             self.names[key] = os.path.splitext(os.path.basename(path))[0]
@@ -204,6 +207,65 @@ class Atlas:
         self.sprites[key] = [t, rect[0] / tw, rect[1] / th, rect[2] / tw, rect[3] / th,
                              round(px, 4), round(py, 4), round(rect[2] / ppu, 4), round(rect[3] / ppu, 4)]
         return key
+
+
+def _area(poly):
+    return sum(poly[i - 1][0] * poly[i][1] - poly[i][0] * poly[i - 1][1] for i in range(len(poly))) / 2  # > 0: counter-clockwise
+
+
+def triangulate(poly):
+    """Ear clipping for one simple polygon; returns index triples into poly."""
+    n = len(poly)
+    if n < 3:
+        return []
+    idx = list(range(n)) if _area(poly) > 0 else list(range(n))[::-1]  # walk it counter-clockwise
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    def inside(p, a, b, c):
+        d1, d2, d3 = cross(a, b, p), cross(b, c, p), cross(c, a, p)
+        return d1 >= 0 and d2 >= 0 and d3 >= 0
+    tris, guard = [], 0
+    while len(idx) > 3 and guard < 10000:
+        guard += 1
+        m = len(idx)
+        for k in range(m):
+            i0, i1, i2 = idx[k - 1], idx[k], idx[(k + 1) % m]
+            a, b, c = poly[i0], poly[i1], poly[i2]
+            if cross(a, b, c) <= 1e-9:  # reflex (polygon is counter-clockwise here)
+                continue
+            if any(inside(poly[j], a, b, c) for j in idx if j not in (i0, i1, i2)):
+                continue
+            tris.append((i0, i1, i2))
+            idx.pop(k)
+            break
+        else:  # degenerate leftovers: fan the rest
+            break
+    if len(idx) >= 3:
+        for k in range(1, len(idx) - 1):
+            tris.append((idx[0], idx[k], idx[k + 1]))
+    return tris
+
+
+def outline_meshes(atlas):
+    """Unity draws Tight sprites with a mesh made from the sprite outline (.meta): the full-rect quad would show
+    the neighbouring sprites of a tightly packed sheet (Nest_B07's leg). Same format as the exported spriteMesh."""
+    out = {}
+    for key, (rect, (px, py), paths) in atlas.outlines.items():
+        t = atlas.sprites[key][0]
+        _, _, tw, th = atlas.textures[t]
+        ppu_w, ppu_h = atlas.sprites[key][7], atlas.sprites[key][8]
+        rx, ry, rw, rh = rect
+        v, u, tri = [], [], []
+        for path in paths:
+            base = len(v) // 2
+            for (ox, oy) in path:
+                fx, fy = (ox + rw / 2) / rw, (oy + rh / 2) / rh
+                v += [round((fx - px) * ppu_w, 4), round((fy - py) * ppu_h, 4)]
+                u += [round((rx + ox + rw / 2) / tw, 5), round((ry + oy + rh / 2) / th, 5)]
+            tri += [base + i for t3 in triangulate(path) for i in t3]
+        if tri:
+            out[key] = [v, u, tri]
+    return out
 
 
 def alignment_pivot(align, piv):
@@ -938,6 +1000,10 @@ def build(uid):
         sm = json.load(open(mpath, encoding="utf-8")).get("spriteMesh") or {}
         data["spriteMesh"] = {k: [[round(x, 4) for x in g["v"]], [round(x, 5) for x in g["u"]], g["t"]]
                               for k, g in sm.items() if k in atlas.sprites}
+    # no export: build the same meshes from the .meta outlines (Tight sprites only)
+    om = {k: g for k, g in outline_meshes(atlas).items() if k not in (data.get("spriteMesh") or {})}
+    if om:
+        data["spriteMesh"] = dict(data.get("spriteMesh") or {}, **om)
     os.makedirs(OUT, exist_ok=True)
     js = "window.SD_DATA=window.SD_DATA||{};SD_DATA[%s]=%s;\n" % (json.dumps(uid), json.dumps(data, separators=(",", ":")))
     with open(os.path.join(OUT, uid + ".js"), "w", encoding="utf-8") as f:
