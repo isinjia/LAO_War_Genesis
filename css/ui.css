@@ -52,7 +52,6 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .logo-ko { font-weight: 700; font-size: clamp(16px, 2.6vw, 22px); letter-spacing: 12px; margin: 2px 0 28px; text-shadow: 0 2px 4px #000; }
 .touch { margin-top: 18px; font-family: var(--en); font-weight: 600; letter-spacing: 6px; font-size: 13px; color: #cfcfcf; animation: blink 1.4s infinite; }
 @keyframes blink { 50% { opacity: 0.2; } }
-.title-foot { position: absolute; right: 14px; bottom: 28px; color: var(--dim); font-size: 12px; }
 .ver { position: absolute; right: 14px; bottom: max(10px, env(safe-area-inset-bottom)); color: var(--dim); font-family: var(--en); font-weight: 700; font-size: 12px; letter-spacing: 1px; opacity: 0.8; }
 
 /* ── lobby frame ── */
