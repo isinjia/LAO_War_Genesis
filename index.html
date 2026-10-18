@@ -84,7 +84,6 @@
         <div class="rates" id="rates"></div>
         <div class="pity" id="pity"></div>
         <div class="pull-btns">
-          <div class="pull-own" title="보유 부품: 제조에 사용"><small>보유 부품</small><b><i class="parts-i"></i><span id="ownParts">0</span></b></div>
           <button id="pull1" class="btn d">1회 제조<small><i class="parts-i"></i>500</small></button>
           <button id="pull10" class="btn">10회 제조<small><i class="parts-i"></i>5000 · S 이상 확정</small></button>
         </div>
@@ -146,7 +145,6 @@
   <div class="hud-top">
     <div class="stage-name"><b id="hudCode"></b><span id="hudStage"></span></div>
     <div class="timer" id="timer">10:00</div>
-    <div class="money"><i></i><span id="money">0</span><small>/<span id="wallet">0</span></small></div>
     <div class="hud-btns">
       <button id="btnSpeed" class="hb speed"><span>x1</span></button>
       <button id="btnPause" class="hb pause" aria-label="일시정지"></button>
@@ -158,7 +156,10 @@
       <div class="lv">LV <b id="workerLv">1</b></div>
       <div class="cost" id="workerCost">80</div>
     </button>
-    <div id="deck" class="deck"></div>
+    <div class="deck-wrap">
+      <div class="money"><small class="mlbl">자금</small><i></i><span id="money">0</span><small>/<span id="wallet">0</span></small></div>
+      <div id="deck" class="deck"></div>
+    </div>
     <button id="btnCannon" class="side-btn cannon">
       <div class="charge" id="cannonFill"></div>
       <div class="lbl">오르카 포격</div>

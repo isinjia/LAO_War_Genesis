@@ -746,17 +746,19 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
   background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); }
 .tut-skip.show { display: block; }
 
-/* making: the parts on hand at the left of the pull buttons */
-.pull-btns { align-items: stretch; }
-.pull-own { flex: 0 0 auto; display: flex; flex-direction: column; justify-content: center; padding: 4px 12px; min-width: 84px;
-  background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.15); border-left: 3px solid var(--y); }
-.pull-own small { font-size: 11px; color: var(--dim); }
-.pull-own b { display: flex; align-items: center; gap: 4px; font-family: var(--en); font-size: 17px; color: #fff; }
-.pull-own .parts-i { width: 18px; height: 18px; }
-@media (max-width: 420px) { .pull-own { min-width: 70px; padding: 4px 8px; } .pull-own b { font-size: 15px; } }
-/* the parts box reads as part of the pull row: same height as the buttons, a large figure */
-.pull-own { height: 64px; box-sizing: border-box; min-width: 130px; padding: 6px 14px; background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 210, 0, 0.45); border-left: 4px solid var(--y); }
-.pull-own small { font-size: 12px; color: #ddd; font-weight: 700; }
-.pull-own b { font-size: 24px; color: var(--y); }
-.pull-own .parts-i { width: 24px; height: 24px; }
-@media (max-width: 640px) { .pull-own { min-width: 92px; padding: 6px 8px; } .pull-own b { font-size: 18px; } .pull-own .parts-i { width: 18px; height: 18px; } }
+
+
+/* battle money: at the left of the deploy cards (what deploying spends), not in the top bar */
+.deck-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; max-width: 820px; margin: 0 auto; }
+.deck-wrap .deck { margin: 0; min-width: 0; }
+.deck-wrap .money { flex: none; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding: 6px 12px; min-width: 116px; box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 210, 0, 0.45); border-left: 4px solid var(--y); font-size: 26px; line-height: 1.05; }
+.deck-wrap .money .mlbl { font-family: var(--ko); font-style: normal; font-weight: 700; font-size: 11px; color: #ddd; text-shadow: none; }
+.deck-wrap .money i { display: none; }
+.deck-wrap .money small:last-child { font-size: 14px; }
+.deck-wrap .money.full::after { margin: 2px 0 0; }
+@media (max-width: 640px) {
+  .deck-wrap { flex-direction: column; align-items: stretch; gap: 4px; }
+  .deck-wrap .money { flex-direction: row; align-items: baseline; gap: 6px; min-width: 0; align-self: flex-start; padding: 2px 10px; font-size: 20px; }
+  .deck-wrap .money small:last-child { font-size: 13px; }
+}
