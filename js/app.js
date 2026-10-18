@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.52'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.53'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -141,7 +141,7 @@
   $('btnBack').onclick = () => {
     AUDIO.play('click', 0.5);
     if (pane === 'campaign' && chapterOpen >= 0) { chapterOpen = -1; refresh(); }
-    else if (pane === 'campaign' && operationView === 'stages') { operationView = 'hub'; refresh(); }
+    else if (pane === 'campaign' && operationView !== 'hub') { operationView = 'hub'; refresh(); }
   };
 
   function setPane(name) {
@@ -166,21 +166,23 @@
     $('partsVal').textContent = fmt(save.parts);
     const inChapter = pane === 'campaign' && chapterOpen >= 0;
     const inHub = pane === 'campaign' && !inChapter && operationView === 'hub';
+    const inDetail = pane === 'campaign' && ['daily', 'infinite'].includes(operationView) && !inChapter;
+    $('pOperationDetail').classList.toggle('on', inDetail);
     $('pOperations').classList.toggle('on', inHub);
-    $('pChapters').classList.toggle('on', pane === 'campaign' && !inChapter && !inHub);
+    $('pChapters').classList.toggle('on', pane === 'campaign' && !inChapter && operationView === 'stages');
     $('pStages').classList.toggle('on', inChapter);
     $('pSquad').classList.toggle('on', pane === 'squad');
     $('pGacha').classList.toggle('on', pane === 'gacha');
     $('pMissions').classList.toggle('on', pane === 'missions');
     missionBadge();
-    const canBack = pane === 'campaign' && (inChapter || operationView === 'stages');
+    const canBack = pane === 'campaign' && !inHub;
+    $('lobby').classList.toggle('operation-depth', canBack);
     $('btnBack').hidden = !canBack;
-    $('btnBack').classList.toggle('arrow', canBack);
     $('btnBack').setAttribute('aria-label', '이전 화면');
-    const [en, ko] = inChapter ? [`CHAPTER ${pad2(chapterOpen + 1)}`, D.CHAPTERS[chapterOpen].title] : pane === 'campaign' && !inHub ? ['STAGES', '스테이지'] : TITLES[pane];
+    const [en, ko] = inChapter ? [`CHAPTER ${pad2(chapterOpen + 1)}`, D.CHAPTERS[chapterOpen].title] : inDetail ? [operationView === 'daily' ? 'DAILY OPERATION' : 'INFINITE FRONT', operationView === 'daily' ? '일일 작전' : '무한 전장'] : pane === 'campaign' && !inHub ? ['STAGES', '스테이지'] : TITLES[pane];
     $('tbEn').textContent = en; $('tbKo').textContent = ko;
     $('lobbyBg').style.backgroundImage = `url(${inChapter ? IMG[D.CHAPTERS[chapterOpen].bg] : IMG.bg_title})`;
-    if (pane === 'campaign') inChapter ? renderStages() : inHub ? renderOperations() : renderChapters();
+    if (pane === 'campaign' && !inDetail) inChapter ? renderStages() : inHub ? renderOperations() : renderChapters();
     if (pane === 'squad') renderSquad(); else { closeCardMenu(); swapIn = null; }
     if (pane === 'gacha') renderGacha();
     if (pane === 'missions') renderMissions();
@@ -291,12 +293,26 @@
     });
   }
 
+  function operationDetail(view, title, body, buttons) {
+    operationView = view; chapterOpen = -1;
+    $('opDetailEn').textContent = view === 'daily' ? 'DAILY OPERATION' : 'INFINITE FRONT';
+    $('opDetailTitle').textContent = title;
+    $('opDetailBody').innerHTML = body;
+    $('opDetailActions').replaceChildren();
+    buttons.filter(([label]) => label !== '닫기').forEach(([label, fn, style]) => {
+      const b = document.createElement('button'); b.className = 'btn' + (style ? ' ' + style : ''); b.textContent = label;
+      b.onclick = () => { AUDIO.play('click', 0.55, 0.85); fn(); };
+      $('opDetailActions').appendChild(b);
+    });
+    refresh();
+  }
+
   function openDaily(day) {
     if (save.dailyDay !== day) { save.dailyDay = day; save.dailyTop = save.cleared; persist(); } // one stage for the whole day
     const st = D.dailyStage(day, save.dailyTop);
     const enemyIds = [...new Set(st.spawns.map((x) => x[0]))];
     const done = save.dailyDone === day;
-    modal('일일 작전', `<div class="inf-info"><div><b>${st.name}</b> · 적 강도 ${Math.round(st.pow * 100)}%</div>
+    operationDetail('daily', '일일 작전', `<div class="inf-info"><div><b>${st.name}</b> · 적 강도 ${Math.round(st.pow * 100)}%</div>
       ${st.mod ? `<div class="si-mod"><b>${D.MODS[st.mod].name}</b> ${D.MODS[st.mod].tip}</div>` : ''}
       <div class="si-enemies">${enemyIds.concat(st.boss ? [st.boss.e] : []).map((e) => enemyChip(e, st.boss && e === st.boss.e)).join('')}</div>
       <div class="si-label">고정 편성 (LV ${st.squadLv})</div>
@@ -314,12 +330,12 @@
     const enemyIds = [...new Set(st.spawns.map((x) => x[0]))];
     const r = D.reward(st, st.floor > save.infBest ? 'first' : 'win');
     const have = buffList();
-    modal(`무한 전장 ${st.floor}층`, `<div class="inf-info"><div>적 강도 <b>${Math.round(st.pow * 100)}%</b>${st.boss ? ` · 보스 <b>${D.ENEMIES[st.boss.e].name}</b>` : ''}</div>
+    operationDetail('infinite', `무한 전장 ${st.floor}층`, `<div class="inf-info"><div>적 강도 <b>${Math.round(st.pow * 100)}%</b>${st.boss ? ` · 보스 <b>${D.ENEMIES[st.boss.e].name}</b>` : ''}</div>
       <div class="si-enemies">${enemyIds.concat(st.boss ? [st.boss.e] : []).map((e) => enemyChip(e, st.boss && e === st.boss.e)).join('')}</div>${traitNote(enemyIds)}
       <div class="si-rewards">${rwHtml(r)}</div>
       <div style="font-size:12px">${run ? `진행 중인 도전 ${run}층 돌파 · 강화 ${have || '없음'}` : '새 도전: 1층부터 시작'} · 최고 기록 ${save.infBest}층</div></div>`,
     [['출격', () => { closeModal(); launch(st); }],
-      ...(run ? [['도전 포기', () => { save.infRun = 0; save.infBuffs = []; persist(); closeModal(); refresh(); }, 'o']] : []),
+      ...(run ? [['도전 포기', () => { save.infRun = 0; save.infBuffs = []; persist(); closeModal(); openInfinite(); }, 'o']] : []),
       ['닫기', closeModal, 'd']]);
   }
   const BUFF_MAX = 3; // one buff stacks at most this many times

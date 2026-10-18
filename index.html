@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>LAO 워 제네시스</title>
 <script src="js/ui_assets.js?v=d1439f92"></script>
-<link rel="stylesheet" href="css/ui.css?v=1971ea26">
+<link rel="stylesheet" href="css/ui.css?v=3e6c3157">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -28,7 +28,6 @@
 <section id="lobby" class="screen">
   <div class="lobby-bg" id="lobbyBg"></div>
   <header class="topbar">
-    <button class="back" id="btnBack" aria-label="뒤로"></button>
     <div class="tb-title"><b id="tbEn">CAMPAIGN</b><span id="tbKo">작전 지역</span></div>
     <div class="res">
       <span class="ri parts" title="부품: 제조"><i></i><b id="partsVal">0</b></span>
@@ -43,6 +42,9 @@
   <div id="pOperations" class="pane">
     <div class="op-intro"><span>OPERATION SELECT</span><h2>작전 선택</h2><p>사령관, 참가할 작전을 선택해 주세요.</p></div>
     <div id="operationList" class="operation-list"></div>
+  </div>
+  <div id="pOperationDetail" class="pane">
+    <div class="operation-detail"><div class="op-intro"><span id="opDetailEn"></span><h2 id="opDetailTitle"></h2></div><div id="opDetailBody"></div><div id="opDetailActions" class="pwin-btns"></div></div>
   </div>
   <div id="pChapters" class="pane on">
     <div class="chapters" id="chapterList"></div>
@@ -109,6 +111,7 @@
     <button class="nav" data-pane="gacha"><i class="ni making"></i><span>제조</span></button>
     <button class="nav" data-pane="missions"><i class="ni medal"></i><span>임무</span><b class="nbadge" id="missionBadge"></b></button>
   </nav>
+  <div class="operation-back"><button id="btnBack" class="op-back-btn" aria-label="이전 화면" hidden><i></i><span>뒤로가기</span></button></div>
 </section>
 
 <!-- story -->
@@ -212,6 +215,6 @@
 <script src="js/fx/_meta.js?v=61ee70bc"></script>
 <script src="js/audio.js?v=f2275017"></script>
 <script src="js/game.js?v=8fe9f2c8"></script>
-<script src="js/app.js?v=c556735a"></script>
+<script src="js/app.js?v=9e65406a"></script>
 </body>
 </html>

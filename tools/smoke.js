@@ -53,12 +53,19 @@
       if (!back.hidden) throw new Error('root still has title exit');
       hub.querySelector('[data-operation="stages"]').click();
       if (!document.getElementById('pChapters').classList.contains('on')) throw new Error('no chapters');
+      if (!document.getElementById('lobby').classList.contains('operation-depth')) throw new Error('tabs not replaced');
       if (document.querySelectorAll('#chapterList .chap').length !== 8) throw new Error('mixed chapter list');
       document.querySelector('#chapterList [data-ch="0"]').click();
       if (!document.getElementById('pStages').classList.contains('on')) throw new Error('no stage map');
       back.click(); back.click();
       if (!hub.classList.contains('on') || !back.hidden) throw new Error('back hierarchy broken');
-      return '3 modes, 8 chapters, map → chapters → modes';
+      for (const mode of ['daily', 'infinite']) {
+        hub.querySelector(`[data-operation="${mode}"]`).click();
+        if (!document.getElementById('pOperationDetail').classList.contains('on') || !document.getElementById('lobby').classList.contains('operation-depth')) throw new Error('no detail/back for ' + mode);
+        back.click();
+        if (!hub.classList.contains('on') || document.getElementById('lobby').classList.contains('operation-depth')) throw new Error('tabs not restored');
+      }
+      return 'all 3 modes replace tabs with back and restore them on return';
     });
     await step('battle 1-1: deploy, fight, enemies spawn', async () => {
       const G = await battle(D.STAGES[0], ['brownie', 'leprechaun', 'gnome'], 40);
