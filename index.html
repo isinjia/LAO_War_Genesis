@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>LAO 워 제네시스</title>
-<script src="js/ui_assets.js?v=6e84fd36"></script>
-<link rel="stylesheet" href="css/ui.css?v=90d88c04">
+<script src="js/ui_assets.js?v=d1439f92"></script>
+<link rel="stylesheet" href="css/ui.css?v=4691d84f">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -39,7 +39,11 @@
     <button class="tbtn opt" id="btnOpt" aria-label="설정"></button>
   </header>
 
-  <!-- campaign: chapter cards -->
+  <!-- operations: mode selection, then chapters -->
+  <div id="pOperations" class="pane">
+    <div class="op-intro"><span>OPERATION SELECT</span><h2>작전 선택</h2><p>사령관, 참가할 작전을 선택해 주세요.</p></div>
+    <div id="operationList" class="operation-list"></div>
+  </div>
   <div id="pChapters" class="pane on">
     <div class="chapters" id="chapterList"></div>
   </div>
@@ -208,6 +212,6 @@
 <script src="js/fx/_meta.js?v=61ee70bc"></script>
 <script src="js/audio.js?v=f2275017"></script>
 <script src="js/game.js?v=8fe9f2c8"></script>
-<script src="js/app.js?v=ce734a50"></script>
+<script src="js/app.js?v=a201c1d3"></script>
 </body>
 </html>

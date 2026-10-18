@@ -1038,3 +1038,35 @@ body.carddrag #deckEdit .crc.drop-hover { animation: none !important; }
 .deck-wrap { max-width: 640px; }
 .deck-wrap .deck { max-width: none; }
 body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and its gap */
+/* Operations hub: a single choice before chapter and battle details. */
+#btnBack[hidden] { display: none; }
+.op-intro { max-width: 1180px; margin: 16px auto 26px; }
+.op-intro > span { color: var(--y); font: 700 12px var(--en); letter-spacing: 3px; }
+.op-intro h2 { margin: 9px 0; font-size: 30px; }
+.op-intro p { color: #b7c1cc; margin: 0; font-size: 14px; }
+.operation-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; max-width: 1180px; margin: 0 auto; }
+.op-card { position: relative; isolation: isolate; display: flex; flex-direction: column; height: 386px; min-width: 0; overflow: hidden; text-align: left; background: #111a24; border: 1px solid #526072; border-top: 3px solid var(--y); box-shadow: 0 12px 28px #0006; transition: border-color .15s, transform .15s; }
+.op-card:not(:disabled):hover { border-color: var(--y); transform: translateY(-3px); }
+.op-art { position: absolute; inset: 0; z-index: -1; background-position: center; background-size: cover; opacity: .65; }
+.op-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #07101c33, #07101ccc 45%, #07101c 85%); }
+.op-copy { margin-top: auto; padding: 28px 24px 22px; }
+.op-index { color: #ffdf84; font: 700 11px var(--en); letter-spacing: 1.5px; }
+.op-copy h3 { font-size: 30px; margin: 12px 0; color: #fff; }
+.op-copy p { font-size: 14px; color: #e0e6ed; line-height: 1.6; min-height: 45px; margin: 0 0 14px; }
+.op-copy small { color: #b8c6d5; font-size: 12px; }
+.op-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 56px; padding: 0 24px; border-top: 1px solid #ffffff26; background: #080e16b3; font-size: 12px; color: #cbd5e0; }
+.op-foot b { color: var(--y); white-space: nowrap; }
+.op-card.locked { border-top-color: #697687; }
+.op-card.locked .op-art { opacity: .28; }
+.op-card.locked .op-foot b { color: #aab8c8; }
+@media(max-width: 760px) {
+  .op-intro { margin: 6px 0 18px; }
+  .op-intro h2 { font-size: 24px; }
+  .operation-list { grid-template-columns: 1fr; gap: 14px; }
+  .op-card { height: 224px; }
+  .op-art { background-position: center 40%; }
+  .op-copy { padding: 18px 20px 14px; }
+  .op-copy h3 { font-size: 25px; margin: 7px 0; }
+  .op-copy p { min-height: 0; margin-bottom: 9px; font-size: 13px; }
+  .op-foot { min-height: 44px; padding: 0 20px; }
+}

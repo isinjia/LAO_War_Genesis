@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.49'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.50'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -132,7 +132,7 @@
   AUDIO.music('title');
 
   // ── lobby ──────────────────────────────────────────────
-  let pane = 'campaign', chapterOpen = -1, selStage = -1;
+  let pane = 'campaign', chapterOpen = -1, selStage = -1, operationView = 'hub';
   // phones / narrow screens: the stage info is a sheet that opens only when a stage is tapped
   let sheetOpen = false;
   const sheetMode = () => matchMedia('(max-width: 1000px)').matches;
@@ -141,11 +141,11 @@
   $('btnBack').onclick = () => {
     AUDIO.play('click', 0.5);
     if (pane === 'campaign' && chapterOpen >= 0) { chapterOpen = -1; refresh(); }
-    else if (pane !== 'campaign') setPane('campaign');
-    else { show('title'); AUDIO.music('title'); }
+    else if (pane === 'campaign' && operationView === 'stages') { operationView = 'hub'; refresh(); }
   };
 
   function setPane(name) {
+    if (name === 'campaign' && pane !== 'campaign') operationView = 'hub';
     pane = name;
     if (name !== 'campaign') chapterOpen = -1;
     document.querySelectorAll('.nav').forEach((x) => x.classList.toggle('on', x.dataset.pane === name));
@@ -155,27 +155,32 @@
   function openLobby(name, chapter) {
     show('lobby');
     AUDIO.music('lobby');
-    if (chapter != null) { pane = 'campaign'; chapterOpen = chapter; }
+    if (chapter != null) { pane = 'campaign'; chapterOpen = chapter; operationView = 'stages'; }
     setPane(name || pane);
   }
 
-  const TITLES = { campaign: ['CAMPAIGN', '작전 지역'], squad: ['SQUAD', '대원 편성 · 강화'], gacha: ['MAKING', '대원 제조'], missions: ['MISSION', '임무'] };
+  const TITLES = { campaign: ['OPERATIONS', '작전'], squad: ['SQUAD', '대원 편성 · 강화'], gacha: ['MAKING', '대원 제조'], missions: ['MISSION', '임무'] };
   function refresh() {
     $('xpVal').textContent = fmt(save.xp);
     $('tunaVal').textContent = fmt(save.tuna);
     $('partsVal').textContent = fmt(save.parts);
     const inChapter = pane === 'campaign' && chapterOpen >= 0;
-    $('pChapters').classList.toggle('on', pane === 'campaign' && !inChapter);
+    const inHub = pane === 'campaign' && !inChapter && operationView === 'hub';
+    $('pOperations').classList.toggle('on', inHub);
+    $('pChapters').classList.toggle('on', pane === 'campaign' && !inChapter && !inHub);
     $('pStages').classList.toggle('on', inChapter);
     $('pSquad').classList.toggle('on', pane === 'squad');
     $('pGacha').classList.toggle('on', pane === 'gacha');
     $('pMissions').classList.toggle('on', pane === 'missions');
     missionBadge();
-    $('btnBack').classList.toggle('arrow', pane !== 'campaign' || inChapter);
-    const [en, ko] = inChapter ? [`CHAPTER ${pad2(chapterOpen + 1)}`, D.CHAPTERS[chapterOpen].title] : TITLES[pane];
+    const canBack = pane === 'campaign' && (inChapter || operationView === 'stages');
+    $('btnBack').hidden = !canBack;
+    $('btnBack').classList.toggle('arrow', canBack);
+    $('btnBack').setAttribute('aria-label', '이전 화면');
+    const [en, ko] = inChapter ? [`CHAPTER ${pad2(chapterOpen + 1)}`, D.CHAPTERS[chapterOpen].title] : pane === 'campaign' && !inHub ? ['STAGES', '스테이지'] : TITLES[pane];
     $('tbEn').textContent = en; $('tbKo').textContent = ko;
     $('lobbyBg').style.backgroundImage = `url(${inChapter ? IMG[D.CHAPTERS[chapterOpen].bg] : IMG.bg_title})`;
-    if (pane === 'campaign') inChapter ? renderStages() : renderChapters();
+    if (pane === 'campaign') inChapter ? renderStages() : inHub ? renderOperations() : renderChapters();
     if (pane === 'squad') renderSquad(); else { closeCardMenu(); swapIn = null; }
     if (pane === 'gacha') renderGacha();
     if (pane === 'missions') renderMissions();
@@ -237,6 +242,25 @@
   const chapterLocked = (c) => (isHard()
     ? save.cleared < D.CHAPTERS[c].first + D.PER_CH || save.hardCleared < D.CHAPTERS[c].first
     : save.cleared < D.CHAPTERS[c].first);
+  function renderOperations() {
+    const today = Math.floor(Date.now() / 86400000);
+    const entries = [
+      { id: 'stages', en: 'STAGES', name: '스테이지', desc: '8개 챕터의 이야기와 전투', tag: '스토리 · 노말 / 하드', status: `${save.cleared} / ${D.STAGES.length} 작전 완료`, bg: IMG.bg_field, open: true,
+        action: () => { operationView = 'stages'; chapterOpen = -1; refresh(); } },
+      { id: 'daily', en: 'DAILY OPERATION', name: '일일 작전', desc: '매일 새로운 조건, 정해진 편성으로 도전', tag: '매일 갱신 · 하루 한 번 보상', status: save.dailyDone === today ? '오늘 보상 획득 완료' : '오늘의 작전 대기 중', bg: IMG.bg_city, open: save.cleared >= D.PER_CH, lock: '1장 클리어 후 개방',
+        action: () => openDaily(today) },
+      { id: 'infinite', en: 'INFINITE FRONT', name: '무한 전장', desc: '강화를 선택하며 한계에 도전하는 전장', tag: '연속 전투 · 누적 강화', status: `${save.infRun ? `진행 ${save.infRun}층 · ` : ''}최고 ${save.infBest}층`, bg: IMG.bg_base, open: normalDone(), lock: '8-10 클리어 후 개방',
+        action: openInfinite },
+    ];
+    const box = $('operationList'); box.replaceChildren();
+    entries.forEach((item, i) => {
+      const b = document.createElement('button');
+      b.className = 'op-card' + (item.open ? '' : ' locked'); b.dataset.operation = item.id;
+      b.disabled = !item.open;
+      b.innerHTML = `<div class="op-art" style="background-image:url(${item.bg})"></div><div class="op-copy"><span class="op-index">0${i + 1} / ${item.en}</span><h3>${item.name}</h3><p>${item.desc}</p><small>${item.tag}</small></div><div class="op-foot"><span>${item.open ? item.status : item.lock}</span><b>${item.open ? '선택 →' : '잠김'}</b></div>`;
+      b.onclick = () => { AUDIO.play('click'); item.action(); }; box.appendChild(b);
+    });
+  }
   function renderChapters() {
     const box = $('chapterList');
     box.innerHTML = '';
@@ -263,26 +287,6 @@
       if (!locked) b.onclick = () => { AUDIO.play('click'); chapterOpen = c; selStage = -1; sheetOpen = false; refresh(); };
       box.appendChild(b);
     });
-    // daily operation: after chapter 1
-    const today = Math.floor(Date.now() / 86400000);
-    const dly = document.createElement('button');
-    const dOpen = save.cleared >= D.PER_CH;
-    dly.className = 'chap daily' + (dOpen ? '' : ' locked');
-    dly.innerHTML = `<div class="img" style="background-image:url(${IMG[D.CHAPTERS[today % 8].bg]})"></div><i class="bar-top"></i>
-      <span class="pc">${save.dailyDone === today ? '오늘 완료' : '참치 300 · 부품 1000'}</span>
-      <div class="txt"><div class="no">DAILY OPERATION</div><div class="nm">일일 작전</div><div class="sb">매일 바뀌는 조건과 고정 편성 · 하루 한 번 보상</div></div>
-      ${dOpen ? '' : '<div class="lock"><i></i><span>1장 클리어 후 개방</span></div>'}`;
-    if (dOpen) dly.onclick = () => { AUDIO.play('click'); openDaily(today); };
-    box.appendChild(dly);
-    // the infinite front: after the normal campaign
-    const inf = document.createElement('button');
-    inf.className = 'chap infinite' + (normalDone() ? '' : ' locked');
-    inf.innerHTML = `<div class="img" style="background-image:url(${IMG.bg_title})"></div><i class="bar-top"></i>
-      <span class="pc">${save.infRun ? `도전 ${save.infRun}층 · ` : ''}최고 ${save.infBest}층</span>
-      <div class="txt"><div class="no">INFINITE FRONT</div><div class="nm">무한 전장</div><div class="sb">층마다 강해지는 철충 · 새 기록마다 참치</div></div>
-      ${normalDone() ? '' : '<div class="lock"><i></i><span>8-10 클리어 후 개방</span></div>'}`;
-    if (normalDone()) inf.onclick = () => { AUDIO.play('click'); openInfinite(); };
-    box.appendChild(inf);
   }
 
   function openDaily(day) {
@@ -1259,9 +1263,9 @@
       done: () => save.deck.includes(TUT_ADD) },
     { pane: 'missions', el: () => document.querySelector('#missionList .mis[data-mid="tut1"] button'),
       text: '<b>임무</b>를 달성하면 보상을 받습니다. <b>받기</b>를 눌러 보세요!', done: () => !!(save.claimed || {}).tut1 },
-    { pane: 'campaign', el: () => (chapterOpen !== 0 ? document.querySelector('#chapterList .chap[data-ch="0"]')
+    { pane: 'campaign', el: () => (operationView === 'hub' ? document.querySelector('[data-operation="stages"]') : chapterOpen !== 0 ? document.querySelector('#chapterList .chap[data-ch="0"]')
       : selStage !== 1 || !infoShown() ? document.querySelector('#pStages .node[data-ix="1"]') : $('btnGo')),
-      text: () => (chapterOpen !== 0 ? '준비 완료! <b>CHAPTER 1</b>로 돌아갑니다.' : selStage !== 1 || !infoShown() ? '다음 작전 <b>1-2</b>를 선택하세요.' : '<b>출격</b>! 이제부터는 사령관의 판단에 맡깁니다.'),
+      text: () => (operationView === 'hub' ? '<b>스테이지</b>를 선택하세요.' : chapterOpen !== 0 ? '준비 완료! <b>CHAPTER 1</b>로 돌아갑니다.' : selStage !== 1 || !infoShown() ? '다음 작전 <b>1-2</b>를 선택하세요.' : '<b>출격</b>! 이제부터는 사령관의 판단에 맡깁니다.'),
       done: () => !!save.tut },
   ];
   const PANE_NAME = { gacha: '제조', squad: '대원', missions: '임무', campaign: '작전' };
@@ -1547,7 +1551,7 @@
 
   // back to where a stage was picked: its chapter (normal / hard) or the campaign list (infinite)
   function backTo(st) {
-    if (st.infinite || st.daily) { mode = 'normal'; openLobby('campaign'); chapterOpen = -1; refresh(); return; }
+    if (st.infinite || st.daily) { operationView = 'hub'; mode = 'normal'; openLobby('campaign'); chapterOpen = -1; refresh(); return; }
     mode = st.hard ? 'hard' : 'normal';
     openLobby('campaign', st.chapter);
   }

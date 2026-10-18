@@ -45,6 +45,21 @@
       if (miss.length) throw new Error('icons ' + miss);
       return 'ok';
     });
+    await step('operations: three modes, chapter navigation and no title exit', () => {
+      APP.openLobby('campaign');
+      const hub = document.getElementById('pOperations');
+      if (!hub.classList.contains('on') || hub.querySelectorAll('[data-operation]').length !== 3) throw new Error('mode hub missing');
+      const back = document.getElementById('btnBack');
+      if (!back.hidden) throw new Error('root still has title exit');
+      hub.querySelector('[data-operation="stages"]').click();
+      if (!document.getElementById('pChapters').classList.contains('on')) throw new Error('no chapters');
+      if (document.querySelectorAll('#chapterList .chap').length !== 8) throw new Error('mixed chapter list');
+      document.querySelector('#chapterList [data-ch="0"]').click();
+      if (!document.getElementById('pStages').classList.contains('on')) throw new Error('no stage map');
+      back.click(); back.click();
+      if (!hub.classList.contains('on') || !back.hidden) throw new Error('back hierarchy broken');
+      return '3 modes, 8 chapters, map → chapters → modes';
+    });
     await step('battle 1-1: deploy, fight, enemies spawn', async () => {
       const G = await battle(D.STAGES[0], ['brownie', 'leprechaun', 'gnome'], 40);
       if (!G.allies.length && !G.over) throw new Error('no allies');
