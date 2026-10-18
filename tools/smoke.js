@@ -90,6 +90,23 @@
       if (!(p.d.wins >= 1 && p.w.wins >= 1)) throw new Error('daily / weekly mission counters did not count the win');
       return 'ok, daily wins ' + p.d.wins;
     });
+    await step('next battle resets victory camera and permits dragging', async () => {
+      const G = await battle(D.STAGES[1], ['brownie', 'leprechaun', 'gnome'], 1);
+      GAME.zoom(1.6); G.ebase.hp = 0; GAME.sim(0.1);
+      if (!GAME.cameraState().panning) throw new Error('victory pan not reproduced');
+      await APP.launch(D.STAGES[2]);
+      const initial = GAME.cameraState();
+      if (initial.panning || initial.zoom !== 1 || Math.abs(initial.left + 3) > .1) throw new Error('old camera carried into next battle');
+      GAME.look(GAME.state.len);
+      const before = GAME.cameraState().x;
+      const gl = document.getElementById('gl');
+      gl.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 77, clientX: 200, clientY: 200, bubbles: true }));
+      window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 77, clientX: 600, clientY: 200 }));
+      window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 77 }));
+      if (GAME.cameraState().x >= before) throw new Error('camera cannot drag away from enemy base');
+      GAME.stop();
+      return 'victory → next stage: allied base, zoom reset, drag works';
+    });
     await step('boss reveal: slow motion + letterbox, then back', async () => {
       const G = await battle(D.STAGES.find((s) => s.code === '1-10'), ['brownie', 'leprechaun', 'gnome'], 3);
       G.ebase.hp = G.ebase.max * (G.st.boss.at - 0.01); GAME.sim(0.1);

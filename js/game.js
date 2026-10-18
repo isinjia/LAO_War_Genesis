@@ -18,6 +18,7 @@
   let renderer, scene, camera, overlay, octx, dpr = 1;
   let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1, hudTop = 0, zoom = 1; // zoom: wheel / pinch (zMin() = the whole lane, 2 = closer) // hudTop: the top bar's bottom edge (px) // hudFrac: the share of the screen the bottom HUD covers
   let G = null; // the running battle
+  let resetFieldInput = () => {};
   let last = 0;
   const tex = {};
 
@@ -197,9 +198,13 @@
     const gl = document.getElementById('gl');
     let drag = null, pinch = null;
     const pts = new Map(); // touches on the field: one drags the lane, two pinch-zoom
+    resetFieldInput = () => { drag = null; pinch = null; pts.clear(); };
+    addEventListener('blur', resetFieldInput);
     const two = () => { const [a, b] = [...pts.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2 }; };
     gl.style.touchAction = 'none';
     gl.addEventListener('pointerdown', (e) => {
+      if (!G) return;
+      pan = null;
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pts.size === 2) { drag = null; const t = two(); pinch = { d: t.d, z: zoom }; } else if (pts.size === 1) drag = { x: e.clientX, cam: camX };
       G && (G.userCam = performance.now());
@@ -222,6 +227,7 @@
     addEventListener('pointercancel', lift);
     gl.addEventListener('wheel', (e) => {
       if (!G) return;
+      pan = null;
       e.preventDefault();
       if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { // sideways scroll (trackpad) or shift: pan
         camX += (e.deltaX || e.deltaY) * 0.01; clampCam(); updateCam(); G.userCam = performance.now();
@@ -231,7 +237,7 @@
     }, { passive: false });
     addEventListener('keydown', (e) => {
       if (!G || G.over) return;
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { camX += e.key === 'ArrowLeft' ? -1 : 1; clampCam(); updateCam(); G.userCam = performance.now(); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { pan = null; camX += e.key === 'ArrowLeft' ? -1 : 1; clampCam(); updateCam(); G.userCam = performance.now(); }
       const n = '1234567890'.indexOf(e.key);
       if (n >= 0) deploy(n);
       if (e.key === 'e' || e.key === 'E') upgradeWorker();
@@ -286,6 +292,7 @@
     G.base.hp = G.base.max = Math.round(3000 * st.pow / 100) * 100;
     if (G.syn.has('lean')) G.worker = 1; // 소수 정예: work efficiency starts at Lv2
     scene.add(G.root);
+    zoom = 1; view();
     buildField();
     camX = -100; clampCam(); updateCam();
     AUDIO.music(battleMusic(st));
@@ -295,6 +302,8 @@
   }
 
   function stop() {
+    pan = null;
+    resetFieldInput();
     document.body.classList.remove('cine', 'finale-on');
     { const el = document.getElementById('finale'); if (el) el.className = 'finale'; }
     AUDIO.ambience(null);
@@ -1448,7 +1457,7 @@
   }
 
   let pan = null;
-  function panTo(x) { pan = { to: x }; }
+  function panTo(x) { pan = { to: x, battle: G }; }
 
   // ── frame ──────────────────────────────────────────────
   function frame(now) {
@@ -1456,6 +1465,7 @@
     const rdt = Math.min(0.1, (now - (last || now)) / 1000);
     last = now;
     if (G) {
+      if (pan && pan.battle !== G) pan = null;
       if (G.cine > 0 && !G.paused) { G.cine -= rdt; if (G.cine <= 0) { document.body.classList.remove('cine'); if (!G.userCam) pan = null; if (G.heldToast) { toast(...G.heldToast); G.heldToast = null; } } }
       const sdt = G.paused ? 0 : rdt * G.speed * (G.cine > 0 ? 0.3 : 1);
       G.acc = Math.min(STEP * 10, (G.acc || 0) + sdt); // a slow device drops time instead of running behind forever
@@ -1616,10 +1626,11 @@
     if (!G || !G.mini) return;
     const m = G.mini;
     if (e.clientY < m.y - 8 || e.clientY > m.y + m.h + 8 || e.clientX < m.x || e.clientX > m.x + m.w) return;
-    camX = (e.clientX - m.x) / m.w * m.span - 2; clampCam(); updateCam(); G.userCam = performance.now();
+    pan = null; camX = (e.clientX - m.x) / m.w * m.span - 2; clampCam(); updateCam(); G.userCam = performance.now();
   });
 
   window.GAME = {
+    cameraState: () => ({ x: camX, zoom, panning: !!pan, left: camera.left, right: camera.right }),
     zoom: (z, sx) => (z == null ? zoom : setZoom(z, sx)),
     setHudInset(f, top) { hudTop = top || 0; if (Math.abs(f - hudFrac) > 0.005) { hudFrac = f; resize(); } },
     init, preload, start, stop, deploy, upgradeWorker, fireCannon, toast,
