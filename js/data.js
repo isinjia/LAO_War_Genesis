@@ -342,6 +342,7 @@
   const starSum = (b) => Object.values(b || {}).reduce((a, v) => a + v, 0);
   const st_ = (sv, k) => (sv.stats && sv.stats[k]) || 0;
   const MISSIONS = [
+    { id: 'tut1', name: '신병 교육 수료', desc: '첫 작전 1-1 클리어 (튜토리얼)', goal: (sv) => [Math.min(sv.cleared, 1), 1], reward: { tuna: 300, parts: 1000 } },
     ...CHAPTERS.map((ch, c) => ({ id: 'ch' + (c + 1), name: `CHAPTER ${c + 1} 돌파`, desc: ch.title + ' 클리어', goal: (sv) => [Math.min(sv.cleared, (c + 1) * PER_CH) - c * PER_CH, PER_CH], reward: { tuna: 200 + 100 * c, parts: 500 + 250 * c } })),
     ...[30, 90, 160, 240].map((n, i) => ({ id: 'star' + n, name: `별 ${n}개`, desc: '캠페인 별점 합계', goal: (sv) => [starSum(sv.stars), n], reward: { tuna: 300 + 300 * i, parts: 0 } })),
     ...[500, 2000, 6000].map((n, i) => ({ id: 'kill' + n, name: `철충 ${n.toLocaleString()}기 격파`, desc: '전투에서 쓰러뜨린 철충', goal: (sv) => [st_(sv, 'kills'), n], reward: { tuna: 0, parts: 1000 * (i + 1) } })),

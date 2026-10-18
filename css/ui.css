@@ -20,6 +20,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); c
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
 #gl, #overlay { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 #overlay { pointer-events: none; }
+#gl { touch-action: none; } /* phones: a swipe on the field pans the battle camera instead of being taken by the browser */
 .screen { position: fixed; inset: 0; display: none; }
 .screen.show { display: block; }
 
@@ -226,8 +227,8 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .rates span { display: flex; align-items: center; gap: 2px; }
 .rates .rk-i { width: 22px; height: 22px; }
 .pity { font-size: 13px; color: var(--y2); }
-.pull-btns { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-.pull-btns .btn { height: 64px; flex: 1; min-width: 170px; font-size: 20px; }
+.pull-btns { display: flex; gap: 6px; margin-top: 12px; flex-wrap: nowrap; }
+.pull-btns .btn { height: 64px; flex: 1; min-width: 0; font-size: 20px; }
 
 .gres { position: fixed; inset: 0; z-index: 25; display: none; background: radial-gradient(circle at 50% 40%, #222024, #050506 72%); }
 .gres.show { display: block; }
@@ -736,3 +737,20 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 .tgl { min-width: 64px; height: 30px; margin-left: auto; font-family: var(--en); font-weight: 900; font-style: italic; font-size: 14px; color: #bbb; background: #2a2d33; border: 1px solid rgba(255, 255, 255, 0.2); }
 .tgl.on { color: #111; background: var(--y); border-color: var(--y); }
 .opt-toggle span { width: auto; }
+
+/* lobby tutorial: the coach above popups, its target pulsing; the skip button at the top right under the bar */
+.lcoach { position: fixed; z-index: 46; }
+.lpulse { position: relative; z-index: 1; animation: lpulse 0.9s ease-in-out infinite alternate; }
+@keyframes lpulse { from { box-shadow: 0 0 0 2px #ffd200, 0 0 10px rgba(255, 210, 0, 0.5); } to { box-shadow: 0 0 0 4px #ffd200, 0 0 24px rgba(255, 210, 0, 0.9); } }
+.tut-skip { position: fixed; right: 10px; top: 60px; z-index: 47; display: none; padding: 6px 12px; font-size: 13px; font-weight: 700; color: #ddd;
+  background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 255, 255, 0.3); }
+.tut-skip.show { display: block; }
+
+/* making: the parts on hand at the left of the pull buttons */
+.pull-btns { align-items: stretch; }
+.pull-own { flex: 0 0 auto; display: flex; flex-direction: column; justify-content: center; padding: 4px 12px; min-width: 84px;
+  background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.15); border-left: 3px solid var(--y); }
+.pull-own small { font-size: 11px; color: var(--dim); }
+.pull-own b { display: flex; align-items: center; gap: 4px; font-family: var(--en); font-size: 17px; color: #fff; }
+.pull-own .parts-i { width: 18px; height: 18px; }
+@media (max-width: 420px) { .pull-own { min-width: 70px; padding: 4px 8px; } .pull-own b { font-size: 15px; } }

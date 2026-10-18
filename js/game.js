@@ -160,9 +160,10 @@
     addEventListener('pointermove', (e) => {
       if (!drag || !G) return;
       camX = drag.cam - (e.clientX - drag.x) / innerWidth * VW;
-      clampCam(); updateCam();
+      clampCam(); updateCam(); G.userCam = performance.now(); // a long drag keeps the camera where the finger put it
     });
     addEventListener('pointerup', () => { drag = null; });
+    addEventListener('pointercancel', () => { drag = null; });
     gl.addEventListener('wheel', (e) => {
       if (!G) return;
       camX += (e.deltaX || e.deltaY) * 0.01; clampCam(); updateCam(); G.userCam = performance.now();

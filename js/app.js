@@ -54,10 +54,10 @@
     return out;
   }
   // a new unit joins the formation by itself while there is room (slots and cost)
-  function grant(id) {
+  function grant(id, keepOut) {
     if (save.owned[id]) return false;
     save.owned[id] = 1;
-    if (fits(id)) save.deck.push(id);
+    if (!keepOut && fits(id)) save.deck.push(id); // (the tutorial's pull leaves the squad to the player)
     return true;
   }
 
@@ -74,7 +74,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.17'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.18'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -172,6 +172,7 @@
     {
       const el = document.createElement('div');
       el.className = 'mis' + (s.claimed ? ' claimed' : s.done ? ' done' : '');
+      el.dataset.mid = m.id;
       const rw = [m.reward.tuna ? `<span class="t"><i class="tuna-i"></i>${fmt(m.reward.tuna)}</span>` : '', m.reward.parts ? `<span class="p"><i class="parts-i"></i>${fmt(m.reward.parts)}</span>` : ''].join('');
       el.innerHTML = `<div class="mi"><b>${m.name}</b><small>${m.desc}</small><div class="mbar"><i style="width:${(s.cur / s.goal) * 100}%"></i></div><small class="mp">${fmt(s.cur)} / ${fmt(s.goal)}</small></div>
         <div class="mr">${rw}</div><button class="btn${s.done && !s.claimed ? '' : ' d'}" ${s.done && !s.claimed ? '' : 'disabled'}>${s.claimed ? '완료' : s.done ? '받기' : '진행 중'}</button>`;
@@ -212,6 +213,7 @@
       const face = D.CHAPTER_REWARD[c];
       const b = document.createElement('button');
       b.className = 'chap' + (locked ? ' locked' : '') + (n >= D.PER_CH ? ' done' : '') + (isHard() ? ' hard' : '');
+      b.dataset.ch = c;
       b.innerHTML = `<div class="img" style="background-image:url(${IMG[ch.bg]})"></div>
         ${hasFull(face) ? `<img class="face" src="${FULL[face]}" alt="">` : ''}<i class="bar-top"></i>
         <span class="pc">${n}/${D.PER_CH}</span>
@@ -355,6 +357,7 @@
       const locked = s.ix > done;
       const stars = starsOf(s);
       const n = document.createElement('button');
+      n.dataset.ix = s.ix;
       n.className = 'node' + (locked ? ' locked' : ' open') + (s.ix === done ? ' cur' : '') + (s.last ? ' boss' : '') + (s.ix === selStage ? ' sel' : '');
       n.style.left = pos[i][0] + '%';
       n.style.top = pos[i][1] + '%';
@@ -399,6 +402,7 @@
   }
 
   function startStage(s) {
+    if (lobbyTut() && !s.hard && s.ix === 1) finishTutorial(); // reaching 1-2 completes the tutorial
     const key = storyBefore(s);
     // 설정 > 스토리 다시 보기: on, every stage story plays each time; off, only the ones never seen
     if (key && (!save.seen[key] || save.storyAlways)) playStory(key, () => launch(s));
@@ -621,6 +625,7 @@
     const have = owned(u.id), inDeck = save.deck.includes(u.id);
     const b = document.createElement('button');
     b.className = `ucard r-${u.rank}` + (have ? '' : ' none') + (inDeck && !price ? ' in' : '');
+    b.dataset.id = u.id;
     b.innerHTML = `<img src="${IMG['u_' + u.id]}" alt="">${rk(u.rank)}${have ? `<span class="lv">LV.${lvOf(u.id)}</span>` : ''}` +
       (have ? linkHtml(linkOf(u.id)) : '') + (inDeck && !price ? '<span class="tag">편성</span>' : '') +
       `<div class="nm">${u.name}</div>` + (price ? `<div class="price"><i class="tuna-i"></i>${fmt(price)}</div>` : '');
@@ -671,8 +676,8 @@
   }
 
   // a unit obtained again: one more core link, past full link it becomes XP. Returns { isNew, link, xp }
-  function obtain(u) {
-    if (grant(u.id)) return { isNew: true, link: 0, xp: 0 };
+  function obtain(u, keepOut) {
+    if (grant(u.id, keepOut)) return { isNew: true, link: 0, xp: 0 };
     save.link = save.link || {};
     const n = linkOf(u.id);
     if (n < D.LINK_MAX) { save.link[u.id] = n + 1; return { isNew: false, link: n + 1, xp: 0 }; }
@@ -700,6 +705,7 @@
     $('pickDesc').textContent = `${f.role} · ${f.desc} — SS 등장 시 ${Math.round(G_.featuredShare * 100)}%는 픽업 대원`;
     $('rates').innerHTML = D.RANK_ORDER.map((r) => `<span>${rk(r)}${(G_.rates[r] * 100).toFixed(0)}%</span>`).join('') + `<span>· 중복은 코어 링크 +1 (최대 ${D.LINK_MAX})</span>`;
     $('pity').innerHTML = `SS 확정까지 <b>${G_.pity - save.pity}</b>회 · 픽업 ${f.name} ${(G_.rates.SS * G_.featuredShare * 100).toFixed(1)}%<div class="pity-bar"><i style="width:${(save.pity / G_.pity) * 100}%"></i></div>`;
+    $('ownParts').textContent = fmt(save.parts); // the making's currency, next to its buttons
     $('pull1').disabled = save.parts < G_.cost1;
     $('pull10').disabled = save.parts < G_.cost10;
     const box = $('ssList');
@@ -756,6 +762,7 @@
   }
 
   function pull(n) {
+    if (n === 10 && !save.tut && !save.tutPulled) return showResult(tutorialPull());
     const cost = n === 10 ? G_.cost10 : G_.cost1;
     if (save.parts < cost) return GAME.toast('부품이 부족합니다');
     save.parts -= cost;
@@ -924,6 +931,103 @@
     }
   }
 
+  // ── the tutorial after 1-1: making → squad → missions → 1-2 (the coach in the lobby) ──
+  // The first 10-pull has a fixed result, and a skip reaches exactly the state of finishing it (same functions).
+  const TUT_PULL = ['daphne', 'banshee', 'sylphid', 'daphne', 'amy', 'banshee', 'andvari', 'daphne', 'sylphid', 'valkyrie'];
+  const TUT_ADD = 'valkyrie'; // the S of that pull: the player puts her in the squad
+  function tutorialPull() {
+    save.parts = Math.max(0, save.parts - G_.cost10);
+    save.pulls += 10; save.pity += 10;
+    save.tutPulled = 1;
+    const out = TUT_PULL.map((id) => Object.assign({ u: D.UNIT[id] }, obtain(D.UNIT[id], true)));
+    persist();
+    return out;
+  }
+  const navBtn = (p) => document.querySelector(`.nav[data-pane="${p}"]`);
+  const modalBtn = (label) => [...document.querySelectorAll('#modal.show button')].find((b) => b.textContent.trim() === label);
+  // each step: the pane it happens in, its target, its line, and when it is done
+  const LT = [
+    { pane: 'gacha', el: () => (gtab === 'making' ? $('pull10') : document.querySelector('.gtab[data-g="making"]')),
+      text: '전투에서 얻은 <b>부품</b>으로 새 대원을 <b>제조</b>합니다. <b>10회 제조</b>를 눌러 보세요!', done: () => !!save.tutPulled },
+    { pane: 'squad', el: () => modalBtn('편성') || document.querySelector(`#squadList .ucard[data-id="${TUT_ADD}"]`),
+      text: () => (modalBtn('편성') ? '<b>편성</b>을 눌러 발키리를 출격 대원에 넣으세요.' : '새로 합류한 <b>발키리</b>를 눌러 편성에 넣어 봅시다.'),
+      done: () => save.deck.includes(TUT_ADD) },
+    { pane: 'missions', el: () => document.querySelector('#missionList .mis[data-mid="tut1"] button'),
+      text: '<b>임무</b>를 달성하면 보상을 받습니다. <b>받기</b>를 눌러 보세요!', done: () => !!(save.claimed || {}).tut1 },
+    { pane: 'campaign', el: () => (chapterOpen !== 0 ? document.querySelector('#chapterList .chap[data-ch="0"]')
+      : selStage !== 1 ? document.querySelector('#pStages .node[data-ix="1"]') : $('btnGo')),
+      text: () => (chapterOpen !== 0 ? '준비 완료! <b>CHAPTER 1</b>로 돌아갑니다.' : selStage !== 1 ? '다음 작전 <b>1-2</b>를 선택하세요.' : '<b>출격</b>! 이제부터는 사령관의 판단에 맡깁니다.'),
+      done: () => !!save.tut },
+  ];
+  const PANE_NAME = { gacha: '제조', squad: '대원', missions: '임무', campaign: '작전' };
+  // the coach is in the lobby: after 1-1, until 1-2 is launched
+  const lobbyTut = () => !save.tut && !noSave && save.cleared >= 1;
+  function lobbyTutTick() {
+    const coach = $('lcoach');
+    const on = lobbyTut() && $('lobby').classList.contains('show') && !$('story').classList.contains('show') && !$('gachaResult').classList.contains('show');
+    $('tutSkip').classList.toggle('show', !save.tut && !noSave && (on || !!tut));
+    if (!on) { coach.classList.remove('show'); document.querySelectorAll('.lpulse').forEach((e) => e.classList.remove('lpulse')); return; }
+    save.tutStep = save.tutStep || 0;
+    while (save.tutStep < LT.length && LT[save.tutStep].done()) { save.tutStep++; persist(); }
+    const s = LT[Math.min(save.tutStep, LT.length - 1)];
+    let el, text;
+    if (pane !== s.pane && !($('modal').classList.contains('show') && s.pane === 'squad')) { el = navBtn(s.pane); text = `<b>${PANE_NAME[s.pane]}</b> 탭으로 이동하세요.`; }
+    else { el = s.el(); text = typeof s.text === 'function' ? s.text() : s.text; }
+    if (!el || !el.offsetParent) { coach.classList.remove('show'); return; }
+    if (!el.classList.contains('lpulse')) { document.querySelectorAll('.lpulse').forEach((e) => e.classList.remove('lpulse')); el.classList.add('lpulse'); }
+    if ($('lcoachText').innerHTML !== text) $('lcoachText').innerHTML = text;
+    coach.classList.add('show');
+    placeCoach(coach, $('lcoachArrow'), el);
+  }
+  setInterval(lobbyTutTick, 200);
+  // a bubble next to its target: above it in the lower part of the screen, below it otherwise
+  function placeCoach(coach, arrow, el) {
+    const r = el.getBoundingClientRect(), w = coach.offsetWidth, h = coach.offsetHeight;
+    const below = r.top < innerHeight * 0.4;
+    const x = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    coach.style.left = x + 'px';
+    coach.style.top = (below ? r.bottom + 14 : r.top - h - 14) + 'px';
+    coach.classList.toggle('up', below);
+    coach.classList.toggle('down', !below);
+    arrow.style.left = Math.max(14, Math.min(w - 14, r.left + r.width / 2 - x)) + 'px';
+  }
+  // skip: the same end state as playing it through (1-1 cleared, the fixed pull, 발키리 in the squad, the mission
+  // claimed), then the stage map at 1-2
+  function finishTutorial() {
+    if (save.tut) return;
+    save.tut = 1; save.tutBattle = 1; save.tutStep = LT.length;
+    persist();
+    $('lcoach').classList.remove('show'); $('tutSkip').classList.remove('show');
+    document.querySelectorAll('.lpulse').forEach((e) => e.classList.remove('lpulse'));
+  }
+  function skipTutorial() {
+    if (GAME.state) GAME.stop();
+    tut = null; $('coach').classList.remove('show'); closeModal();
+    if (story) { const st = story; story = null; if (st.typing) clearInterval(st.typing); $('story').classList.remove('show'); }
+    if (save.cleared < 1) { // 1-1 as a first clear
+      const st0 = D.STAGES[0];
+      save.cleared = 1; save.stars[0] = Math.max(save.stars[0] || 0, 3); save.seen[storyBefore(st0)] = 1;
+      gain(D.reward(st0, 'first'));
+    }
+    if (!save.tutPulled) tutorialPull();
+    if (!save.deck.includes(TUT_ADD) && fits(TUT_ADD)) save.deck.push(TUT_ADD);
+    const m = D.MISSIONS.find((x) => x.id === 'tut1');
+    save.claimed = save.claimed || {};
+    if (!save.claimed.tut1) { save.claimed.tut1 = 1; save.tuna += m.reward.tuna; save.parts += m.reward.parts; }
+    finishTutorial();
+    mode = 'normal';
+    openLobby('campaign', 0);
+    selStage = 1; renderStages();
+    GAME.toast('튜토리얼을 건너뛰었습니다');
+  }
+  $('tutSkip').onclick = () => {
+    AUDIO.play('click', 0.5);
+    modal('튜토리얼 건너뛰기', '튜토리얼을 마친 것과 같은 상태로 시작합니다.<br>(1-1 클리어 · 첫 제조 결과 · 발키리 편성 · 임무 보상)', [
+      ['건너뛰기', skipTutorial, 'o'],
+      ['계속하기', closeModal, 'd'],
+    ]);
+  };
+
   // ── first battle coaching (1-1 until finished once) ────
   // each step: target element, text, done(G) — advanced from the HUD sync
   const TUT = [
@@ -936,7 +1040,7 @@
   let tut = null;
   function tutorialStart(st) {
     TUT.forEach((s) => { delete s.waited; });
-    tut = !save.tut && !st.hard && !st.infinite && st.ix === 0 ? { i: 0, t: 0, last: performance.now() } : null;
+    tut = !save.tut && !save.tutBattle && !st.hard && !st.infinite && !st.daily && st.ix === 0 ? { i: 0, t: 0, last: performance.now() } : null;
     $('coach').classList.remove('show');
   }
   function tutorialStep(G) {
@@ -953,7 +1057,7 @@
     if (s.done(G, tut.t)) {
       document.querySelectorAll('.pulse-target').forEach((e) => e.classList.remove('pulse-target'));
       tut.i++; tut.t = 0;
-      if (tut.i >= TUT.length) { tut = null; save.tut = 1; persist(); coach.classList.remove('show'); }
+      if (tut.i >= TUT.length) { tut = null; save.tutBattle = 1; persist(); coach.classList.remove('show'); }
       return;
     }
     const el = s.el();
@@ -985,7 +1089,7 @@
       ['확인', back || closeModal],
       ['도움말', () => openHelp(), 'd'],
       ['세이브 내보내기 / 불러오기', () => openSaveIO(), 'd'],
-      ['튜토리얼 다시 보기', () => { save.tut = 0; persist(); closeModal(); GAME.toast('1-1 출격 시 튜토리얼이 나옵니다'); }, 'd'],
+      ['튜토리얼 다시 보기', () => { save.tutBattle = 0; persist(); closeModal(); GAME.toast('1-1 출격 시 전투 튜토리얼이 나옵니다'); }, 'd'],
       ['세이브 초기화', () => {
         modal('세이브 초기화', '모든 진행 · 대원 · 재화가 사라집니다. 정말 초기화할까요?', [
           ['초기화', () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ } location.reload(); }, 'o'],
@@ -1161,9 +1265,9 @@
         const next = pool[st.ix + 1];
         const nextOpen = next && (!st.hard || save.cleared >= D.CHAPTERS[next.chapter].first + D.PER_CH);
         if (outro) btns.push(['스토리 보기', () => { closeModal(); GAME.stop(); show('lobby'); playStory(outro, () => titleCard(st.chapter, () => { mode = 'normal'; openLobby('campaign', next ? next.chapter : st.chapter); })); }]);
-        else if (nextOpen) btns.push(['다음 작전', () => { closeModal(); GAME.stop(); startStage(next); }]);
+        else if (nextOpen && !lobbyTut()) btns.push(['다음 작전', () => { closeModal(); GAME.stop(); startStage(next); }]); // the tutorial goes back to the lobby first
       }
-      btns.push([st.infinite ? '나가기' : '작전 지도', leave, 'd']);
+      btns.push([st.infinite ? '나가기' : lobbyTut() ? '계속' : '작전 지도', leave, lobbyTut() ? '' : 'd']);
       modal('', body, btns);
       if (joined && window.VOICE && VOICE[joined.id]) AUDIO.voice(VOICE[joined.id]);
     } else {

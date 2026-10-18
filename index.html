@@ -84,6 +84,7 @@
         <div class="rates" id="rates"></div>
         <div class="pity" id="pity"></div>
         <div class="pull-btns">
+          <div class="pull-own" title="보유 부품: 제조에 사용"><small>보유 부품</small><b><i class="parts-i"></i><span id="ownParts">0</span></b></div>
           <button id="pull1" class="btn d">1회 제조<small><i class="parts-i"></i>500</small></button>
           <button id="pull10" class="btn">10회 제조<small><i class="parts-i"></i>5000 · S 이상 확정</small></button>
         </div>
@@ -169,6 +170,10 @@
   <div class="comm" id="comm"><img id="commImg" alt=""><div><b id="commName"></b><span id="commText"></span></div></div>
   <div class="coach" id="coach"><div class="coach-text" id="coachText"></div><i class="coach-arrow" id="coachArrow"></i></div>
 </section>
+
+<!-- lobby tutorial: a coach bubble over every screen, and a skip button -->
+<div class="coach lcoach" id="lcoach"><div class="coach-text" id="lcoachText"></div><i class="coach-arrow" id="lcoachArrow"></i></div>
+<button class="tut-skip" id="tutSkip">튜토리얼 건너뛰기 ›</button>
 
 <!-- popup -->
 <div id="modal" class="modal">
