@@ -189,7 +189,18 @@ window.FULL = {
 "labiata": "assets/full/labiata.webp",
 "titania": "assets/full/titania.webp",
 "empress": "assets/full/empress.webp",
-"fafnir": "assets/full/fafnir.webp"
+"fafnir": "assets/full/fafnir.webp",
+"zero": "assets/full/zero.webp",
+"hela": "assets/full/hela.webp",
+"saraqael": "assets/full/saraqael.webp",
+"lemonadealpha": "assets/full/lemonadealpha.webp",
+"sleipnir": "assets/full/sleipnir.webp",
+"brunhild": "assets/full/brunhild.webp",
+"khan": "assets/full/khan.webp",
+"lrl": "assets/full/lrl.webp",
+"constantia": "assets/full/constantia.webp",
+"mercury": "assets/full/mercury.webp",
+"ramiel": "assets/full/ramiel.webp"
 };
 window.VOICE = {
 "brownie": "assets/voice/brownie.mp3",

@@ -130,7 +130,7 @@ VOICE_DIR = SND + "/Voice"
 
 def fullbody(model):
     """The unit's full-body illustration in its base outfit (the one its battle rig wears); none when that picture
-    only exists split into parts. Skins are not used: the page falls back to the portrait."""
+    only exists split into parts (build_gallery reconstructs SS parts with build_fullbody). Skins are not used."""
     p = FULL_DIR + "/FullbodyIMG_%s.png" % model
     return p if os.path.exists(p) else None
 
@@ -218,6 +218,13 @@ def build_gallery():
     full, voice, bark = {}, {}, {}
     for uid, model in UNITS.items():
         p = fullbody(model)
+        if not p and uid in list(UNITS)[16:]:
+            import build_fullbody
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), "ui_ref"))
+            import ngui
+            build_fullbody.sd._guid_index = ngui.guid_index()
+            build_fullbody.compose(model, os.path.join(fdir, uid + ".webp"))
+            full[uid] = "assets/full/%s.webp" % uid
         if p:
             im = Image.open(p).convert("RGBA")
             im = im.crop(im.getbbox())

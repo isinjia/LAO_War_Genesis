@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.59'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.60'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -973,7 +973,7 @@
     save.pickup = featured().id; save.pickupV = 1; persist();
   }
   function selectPickup() {
-    modal('SS 픽업 선택', `<div class="pickup-options">${SS.map((u) => `<button data-pickup="${u.id}" class="${u.id === featured().id ? 'selected' : ''}" aria-pressed="${u.id === featured().id}"><img src="${IMG['u_' + u.id]}" alt=""><b>${u.name}</b><small>${u.id === featured().id ? '선택 중' : '선택'}</small></button>`).join('')}</div><p class="pickup-note">무료로 변경할 수 있으며, 확정까지 누적한 횟수는 유지됩니다.</p>`, [['닫기', closeModal, 'd']], true);
+    modal('SS 픽업 선택', `<div class="pickup-options">${SS.map((u) => `<button data-pickup="${u.id}" class="${u.id === featured().id ? 'selected' : ''}" aria-pressed="${u.id === featured().id}"><img src="${FULL[u.id]}" alt=""><b>${u.name}</b><small>${u.id === featured().id ? '선택 중' : '선택'}</small></button>`).join('')}</div><p class="pickup-note">무료로 변경할 수 있으며, 확정까지 누적한 횟수는 유지됩니다.</p>`, [['닫기', closeModal, 'd']], true);
     document.querySelectorAll('[data-pickup]').forEach((button) => { button.onclick = () => {
       save.pickup = button.dataset.pickup; persist(); AUDIO.play('click'); closeModal(); renderGacha();
     }; });

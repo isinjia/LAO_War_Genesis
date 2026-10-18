@@ -43,6 +43,8 @@
     await step('every unit has a rig, portrait and icon', () => {
       const miss = D.UNITS.filter((u) => !IMG['u_' + u.id]).map((u) => u.id);
       if (miss.length) throw new Error('icons ' + miss);
+      const noFull = D.UNITS.filter(u => u.rank === 'SS' && !FULL[u.id]).map(u => u.id);
+      if (noFull.length) throw new Error('SS full-body art missing: ' + noFull);
       return 'ok';
     });
     await step('operations: three modes, chapter navigation and no title exit', () => {

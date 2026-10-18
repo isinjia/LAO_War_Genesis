@@ -1120,3 +1120,5 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
 .pickup-options small { color: #ffdf79; font-size: 11px; }
 .pickup-note { color: #bdc9d5; font-size: 12px; text-align: center; }
 @media(max-width: 640px) { .pickup-options { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.pickup-options img { width: 100%; height: 112px; object-fit: contain; }
+@media(max-width: 640px) { .pickup-options img { height: 96px; } }
