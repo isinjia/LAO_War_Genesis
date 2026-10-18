@@ -33,12 +33,13 @@
       // the best affordable one instead
       const cap = D.WORKER.cap[G.worker];
       let goal = -1;
-      for (let i = deck.length - 1; i >= 2; i--) if (G.cds[i] <= 0 && deck[i].def.cost <= cap) { goal = i; break; }
+      const free = (i) => G.cds[i] <= 0 && !(GAME.onField && GAME.onField(deck[i].def)); // an SS already fighting can't be sent again
+      for (let i = deck.length - 1; i >= 2; i--) if (free(i) && deck[i].def.cost <= cap) { goal = i; break; }
       if (goal >= 0) {
         const wait = (deck[goal].def.cost - G.money) / D.WORKER.rate[G.worker];
         if (G.money >= deck[goal].def.cost) GAME.deploy(goal);
         else if (wait > 4 || threat) {
-          for (let i = goal - 1; i >= 2; i--) if (G.cds[i] <= 0 && G.money >= deck[i].def.cost) { GAME.deploy(i); break; }
+          for (let i = goal - 1; i >= 2; i--) if (free(i) && G.money >= deck[i].def.cost) { GAME.deploy(i); break; }
         }
       }
       if (G.cannon >= D.CANNON.charge && G.enemies.some((e) => !e.dead && e.x < 12)) GAME.fireCannon();

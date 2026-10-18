@@ -1039,7 +1039,9 @@
       d.cd.style.height = cd > 0 ? (cd / d.def.cd) * 100 + '%' : '0';
       const poor = G.money < d.def.cost;
       d.b.classList.toggle('poor', poor);
-      d.b.classList.toggle('ready', !poor && cd <= 0);
+      const busy = GAME.onField(d.def); // an SS already fighting: the card waits for it
+      d.b.classList.toggle('busy', busy);
+      d.b.classList.toggle('ready', !poor && cd <= 0 && !busy);
       if (d.sk) { // SS: the skill chip shows the best charge among the deployed copies
         const k = GAME.skillState(i);
         d.sk.classList.toggle('on', k != null && k >= 0);

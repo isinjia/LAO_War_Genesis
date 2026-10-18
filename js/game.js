@@ -439,6 +439,8 @@
     f.holder.parent && f.holder.parent.remove(f.holder);
   }
 
+  // an SS fights alone: one of each on the field at a time (a fallen one can be sent again)
+  const onField = (def) => def.rank === 'SS' && G.allies.some((a) => !a.dead && a.def.id === def.id);
   function deploy(i) {
     if (!G || G.over || G.paused) return false;
     const slot = G.deck[i];
@@ -446,6 +448,7 @@
     const def = slot.def;
     if (G.cds[i] > 0 || G.money < def.cost) { AUDIO.play('fail', 0.6); return false; }
     if (G.allies.length >= 40) { toast('필드가 가득 찼습니다'); return false; }
+    if (onField(def)) { toast(`${def.name}은(는) 이미 출격 중입니다 (SS는 한 명씩)`); AUDIO.play('fail', 0.6); return false; }
     G.money -= def.cost;
     const link = slot.link || 0; // core link: duplicates make the unit stronger
     G.cds[i] = def.cd * D.linkCd(link) * Math.pow(0.88, buffN(G.st, 'cd')) * (G.syn.has('lean') ? 0.7 : 1) *
@@ -1185,9 +1188,11 @@
   }
 
   // an ordered skill: the HUD shows its cut-in, the battle holds its breath
-  // the full cut-in plays at most every 4 s: several copies (or several S / SS) firing together get one
+  // SS: every skill gets the full cut-in (one of each on the field, so it never stacks; two different SS firing
+  // together wait 1.2 s for the screen). S: a short hitstop and the SKILL callout only.
   function cutIn(f) {
-    if (G.t - (G.lastCut || -99) < 4) { hitstop(0.06); return; }
+    if (f.def.rank !== 'SS') { hitstop(0.06); return; }
+    if (G.t - (G.lastCut || -99) < 1.2) { hitstop(0.08); return; }
     G.lastCut = G.t;
     hitstop(0.25);
     shake(0.2, 0.3);
@@ -1440,7 +1445,7 @@
     setSpeed(s) { if (G && !(G.over && G.st.finale)) G.speed = s; },
     setPaused(p) { if (G) G.paused = p; },
     wallet: () => (G ? wallet() : 0),
-    orderSkill, skillState,
+    orderSkill, skillState, onField: (def) => !!G && onField(def),
     TIME_LIMIT: 600,
     // tests: every effect sheet in a row at the camera's centre, frozen at frame `u` (0..1)
     fxTest(u = 0.3) {
