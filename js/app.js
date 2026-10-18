@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.29'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.30'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -159,7 +159,7 @@
     $('tbEn').textContent = en; $('tbKo').textContent = ko;
     $('lobbyBg').style.backgroundImage = `url(${inChapter ? IMG[D.CHAPTERS[chapterOpen].bg] : IMG.bg_title})`;
     if (pane === 'campaign') inChapter ? renderStages() : renderChapters();
-    if (pane === 'squad') renderSquad();
+    if (pane === 'squad') renderSquad(); else { closeCardMenu(); swapIn = null; }
     if (pane === 'gacha') renderGacha();
     if (pane === 'missions') renderMissions();
   }
@@ -617,7 +617,7 @@
     b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt=""><i class="crc-cost">${u.cost}</i>${rk(u.rank)}` +
       `</div>` +
       `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
-      (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-name">${u.name}</div>`);
+      (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-xp crc-name">${u.name}</div>`);
     b.title = `${u.name} (${u.rank} · 편성 코스트 ${D.DECK_COST[u.rank]})`;
     b.onclick = onClick;
     return b;
@@ -640,8 +640,11 @@
     grid.innerHTML = '';
     for (let i = 0; i < DECK_MAX; i++) {
       const id = save.deck[i];
-      if (id) grid.appendChild(crCard(D.UNIT[id], () => openDetail(D.UNIT[id])));
-      else { const e = document.createElement('div'); e.className = 'crc empty'; e.innerHTML = '<i>+</i>'; grid.appendChild(e); }
+      if (id) { const c = crCard(D.UNIT[id], () => (swapIn ? swapInto(i) : cardMenu(D.UNIT[id], c))); if (swapIn) c.classList.add('swap-target'); grid.appendChild(c); }
+      else { // the same frame as a card (art / level / bar), so the grid never changes height
+        const e = document.createElement('div'); e.className = 'crc empty';
+        e.innerHTML = '<div class="crc-art"><i>+</i></div><div class="crc-lv">&nbsp;</div><div class="crc-xp ghost"></div>'; grid.appendChild(e);
+      }
     }
     const avg = save.deck.length ? Math.round(save.deck.reduce((a, id) => a + D.UNIT[id].cost, 0) / save.deck.length) : 0;
     $('deckAvg').innerHTML = `<i class="pw"></i>평균 전력 <b>${avg}</b>`;
@@ -660,8 +663,84 @@
     box.innerHTML = '';
     D.UNITS.filter((u) => filter === 'ALL' || u.rank === filter)
       .sort((a, b) => (owned(b.id) - owned(a.id)) || (rankIx(b) - rankIx(a)) || (a.cost - b.cost))
-      .forEach((u) => box.appendChild(crCard(u, () => openDetail(u))));
+      .forEach((u) => { const c = crCard(u, () => cardMenu(u, c)); box.appendChild(c); });
   }
+  // Clash Royale-style card menu: right under the tapped card, over the layout (nothing moves)
+  //  not in the deck: 정보 / 사용     in the deck: 정보 / 제거     upgradable: 업그레이드 (XP) / 사용 or 제거
+  let swapIn = null; // a card waiting for a deck slot to replace (the deck was full)
+  function closeCardMenu() {
+    const m = $('cardMenu'); m.classList.remove('show'); m.innerHTML = '';
+    document.querySelectorAll('.crc.sel').forEach((e) => e.classList.remove('sel'));
+  }
+  function cardMenu(u, el) {
+    const m = $('cardMenu');
+    if (m.classList.contains('show') && m.dataset.id === u.id) return closeCardMenu();
+    closeCardMenu();
+    AUDIO.play('click', 0.45, 1.2);
+    const have = owned(u.id), inDeck = save.deck.includes(u.id), lv = have ? lvOf(u.id) : 0;
+    const need = have && lv < D.MAX_LV ? D.cardsNeed(u.rank, lv) : 0, cost = have ? D.xpNeed(u.rank, lv) : 0;
+    const upgradable = have && need && cardsOf(u.id) >= need && save.xp >= cost;
+    const btns = [];
+    if (upgradable) btns.push(['up', `<b>업그레이드</b><small><i class="xp-i"></i>${fmt(cost)}</small>`]);
+    else btns.push(['info', '<b>정보</b>']);
+    if (have) btns.push(inDeck ? ['remove', '<b>제거</b>'] : ['use', '<b>사용</b>']);
+    m.innerHTML = btns.map(([k, h]) => `<button class="cm-${k}" data-k="${k}">${h}</button>`).join('');
+    m.dataset.id = u.id;
+    m.querySelectorAll('button').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); cardAction(u, b.dataset.k); }; });
+    el.classList.add('sel');
+    // place it under the card (above it when the card is near the bottom)
+    const r = el.getBoundingClientRect();
+    m.style.width = Math.max(96, r.width + 16) + 'px';
+    m.classList.add('show');
+    const h = m.offsetHeight, below = r.bottom + h + 8 < innerHeight - 70;
+    const left = Math.max(6, Math.min(innerWidth - m.offsetWidth - 6, r.left + r.width / 2 - m.offsetWidth / 2));
+    m.style.left = left + 'px';
+    m.style.setProperty('--ax', r.left + r.width / 2 - left + 'px'); // the arrow points at the card even when the menu is pushed in
+    m.style.top = (below ? r.bottom + 4 : r.top - h - 4) + 'px';
+    m.classList.toggle('above', !below);
+  }
+  function cardAction(u, k) {
+    if (k === 'info') { closeCardMenu(); return openDetail(u); }
+    if (k === 'up') {
+      const lv = lvOf(u.id), need = D.cardsNeed(u.rank, lv), cost = D.xpNeed(u.rank, lv);
+      if (cardsOf(u.id) < need || save.xp < cost) return GAME.toast('카드나 XP가 부족합니다');
+      save.xp -= cost; save.cards[u.id] = cardsOf(u.id) - need; save.lv[u.id] = lv + 1; persist();
+      AUDIO.play('levelup'); closeCardMenu(); refresh();
+      GAME.toast(`${u.name} 레벨 ${lv + 1}!`);
+      return;
+    }
+    if (k === 'remove') {
+      if (save.deck.length <= 1) return GAME.toast('최소 1명은 편성해야 합니다');
+      save.deck = save.deck.filter((x) => x !== u.id); persist();
+      AUDIO.play('click', 0.45, 0.7); closeCardMenu(); renderSquad();
+      return;
+    }
+    if (k === 'use') {
+      closeCardMenu();
+      if (save.deck.length < DECK_MAX && fits(u.id)) { save.deck.push(u.id); persist(); AUDIO.play('click', 0.5, 1.1); renderSquad(); return; }
+      // the deck is full (or over its cost): pick the card to replace
+      swapIn = u.id; renderSquad();
+      $('deckEdit').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      GAME.toast(`교체할 덱 카드를 고르세요 (${u.name})`);
+    }
+  }
+  function swapInto(i) {
+    const id = swapIn, out = save.deck[i];
+    const next = save.deck.slice(); next[i] = id;
+    if (deckCost(next) > D.DECK_CAP) return GAME.toast(`편성 코스트 초과 (${deckCost(next)} > ${D.DECK_CAP})`);
+    save.deck = next; swapIn = null; persist();
+    AUDIO.play('click', 0.5, 1.1); renderSquad();
+    GAME.toast(`${D.UNIT[out].name} → ${D.UNIT[id].name}`);
+  }
+  // a tap anywhere else closes the menu / leaves the replace mode
+  addEventListener('pointerdown', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if ($('cardMenu').classList.contains('show') && !t.closest('#cardMenu, .crc')) closeCardMenu();
+    if (swapIn && !t.closest('#deckEdit .crc')) { swapIn = null; renderSquad(); }
+  }, true);
+  document.addEventListener('scroll', () => closeCardMenu(), true);
+
   function openSynergies() {
     const on = new Set(D.synergiesOf(save.deck.map((id) => D.UNIT[id])));
     modal('편성 시너지', `<div class="syn" style="margin:0">` +
@@ -1032,8 +1111,8 @@
   const LT = [
     { pane: 'gacha', el: () => (gtab === 'making' ? $('pull10') : document.querySelector('.gtab[data-g="making"]')),
       text: '전투에서 얻은 <b>부품</b>으로 새 대원을 <b>제조</b>합니다. <b>10회 제조</b>를 눌러 보세요!', done: () => !!save.tutPulled },
-    { pane: 'squad', el: () => modalBtn('편성') || document.querySelector(`#squadList .crc[data-id="${TUT_ADD}"]`),
-      text: () => (modalBtn('편성') ? '<b>편성</b>을 눌러 발키리를 출격 대원에 넣으세요.' : '새로 합류한 <b>발키리</b>를 눌러 편성에 넣어 봅시다.'),
+    { pane: 'squad', el: () => ($('cardMenu').dataset.id === TUT_ADD && document.querySelector('#cardMenu.show .cm-use')) || document.querySelector(`#squadList .crc[data-id="${TUT_ADD}"]`),
+      text: () => (document.querySelector('#cardMenu.show .cm-use') ? '<b>사용</b>을 눌러 발키리를 덱에 넣으세요.' : '새로 합류한 <b>발키리</b> 카드를 눌러 보세요.'),
       done: () => save.deck.includes(TUT_ADD) },
     { pane: 'missions', el: () => document.querySelector('#missionList .mis[data-mid="tut1"] button'),
       text: '<b>임무</b>를 달성하면 보상을 받습니다. <b>받기</b>를 눌러 보세요!', done: () => !!(save.claimed || {}).tut1 },
@@ -1073,7 +1152,7 @@
     if (!lobbyOn && !battleOn) return;
     const target = document.querySelector(lobbyOn ? '.lpulse' : '.pulse-target');
     if (!target) return; // nothing pointed at (a step waiting): free play
-    if (target.contains(t) || t.closest('#tutSkip, #modal, #gachaResult, #story, #lcoach, #coach') || (battleOn && t.id === 'gl')) return;
+    if (target.contains(t) || t.closest('#tutSkip, #modal, #gachaResult, #story, #lcoach, #coach, #cardMenu') || (battleOn && t.id === 'gl')) return;
     e.stopPropagation(); e.preventDefault();
     if (e.type === 'pointerdown') { // a nudge towards the right spot
       target.classList.remove('tut-nudge'); void target.offsetWidth; target.classList.add('tut-nudge');

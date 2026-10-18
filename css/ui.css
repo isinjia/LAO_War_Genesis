@@ -898,3 +898,56 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 .card-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; } .card-row > span { font-weight: 700; font-size: 13px; } .card-row .crc-xp { flex: 1; height: 16px; } .card-row .crc-xp span { font-size: 11px; line-height: 16px; }
 .card-row small { font-size: 11px; color: #c9b8ff; }
 .crc.full .crc-xp i { background: linear-gradient(180deg, #a8ff6a, #3fbf2e); }
+
+/* ── fixed layouts: sized for the largest content, so nothing grows or shrinks with what is shown ── */
+/* top-bar chips: room for 999,999 in fixed-width digits */
+.ri b { display: inline-block; min-width: 7ch; text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .ri b { min-width: 6.2ch; } }
+/* numbers that tick: fixed-width digits everywhere they change in place */
+.timer, .pw-num, .crc-xp span, .cr-avg b, .cr-cost, .slot .c, .side-btn .cost, .mis .mr, .si-rewards, .gres-grid .dup { font-variant-numeric: tabular-nums; }
+/* stage info: the tallest stage's height on phones (desktop rows are already fixed) */
+@media (max-width: 640px) { .sinfo { min-height: 330px; box-sizing: border-box; } }
+/* deck / collection cards: one height for owned, unowned and empty slots */
+.crc-lv { height: 16px; line-height: 16px; margin-top: 4px; overflow: hidden; white-space: nowrap; }
+.crc-xp { flex: none; }
+.crc-xp.crc-name { margin-top: 3px; background: none; box-shadow: none; font-size: 11px; line-height: 14px; color: #aab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crc-xp.ghost { background: rgba(255, 255, 255, 0.05); box-shadow: none; }
+.crc.empty { justify-content: flex-start; min-height: 0; padding: 4px 4px 5px; }
+.crc.empty .crc-art { display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.04); }
+.crc.empty .crc-art i { font-style: normal; font-size: 26px; color: rgba(255, 255, 255, 0.25); }
+@media (max-width: 640px) { .crc-lv { height: 13px; line-height: 13px; } .crc-xp.crc-name { font-size: 9px; line-height: 11px; } .crc.empty { padding: 3px 3px 4px; } }
+/* mission rewards: a fixed column, so every card's button lines up */
+.mis .mr { width: 112px; flex: none; }
+@media (max-width: 640px) { .mis .mr { width: 84px; font-size: 11px; } }
+/* 전력 gauge: the MAX badge overlays the bar's end instead of pushing it */
+.power.full::after { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); z-index: 1; }
+.power .pw-num { min-width: 5.2em; }
+/* swap button: its place is kept even when the deck has five or fewer */
+@media (max-width: 640px) { .swap { display: flex; visibility: hidden; flex: none; width: 44px; } .swap.on { visibility: visible; } }
+
+/* card bars: readable numbers (bold, outlined, larger) */
+.crc-xp { height: 16px; border-radius: 8px; }
+.crc-xp span { font-family: var(--en); font-size: 12px; font-weight: 900; line-height: 16px; color: #fff; letter-spacing: 0.3px;
+  text-shadow: 0 0 2px #000, 0 0 2px #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
+.crc-lv { font-size: 13px; }
+@media (max-width: 640px) { .crc-xp { height: 14px; } .crc-xp span { font-size: 10.5px; line-height: 14px; } .crc-lv { font-size: 11px; } }
+/* the card menu */
+.card-menu { position: fixed; z-index: 40; display: none; flex-direction: column; gap: 4px; padding: 5px; box-sizing: border-box;
+  background: rgba(10, 12, 16, 0.96); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 8px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6); }
+.card-menu.show { display: flex; animation: cmin 0.14s ease-out; }
+.card-menu::before { content: ''; position: absolute; left: var(--ax, 50%); top: -7px; margin-left: -7px; border: 7px solid transparent; border-top: 0; border-bottom-color: rgba(10, 12, 16, 0.96); }
+.card-menu.above::before { top: auto; bottom: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: rgba(10, 12, 16, 0.96); }
+@keyframes cmin { from { opacity: 0; transform: translateY(-4px) scale(0.96); } }
+.card-menu button { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 38px; border-radius: 6px; color: #fff;
+  background: linear-gradient(180deg, #4a90e8, #2b62b8); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.card-menu button b { font-size: 14px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.card-menu button small { display: flex; align-items: center; gap: 3px; font-family: var(--en); font-weight: 900; font-size: 12px; }
+.card-menu .cm-up { height: 46px; background: linear-gradient(180deg, #5fd35a, #2f9a2c); }
+.card-menu .cm-use { background: linear-gradient(180deg, #ffd23e, #e09a00); } .card-menu .cm-use b { color: #2a1c00; text-shadow: none; }
+.card-menu .cm-remove { background: linear-gradient(180deg, #ef5b5b, #b42c2c); }
+.card-menu button:active { transform: translateY(1px); }
+.xp-i { display: inline-block; width: 14px; height: 13px; background: var(--s-i_promote) center / contain no-repeat; }
+.crc.sel { transform: translateY(-3px) scale(1.03); z-index: 2; box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #fff, 0 6px 14px rgba(0, 0, 0, 0.5); }
+/* replace mode: the deck cards wiggle, waiting for the one to swap out */
+.crc.swap-target { animation: wiggle 0.5s ease-in-out infinite; }
+@keyframes wiggle { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
