@@ -56,7 +56,7 @@ SFX = {
     "win": "SFX/UI/battle_win.wav",
     "clear": "SFX/UI/stage_clear.wav",
     "warning": "SFX/UI/Warning_infinite.wav",
-    "click": "SFX/UI/Join_Search.wav",
+    "click": "SFX/UI/Join_Search.wav",  # cut to its first hit (TRIM): the file carries a second one at 1.4 s
     "fail": "SFX/comedy/QuestionMark.wav",
     "handgun": "SFX/Common/Atk/Shot/atk_handgun.wav",
     "spray": "SFX/Common/Atk/Shot/spray.wav",
@@ -119,6 +119,9 @@ def fit(path, size, mode="RGBA"):
 def scaled(path, w, mode="RGB"):
     im = Image.open(path).convert(mode)
     return im.resize((w, round(im.height * w / im.width)), Image.LANCZOS)
+
+
+TRIM = {"click": 0.9}  # seconds kept of a source sound (UI clicks taken from longer effects)
 
 
 FULL_DIR = r"E:/LAO_Google_QA/Assets/AssetBundleResourceSub/Texture/FullbodyImg"
@@ -280,6 +283,9 @@ def main():
             ext = os.path.splitext(p)[1].lower()
             if ff:  # every sound levelled (EBU R128): effects / voices -16 LUFS, music -21 LUFS under them
                 level = "loudnorm=I=-16:TP=-1.5:LRA=11" if folder == "sfx" else "loudnorm=I=-21:TP=-2:LRA=11"
+                if k in TRIM:  # keep only the start of the file, fading out
+                    t = TRIM[k]
+                    level = "atrim=0:%g,afade=t=out:st=%g:d=0.2,%s" % (t, max(0, t - 0.2), level)
                 out = os.path.join(d, k + ".mp3")
                 subprocess.run([ff, "-y", "-loglevel", "error", "-i", SND + "/" + p, "-af", level, "-ar", "44100"]
                                + (["-ac", "1", "-b:a", "96k"] if folder == "sfx" else ["-b:a", "128k"]) + [out], check=True)
