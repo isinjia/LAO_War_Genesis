@@ -485,6 +485,13 @@
     tx.className = 'st-text' + (who === 'sys' ? ' sys' : who === 'radio' ? ' radio' : '');
     if (unit) {
       let side = sideArg || (st.slots.L === who ? 'L' : st.slots.R === who ? 'R' : st.side);
+      const was = side === 'L' ? 'R' : 'L';
+      if (st.slots[was] === who) { // moving to the other side: leave the old one (never the same character twice)
+        st.slots[was] = null;
+        const old = $('st' + was);
+        old.classList.remove('show', 'talk', 'enter');
+        old.removeAttribute('src'); old.dataset.face = '';
+      }
       const el = $('st' + side);
       if (st.slots[side] !== who) {
         st.slots[side] = who;
