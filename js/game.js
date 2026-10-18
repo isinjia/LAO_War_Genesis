@@ -441,12 +441,15 @@
   // the picture spans the view height with its walkable band on the lane (y = 0); it repeats (mirrored) along x
   function fitBg() {
     if (!G || !G.bg) return;
-    // Keep image texels at a fixed world scale. Extend the edge pixels when
-    // zooming out instead of enlarging the image to cover the camera again.
-    const b = G.bg, top1 = (camBottom + VH) * zoom + 0.2;
-    const H1 = Math.max(top1 / (1 - b.gf), (0.2 - camBottom * zoom) / b.gf);
-    const bottom = Math.min(-H1 * b.gf, camBottom - 0.2);
-    const top = Math.max(H1 * (1 - b.gf), camBottom + VH + 0.2);
+    // Both the plane and its UVs stay fixed throughout the entire zoom range.
+    // Cover the widest camera up front; only the camera scales the background.
+    const b = G.bg, aspect = innerWidth / innerHeight;
+    const viewHeight = Math.max(8.5, Math.min(10.5, 11 / aspect));
+    const groundFrac = hudFrac >= 0 ? Math.max(0.24, Math.min(0.44, hudFrac + 0.06)) : aspect < 1 ? 0.38 : 0.37;
+    const H1 = Math.max((viewHeight * (1 - groundFrac) + 0.2) / (1 - b.gf), (0.2 + viewHeight * groundFrac) / b.gf);
+    const widestHeight = viewHeight / zMin();
+    const bottom = Math.min(-H1 * b.gf, -widestHeight * groundFrac - 0.2);
+    const top = Math.max(H1 * (1 - b.gf), widestHeight * (1 - groundFrac) + 0.2);
     const H = top - bottom;
     const width = G.len + 40;
     b.tex.wrapT = THREE.ClampToEdgeWrapping;
