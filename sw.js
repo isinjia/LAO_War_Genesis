@@ -21,7 +21,7 @@ self.addEventListener('fetch', (e) => {
     }));
     return;
   }
-  e.respondWith(fetch(req).then((res) => {
+  e.respondWith(fetch(req, { cache: 'no-cache' }).then((res) => { // revalidate: never a heuristically cached old script
     if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone()));
     return res;
   }).catch(() => caches.match(req)));

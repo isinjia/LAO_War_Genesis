@@ -836,11 +836,11 @@
       const s = deck[i];
       const b = document.createElement('button');
       b.className = 'slot' + (s ? ` r-${s.def.rank}` : ' empty');
+      let skb = null;
       if (s) {
         b.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt="">${rk(s.def.rank)}<div class="cd"></div><div class="c">${s.def.cost}</div><div class="snm">${s.def.name.replace(/ .*/, '')}</div>` +
           (s.def.rank === 'SS' || s.def.rank === 'S' ? '<span class="sk" title="스킬 명령"><i></i></span>' : '');
         // S / SS: a SKILL button of its own in the strip above the deck (full-size touch target, never a deploy by mistake)
-        let skb = null;
         if (b.querySelector('.sk')) {
           skb = document.createElement('button');
           skb.className = `skb r-${s.def.rank}`;
