@@ -642,6 +642,8 @@
     G.t += dt;
     if (G.over) { // the battle is decided: the fallen still finish their knockback and fade out
       G.overT += dt;
+      while (G.beats && G.beats.length && G.overT >= G.beats[0][0]) G.beats.shift()[1]();
+      if (!G) return; // a beat ended the battle
       for (const list of [G.allies, G.enemies]) {
         for (let i = list.length - 1; i >= 0; i--) {
           const f = list[i];
@@ -807,22 +809,24 @@
       panTo(0);
     }
     const g = G; // only this battle's result: a restart during the ending must not receive it
-    setTimeout(() => { if (G === g && G.hooks.onEnd) G.hooks.onEnd(kind); }, kind === 'win' && G.st.finale ? 7600 : 2600);
+    if (!(kind === 'win' && G.st.finale)) setTimeout(() => { if (G === g && G.hooks.onEnd) G.hooks.onEnd(kind); }, 2600); // the finale ends from its beats
   }
 
   // the last battle (8-10): the fortress goes down in a chain of blasts under letterbox bars, a white-out,
   // then the operation title before the result
+  // beats on battle time (G.overT), so a slow phone or a paused tab can't show the title before the boss has sunk
   function finale() {
-    const g = G;
     document.body.classList.add('cine', 'finale-on');
-    for (let i = 0; i < 18; i++) setTimeout(() => {
-      if (G !== g) return;
+    const beats = [];
+    for (let i = 0; i < 18; i++) beats.push([0.4 + i * 0.19, () => {
       const x = G.len - 2 + Math.random() * 4, y = Math.random() * 4.5;
       sheet('burst', x, y, 0xffd27a, 2 + Math.random() * 1.6, 0.3); sheet('smoke', x, y, 0xffb070, 3, 0.9, { grow: 0.6 });
       debris(x, y, 6, 0xffc060); shake(0.3, 0.35); if (i % 3 === 0) AUDIO.play('expB', 0.7);
-    }, 400 + i * 190);
-    setTimeout(() => { if (G !== g) return; const el = document.getElementById('finale'); el.classList.add('flash'); AUDIO.play('expB'); shake(0.8, 1.2); hitstop(0.3); }, 4000);
-    setTimeout(() => { if (G !== g) return; document.getElementById('finale').classList.add('show'); }, 4500);
+    }]);
+    beats.push([4.0, () => { document.getElementById('finale').classList.add('flash'); AUDIO.play('expB'); shake(0.8, 1.2); hitstop(0.3); }]);
+    beats.push([4.5, () => document.getElementById('finale').classList.add('show')]);
+    beats.push([7.6, () => G.hooks.onEnd && G.hooks.onEnd('win')]);
+    G.beats = beats;
   }
 
   // ── economy / cannon ───────────────────────────────────

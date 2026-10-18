@@ -720,3 +720,6 @@ body.cine .hud-top { opacity: 0; transition: opacity 0.2s; }
 
 /* the finale owns the screen: the deck, SKILL strip and top bar step aside */
 body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+/* comm bubble: always inside the screen; it fades as it slides so a caught-mid-slide frame never looks clipped */
+.comm { box-sizing: border-box; max-width: calc(100vw - 20px); opacity: 0; transform: translateX(-40px); transition: transform 0.3s ease-out, opacity 0.3s; }
+.comm.show { opacity: 1; transform: none; }
