@@ -99,19 +99,32 @@
   // currencies: parts (부품, earned by every win) pay for the making (gacha); tuna (참치, first clears / records)
   // buys a chosen unit outright in the recruit shop.
   // gacha: rates per rank, a 10-pull guarantees S or better, and PITY pulls without SS guarantee one.
-  // The featured SS (changes daily) takes half of the SS draws. Duplicates turn into XP.
+  // The featured SS (changes daily) takes half of the SS draws. Duplicates turn into card copies (PULL_CARDS).
   const GACHA = {
     cost1: 500, cost10: 5000, rates: { B: 0.47, A: 0.32, S: 0.18, SS: 0.03 }, pity: 80, featuredShare: 0.5, // tools/econ_sim.js: ~12 SS in 4 weeks
-    dupeXp: { B: 100, A: 300, S: 800, SS: 3000 }, startParts: 5000, startTuna: 300,
+    startParts: 5000, startTuna: 300,
   };
   const SHOP_PRICE = { B: 150, A: 400, S: 1000, SS: 3000 }; // tuna, recruit shop (a link for an owned unit)
   const SHOP_NEW_SS = 10000; // a new SS recruited outright costs double: the making stays the main way to meet SS
 
-  // core link (as in the original): every duplicate of an owned unit links one more core, up to LINK_MAX.
-  // Each link: +8% hp / atk; a full link adds +10% more and 15% shorter redeploy. Duplicates past full link become XP.
-  const LINK_MAX = 5;
-  const linkMul = (n) => 1 + 0.08 * n + (n >= LINK_MAX ? 0.1 : 0);
-  const linkCd = (n) => (n >= LINK_MAX ? 0.85 : 1);
+  // cards (as in Clash Royale): a unit's card level runs to 15 and starts by rank (B 1, A 3, S 6, SS 9).
+  // Each upgrade spends copies of that card (from duplicate pulls, the shop, wild cards) and XP (the 'gold').
+  // Battle power counts the levels gained above the starting level, so a fresh card of any rank fights as before.
+  const START_LV = { B: 1, A: 3, S: 6, SS: 9 };
+  // copies needed from level L to L+1, from the rank's starting level up (Clash Royale's quantities)
+  const CARDS = {
+    B: [2, 4, 10, 20, 50, 100, 200, 400, 800, 1000, 1500, 3000, 5000, 5000],
+    A: [2, 4, 10, 20, 50, 100, 200, 400, 500, 750, 1250, 2500],
+    S: [2, 4, 10, 20, 40, 50, 100, 200, 400],
+    SS: [2, 4, 6, 10, 20, 40],
+  };
+  const cardsNeed = (rank, lv) => CARDS[rank][lv - START_LV[rank]] || 0; // 0 at the top
+  const relLv = (rank, lv) => lv - START_LV[rank] + 1; // the battle level (1 = fresh card)
+  // copies in one pull of a card you already have (chest-like bundles for the common ranks)
+  const PULL_CARDS = { B: [20, 40], A: [6, 12], S: [1, 3], SS: [1, 1] };
+  // wild cards: stand in for missing copies of any card of their rank
+  const WILD_SHOP = { B: { n: 20, price: 200 }, A: { n: 5, price: 400 }, S: { n: 1, price: 600 }, SS: { n: 1, price: 2500 } };
+  const SHOP_CARDS = { B: 20, A: 6, S: 2, SS: 1 }; // copies per recruit-shop buy of a card you own
 
   // formation cost: the squad's ranks must add up to DECK_CAP or less (an all-SS squad does not fit)
   const DECK_COST = { B: 1, A: 2, S: 4, SS: 8 };
@@ -244,9 +257,10 @@
   // worker (income) levels: money per second and wallet size; cost of the next level
   const WORKER = { rate: [24, 32, 40, 48, 56, 64, 72, 80], cap: [600, 900, 1200, 1500, 1800, 2200, 2600, 3000], cost: [80, 160, 240, 320, 400, 480, 560] };
   const CANNON = { charge: 22, reach: 15, dmg: 300 }; // damage x the stage's pow
-  const MAX_LV = 20;
-  const lvMul = (lv) => 1 + 0.2 * (lv - 1); // hp / atk at unit level lv
-  const lvCost = (lv) => Math.round(150 * Math.pow(lv, 1.9) / 50) * 50; // xp from lv to lv + 1
+  const MAX_LV = 15; // card level cap
+  const lvMul = (lv) => 1 + 0.2 * (lv - 1); // hp / atk at battle level lv (levels above the card's start, 1-based)
+  const lvCost = (lv) => Math.round(150 * Math.pow(lv, 1.9) / 50) * 50; // xp from battle level lv to lv + 1
+  const xpNeed = (rank, lv) => lvCost(relLv(rank, lv)); // XP for a card's next level
 
   // ── after the campaign ──
   // hard: every campaign stage again, much stronger worms (opens per chapter once its normal 10 stages are cleared)
@@ -343,8 +357,8 @@
   const st_ = (sv, k) => (sv.stats && sv.stats[k]) || 0;
   const MISSIONS = [
     { id: 'tut1', name: '신병 교육 수료', desc: '첫 작전 1-1 클리어 (튜토리얼)', goal: (sv) => [Math.min(sv.cleared, 1), 1], reward: { tuna: 300, parts: 1000 } },
-    ...CHAPTERS.map((ch, c) => ({ id: 'ch' + (c + 1), name: `CHAPTER ${c + 1} 돌파`, desc: ch.title + ' 클리어', goal: (sv) => [Math.min(sv.cleared, (c + 1) * PER_CH) - c * PER_CH, PER_CH], reward: { tuna: 200 + 100 * c, parts: 500 + 250 * c } })),
-    ...[30, 90, 160, 240].map((n, i) => ({ id: 'star' + n, name: `별 ${n}개`, desc: '캠페인 별점 합계', goal: (sv) => [starSum(sv.stars), n], reward: { tuna: 300 + 300 * i, parts: 0 } })),
+    ...CHAPTERS.map((ch, c) => ({ id: 'ch' + (c + 1), name: `CHAPTER ${c + 1} 돌파`, desc: ch.title + ' 클리어', goal: (sv) => [Math.min(sv.cleared, (c + 1) * PER_CH) - c * PER_CH, PER_CH], reward: { tuna: 200 + 100 * c, parts: 500 + 250 * c, wild: { A: 10, S: 1 + Math.floor(c / 3) } } })),
+    ...[30, 90, 160, 240].map((n, i) => ({ id: 'star' + n, name: `별 ${n}개`, desc: '캠페인 별점 합계', goal: (sv) => [starSum(sv.stars), n], reward: { tuna: 300 + 300 * i, parts: 0, wild: { S: 2 + i } } })),
     ...[500, 2000, 6000].map((n, i) => ({ id: 'kill' + n, name: `철충 ${n.toLocaleString()}기 격파`, desc: '전투에서 쓰러뜨린 철충', goal: (sv) => [st_(sv, 'kills'), n], reward: { tuna: 0, parts: 1000 * (i + 1) } })),
     ...[300, 1500].map((n, i) => ({ id: 'dep' + n, name: `대원 ${n}회 출격`, desc: '전투에서 배치한 횟수', goal: (sv) => [st_(sv, 'deploys'), n], reward: { tuna: 0, parts: 1500 * (i + 1) } })),
     ...[20, 150].map((n, i) => ({ id: 'skill' + n, name: `스킬 발동 ${n}회`, desc: 'S·SS 스킬 사용 (충전되면 자동)', goal: (sv) => [st_(sv, 'skills'), n], reward: { tuna: 200 * (i + 1), parts: 0 } })),
@@ -359,31 +373,34 @@
   // rewards for a stage result. kind: 'first' (first clear), 'win' (repeat clear), 'lose'
   function reward(st, kind) {
     if (kind === 'lose') return { xp: Math.round(st.xp * 0.1), parts: 60, tuna: 0 };
-    if (st.daily) return kind === 'first' ? { xp: st.xp, parts: 1000, tuna: 300 } : { xp: Math.round(st.xp / 3), parts: 200, tuna: 0 };
-    if (st.infinite) return { xp: st.xp, parts: 1200 + 120 * st.floor, tuna: kind === 'first' ? 150 + 20 * st.floor : 0 };
+    if (st.daily) return kind === 'first' ? { xp: st.xp, parts: 1000, tuna: 300, wild: { A: 5 } } : { xp: Math.round(st.xp / 3), parts: 200, tuna: 0 };
+    if (st.infinite) return { xp: st.xp, parts: 1200 + 120 * st.floor, tuna: kind === 'first' ? 150 + 20 * st.floor : 0, wild: kind === 'first' && st.floor % 5 === 0 ? { S: 1 } : null };
     const g = st.ix, k = st.hard ? 1.6 : 1, boss = st.last ? 5 : 1;
+    // first clears also bring wild cards: every stage B, the elite A, the boss S (hard: A / S, its boss SS)
+    const wild = kind !== 'first' ? null : st.hard ? (st.last ? { SS: 1, S: 2 } : { A: 4 }) : st.last ? { S: 1, A: 5 } : st.elite ? { A: 5 } : { B: 10 };
     return {
       xp: kind === 'first' ? st.xp : Math.round(st.xp / 2),
       parts: Math.round((150 + 10 * g) * k * (st.bonus || 1) * (kind === 'first' ? 1 : 0.5) / 10) * 10, // replays pay half
       tuna: kind === 'first' ? Math.round((30 + 3 * g) * k * boss / 10) * 10 : 0,
+      wild,
     };
   }
 
   // repeatable missions: counters reset each day (UTC, same day as the daily operation) and each week (from Monday)
   const PERIODIC = {
     day: [
-      { id: 'd_win', name: '전투 승리 3회', desc: '어떤 전투든 승리', key: 'wins', n: 3, reward: { tuna: 0, parts: 300 } },
+      { id: 'd_win', name: '전투 승리 3회', desc: '어떤 전투든 승리', key: 'wins', n: 3, reward: { tuna: 0, parts: 300, wild: { B: 15 } } },
       { id: 'd_kill', name: '철충 150기 격파', desc: '오늘 쓰러뜨린 철충', key: 'kills', n: 150, reward: { tuna: 0, parts: 200 } },
       { id: 'd_skill', name: '스킬 발동 5회', desc: 'S·SS 스킬 사용 (충전되면 자동)', key: 'skills', n: 5, reward: { tuna: 30, parts: 100 } },
       { id: 'd_star', name: '★3 승리 1회', desc: '6분 안에, 기지 체력 80% 이상으로 승리', key: 'star3', n: 1, reward: { tuna: 50, parts: 0 } },
-      { id: 'd_op', name: '일일 작전 완료', desc: '오늘의 일일 작전 승리', key: 'daily', n: 1, reward: { tuna: 70, parts: 150 } },
+      { id: 'd_op', name: '일일 작전 완료', desc: '오늘의 일일 작전 승리', key: 'daily', n: 1, reward: { tuna: 70, parts: 150, wild: { A: 4 } } },
     ],
     week: [
-      { id: 'w_win', name: '전투 승리 25회', desc: '이번 주 승리', key: 'wins', n: 25, reward: { tuna: 150, parts: 1500 } },
+      { id: 'w_win', name: '전투 승리 25회', desc: '이번 주 승리', key: 'wins', n: 25, reward: { tuna: 150, parts: 1500, wild: { A: 12, S: 1 } } },
       { id: 'w_kill', name: '철충 1,500기 격파', desc: '이번 주 쓰러뜨린 철충', key: 'kills', n: 1500, reward: { tuna: 0, parts: 1250 } },
-      { id: 'w_star', name: '★3 승리 10회', desc: '이번 주 ★3 승리', key: 'star3', n: 10, reward: { tuna: 200, parts: 0 } },
-      { id: 'w_hard', name: '하드 · 무한 전장 승리 5회', desc: '하드 스테이지나 무한 전장 층 돌파', key: 'elite', n: 5, reward: { tuna: 200, parts: 500 } },
-      { id: 'w_op', name: '일일 작전 5회', desc: '이번 주 일일 작전 승리', key: 'daily', n: 5, reward: { tuna: 300, parts: 750 } },
+      { id: 'w_star', name: '★3 승리 10회', desc: '이번 주 ★3 승리', key: 'star3', n: 10, reward: { tuna: 200, parts: 0, wild: { S: 2 } } },
+      { id: 'w_hard', name: '하드 · 무한 전장 승리 5회', desc: '하드 스테이지나 무한 전장 층 돌파', key: 'elite', n: 5, reward: { tuna: 200, parts: 500, wild: { SS: 1 } } },
+      { id: 'w_op', name: '일일 작전 5회', desc: '이번 주 일일 작전 승리', key: 'daily', n: 5, reward: { tuna: 300, parts: 750, wild: { S: 1 } } },
     ],
   };
   const dayNo = (now = Date.now()) => Math.floor(now / 86400000);
@@ -397,6 +414,6 @@
     return p;
   }
 
-  window.DATA = { UNITS, UNIT, TYPES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, DECK_COST, DECK_CAP, LINK_MAX, linkMul, linkCd,
-    ENEMIES, TRAITS, MODS, INF_BUFFS, dailyStage, SYNERGIES, synergiesOf, MISSIONS, PERIODIC, periodic, dayNo, BASE_RIG, STAGES, HARD, infiniteFloor, WORKER, CANNON, MAX_LV, lvMul, lvCost, reward };
+  window.DATA = { UNITS, UNIT, TYPES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, DECK_COST, DECK_CAP, START_LV, CARDS, cardsNeed, relLv, PULL_CARDS, WILD_SHOP, SHOP_CARDS,
+    ENEMIES, TRAITS, MODS, INF_BUFFS, dailyStage, SYNERGIES, synergiesOf, MISSIONS, PERIODIC, periodic, dayNo, BASE_RIG, STAGES, HARD, infiniteFloor, WORKER, CANNON, MAX_LV, lvMul, lvCost, xpNeed, reward };
 })();

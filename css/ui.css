@@ -884,3 +884,17 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 
 @keyframes rowin { 0% { transform: translateY(-16px) scale(0.92); filter: brightness(0.45); } 45% { transform: translateY(-26px) scale(1.02); filter: brightness(1.2); } 100% { transform: none; filter: none; } }
 @keyframes rowout { 0% { transform: none; filter: none; } 40% { transform: translateY(10px) scale(0.98); filter: brightness(0.8); } 100% { transform: translateY(-16px) scale(0.92); filter: brightness(0.45) saturate(0.5); } }
+
+/* wild cards: a small rank-coloured card icon with its letter */
+.wild-i { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 19px; margin: 0 2px 0 4px; vertical-align: -4px; border-radius: 3px;
+  font: 900 9px/1 var(--en); font-style: normal; color: #111; background: linear-gradient(135deg, #fff 0%, var(--wc, #aaa) 55%); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 6px var(--wc, #aaa); }
+.wild-i.r-B { --wc: #9aa8bb; } .wild-i.r-A { --wc: #5aa8ff; } .wild-i.r-S { --wc: #c47cff; } .wild-i.r-SS { --wc: #ffcf3a; }
+.rws .w, .mis .mr .w { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; font-weight: 700; }
+.wildbuy { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 10px 14px; text-align: left; color: #fff;
+  background: linear-gradient(90deg, rgba(40, 32, 6, 0.9), rgba(16, 18, 22, 0.9)); border: 1px solid rgba(255, 210, 0, 0.45); }
+.wildbuy .wild-i { width: 28px; height: 36px; font-size: 14px; margin: 0; }
+.wildbuy b { font-size: 15px; } .wildbuy small { color: var(--dim); font-size: 12px; flex: 1; }
+.wildbuy .price { display: inline-flex; align-items: center; gap: 4px; font-family: var(--en); font-weight: 900; font-size: 16px; color: var(--y); }
+.card-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; } .card-row > span { font-weight: 700; font-size: 13px; } .card-row .crc-xp { flex: 1; height: 16px; } .card-row .crc-xp span { font-size: 11px; line-height: 16px; }
+.card-row small { font-size: 11px; color: #c9b8ff; }
+.crc.full .crc-xp i { background: linear-gradient(180deg, #a8ff6a, #3fbf2e); }

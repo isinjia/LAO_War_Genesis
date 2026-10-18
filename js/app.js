@@ -45,7 +45,24 @@
       if (!saveWarned) { saveWarned = true; GAME.toast('저장 실패 — 브라우저 저장소를 확인하세요 (설정 > 세이브 내보내기)', true); }
     }
   };
-  const lvOf = (id) => save.lv[id] || 1;
+  // cards: save.lv = card level (1-15, starts by rank), save.cards = copies on hand, save.wild = wild cards by rank
+  if (!save.cardsV) { // older saves: battle levels (1-20) and core links → card levels and copies
+    const old = save.lv || {};
+    save.lv = {};
+    for (const id in save.owned) {
+      const u = D.UNIT[id];
+      if (u) save.lv[id] = Math.min(D.MAX_LV, D.START_LV[u.rank] + Math.max(0, (old[id] || 1) - 1));
+    }
+    save.cards = {};
+    for (const id in save.link || {}) { const u = D.UNIT[id]; if (u) save.cards[id] = (save.link[id] || 0) * D.PULL_CARDS[u.rank][1]; }
+    delete save.link;
+    save.cardsV = 1;
+  }
+  save.cards = save.cards || {};
+  save.wild = Object.assign({ B: 0, A: 0, S: 0, SS: 0 }, save.wild || {});
+  const lvOf = (id) => save.lv[id] || D.START_LV[D.UNIT[id].rank];
+  const relOf = (id) => D.relLv(D.UNIT[id].rank, lvOf(id)); // the battle level
+  const cardsOf = (id) => save.cards[id] || 0;
   const owned = (id) => !!save.owned[id];
   const rankIx = (u) => D.RANK_ORDER.indexOf(u.rank);
 
@@ -62,6 +79,7 @@
   function grant(id, keepOut) {
     if (save.owned[id]) return false;
     save.owned[id] = 1;
+    save.lv[id] = save.lv[id] || D.START_LV[D.UNIT[id].rank];
     if (!keepOut && fits(id)) save.deck.push(id); // (the tutorial's pull leaves the squad to the player)
     return true;
   }
@@ -79,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.28'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.29'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -178,12 +196,12 @@
       const el = document.createElement('div');
       el.className = 'mis' + (s.claimed ? ' claimed' : s.done ? ' done' : '');
       el.dataset.mid = m.id;
-      const rw = [m.reward.tuna ? `<span class="t"><i class="tuna-i"></i>${fmt(m.reward.tuna)}</span>` : '', m.reward.parts ? `<span class="p"><i class="parts-i"></i>${fmt(m.reward.parts)}</span>` : ''].join('');
+      const rw = [m.reward.tuna ? `<span class="t"><i class="tuna-i"></i>${fmt(m.reward.tuna)}</span>` : '', m.reward.parts ? `<span class="p"><i class="parts-i"></i>${fmt(m.reward.parts)}</span>` : '', wildHtml(m.reward.wild)].join('');
       el.innerHTML = `<div class="mi"><b>${m.name}</b><small>${m.desc}</small><div class="mbar"><i style="width:${(s.cur / s.goal) * 100}%"></i></div><small class="mp">${fmt(s.cur)} / ${fmt(s.goal)}</small></div>
         <div class="mr">${rw}</div><button class="btn${s.done && !s.claimed ? '' : ' d'}" ${s.done && !s.claimed ? '' : 'disabled'}>${s.claimed ? '완료' : s.done ? '받기' : '진행 중'}</button>`;
       if (s.done && !s.claimed) el.querySelector('button').onclick = () => {
         claim();
-        save.tuna += m.reward.tuna; save.parts += m.reward.parts; persist();
+        save.tuna += m.reward.tuna; save.parts += m.reward.parts; addWild(m.reward.wild); persist();
         AUDIO.play('purchase'); refresh();
       };
       box.appendChild(el);
@@ -588,19 +606,18 @@
 
   // squad: the formation bar (slots and cost) and every unit (owned ones bright)
   let filter = 'ALL';
-  const linkOf = (id) => (save.link && save.link[id]) || 0;
-  const linkHtml = (n) => `<span class="links">${[0, 1, 2, 3, 4].map((k) => `<i class="${k < n ? 'on' : ''}"></i>`).join('')}</span>`;
   // a card in the 덱 구성 style: rank frame, 전력 cost, level, the XP towards the next level
   function crCard(u, onClick) {
-    const have = owned(u.id), inDeck = save.deck.includes(u.id), lv = lvOf(u.id);
-    const need = lv < D.MAX_LV ? D.lvCost(lv) : 0, prog = need ? Math.min(1, save.xp / need) : 1;
+    const have = owned(u.id), inDeck = save.deck.includes(u.id), lv = have ? lvOf(u.id) : D.START_LV[u.rank];
+    const need = lv < D.MAX_LV ? D.cardsNeed(u.rank, lv) : 0, n = cardsOf(u.id), prog = need ? Math.min(1, n / need) : 1;
+    const ready = have && need && n >= need && save.xp >= D.xpNeed(u.rank, lv);
     const b = document.createElement('button');
-    b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (have && need && save.xp >= need ? ' up' : '');
+    b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (ready ? ' up' : '') + (have && need && n >= need ? ' full' : '');
     b.dataset.id = u.id;
     b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt=""><i class="crc-cost">${u.cost}</i>${rk(u.rank)}` +
-      (have ? linkHtml(linkOf(u.id)) : '') + `</div>` +
+      `</div>` +
       `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
-      (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(Math.min(save.xp, need))}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-name">${u.name}</div>`);
+      (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-name">${u.name}</div>`);
     b.title = `${u.name} (${u.rank} · 편성 코스트 ${D.DECK_COST[u.rank]})`;
     b.onclick = onClick;
     return b;
@@ -637,7 +654,7 @@
     const fl = $('rankFilter');
     const have = D.UNITS.filter((u) => owned(u.id)).length;
     fl.innerHTML = ['ALL', ...D.RANK_ORDER].map((r) => `<button data-r="${r}" class="${filter === r ? 'on' : ''}">${r === 'ALL' ? '전체' : rk(r) + r}</button>`).join('') +
-      `<span class="count">보유 ${have} / ${D.UNITS.length} · 보유 XP ${fmt(save.xp)}</span>`;
+      `<span class="count">보유 ${have} / ${D.UNITS.length} · XP ${fmt(save.xp)} · 와일드카드 ${D.RANK_ORDER.map((r) => `<i class="wild-i r-${r}">${r}</i>${fmt(save.wild[r])}`).join(' ')}</span>`;
     fl.querySelectorAll('button').forEach((b) => { b.onclick = () => { filter = b.dataset.r; renderSquad(); }; });
     const box = $('squadList');
     box.innerHTML = '';
@@ -659,7 +676,7 @@
     b.className = `ucard r-${u.rank}` + (have ? '' : ' none') + (inDeck && !price ? ' in' : '');
     b.dataset.id = u.id;
     b.innerHTML = `<img src="${IMG['u_' + u.id]}" alt="">${rk(u.rank)}${have ? `<span class="lv">LV.${lvOf(u.id)}</span>` : ''}` +
-      (have ? linkHtml(linkOf(u.id)) : '') + (inDeck && !price ? '<span class="tag">편성</span>' : '') +
+      (inDeck && !price ? '<span class="tag">편성</span>' : '') +
       `<div class="nm">${u.name}</div>` + (price ? `<div class="price"><i class="tuna-i"></i>${fmt(price)}</div>` : '');
     b.onclick = onClick;
     return b;
@@ -673,7 +690,8 @@
 
   function openDetail(u) {
     const have = owned(u.id);
-    const lv = lvOf(u.id), link = linkOf(u.id), m = D.lvMul(lv) * D.linkMul(link), cost = D.lvCost(lv);
+    const lv = have ? lvOf(u.id) : D.START_LV[u.rank], m = D.lvMul(D.relLv(u.rank, lv)), cost = D.xpNeed(u.rank, lv);
+    const need = lv < D.MAX_LV ? D.cardsNeed(u.rank, lv) : 0, n = cardsOf(u.id), short = Math.max(0, need - n);
     const inDeck = save.deck.includes(u.id);
     const fx = u.slow ? (u.slow[0] >= 1 ? ` · 맞은 적 ${u.slow[1]}초 기절` : ` · 맞은 적 ${Math.round(u.slow[0] * 100)}% 둔화`) : '';
     const body = `<div class="detail"><img class="art${hasFull(u.id) ? '' : ' portrait'}" src="${art(u.id)}" alt="" style="${have ? '' : 'filter:brightness(0.12) grayscale(1)'}">
@@ -681,19 +699,26 @@
       <div class="role">${u.role}${u.area ? ' · 범위' : ' · 단일'}${fx} · 편성 코스트 ${D.DECK_COST[u.rank]}</div>
       <div class="utr">${u.range < 2.4 ? '<span class="no">대공 불가</span>' : '<span>대공 가능</span>'}${u.type === 'snipe' ? '<span>장갑 관통 x1.5</span>' : u.area ? '<span class="no">장갑에 50%</span>' : ''}</div>
       <div>${have ? u.desc : howToGet(u)}</div>
-      ${have ? `<div class="link-row">코어 링크 ${linkHtml(link)} <b>${link}/${D.LINK_MAX}</b>${link >= D.LINK_MAX ? ' · 풀 링크 (재배치 -15%)' : ' · 중복 획득 시 +1'}</div>` : ''}
-      <div class="stat-grid"><span>비용 <b>${u.cost}</b></span><span>재배치 <b>${Math.round(u.cd * D.linkCd(link) * 10) / 10}s</b></span>
+      ${have ? `<div class="card-row"><span>카드</span><div class="crc-xp"><i style="width:${need ? Math.min(100, (n / need) * 100) : 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>${short && save.wild[u.rank] ? `<small>${u.rank} 와일드카드 ${fmt(save.wild[u.rank])}장 보유</small>` : ''}</div>` : ''}
+      <div class="stat-grid"><span>비용 <b>${u.cost}</b></span><span>재배치 <b>${u.cd}s</b></span>
       <span>체력 <b>${fmt(u.hp * m)}</b></span><span>공격 <b>${fmt(u.atk * m)}</b></span>
       <span>사거리 <b>${u.range}</b></span><span>이동 <b>${u.spd}</b></span>
       <span>넉백 <b>${u.kb}회</b></span><span>${u.skill ? `스킬 <b>${u.skill}타</b>` : ''}</span></div>
-      ${have && lv < D.MAX_LV ? `<div style="margin-top:6px">다음 강화 <b>${fmt(cost)} XP</b> (보유 ${fmt(save.xp)})</div>` : ''}</div></div>`;
+      ${have && lv < D.MAX_LV ? `<div style="margin-top:6px">업그레이드 → 레벨 ${lv + 1}: 카드 <b>${fmt(need)}</b> · <b>${fmt(cost)} XP</b> (보유 ${fmt(save.xp)})</div>` : have ? '<div style="margin-top:6px">최대 레벨</div>' : ''}</div></div>`;
     const btns = [];
     if (have) {
-      if (lv < D.MAX_LV) btns.push([`강화`, () => {
+      if (lv < D.MAX_LV) btns.push([`업그레이드`, () => {
+        if (n < need) return GAME.toast(`카드가 ${fmt(need - n)}장 부족합니다`);
         if (save.xp < cost) return GAME.toast('XP가 부족합니다');
-        save.xp -= cost; save.lv[u.id] = lv + 1; persist();
+        save.xp -= cost; save.cards[u.id] = n - need; save.lv[u.id] = lv + 1; persist();
         AUDIO.play('levelup'); refresh(); openDetail(u);
-      }, save.xp >= cost ? '' : 'd']);
+      }, n >= need && save.xp >= cost ? '' : 'd']);
+      // wild cards stand in for the missing copies
+      if (short && save.wild[u.rank]) btns.push([`와일드카드 ${fmt(Math.min(short, save.wild[u.rank]))}장 사용`, () => {
+        const k = Math.min(short, save.wild[u.rank]);
+        save.wild[u.rank] -= k; save.cards[u.id] = n + k; persist();
+        AUDIO.play('purchase'); refresh(); openDetail(u);
+      }, 'b']);
       btns.push([inDeck ? '편성 해제' : '편성', () => {
         if (inDeck) { if (save.deck.length <= 1) return GAME.toast('최소 1명은 편성해야 합니다'); save.deck = save.deck.filter((x) => x !== u.id); }
         else if (save.deck.length >= DECK_MAX) return GAME.toast('편성 칸을 눌러 대원을 먼저 빼 주세요');
@@ -708,14 +733,13 @@
   }
 
   // a unit obtained again: one more core link, past full link it becomes XP. Returns { isNew, link, xp }
-  function obtain(u, keepOut) {
-    if (grant(u.id, keepOut)) return { isNew: true, link: 0, xp: 0 };
-    save.link = save.link || {};
-    const n = linkOf(u.id);
-    if (n < D.LINK_MAX) { save.link[u.id] = n + 1; return { isNew: false, link: n + 1, xp: 0 }; }
-    const xp = D.GACHA.dupeXp[u.rank];
-    save.xp += xp;
-    return { isNew: false, link: n, xp };
+  // a card from the making / shop: new → it joins; owned → copies of it (qty, by default a pull's bundle)
+  function obtain(u, keepOut, qty) {
+    if (grant(u.id, keepOut)) return { isNew: true, cards: 0 };
+    const [lo, hi] = D.PULL_CARDS[u.rank];
+    const n = qty || lo + Math.floor(Math.random() * (hi - lo + 1));
+    save.cards[u.id] = cardsOf(u.id) + n;
+    return { isNew: false, cards: n };
   }
 
   // ── making (gacha, parts) and recruit shop (tuna) ──────
@@ -735,7 +759,7 @@
     setArt($('bannerArt'), f.id);
     $('pickName').innerHTML = `${rk('SS')} ${f.name}`;
     $('pickDesc').textContent = `${f.role} · ${f.desc} — SS 등장 시 ${Math.round(G_.featuredShare * 100)}%는 픽업 대원`;
-    $('rates').innerHTML = D.RANK_ORDER.map((r) => `<span>${rk(r)}${(G_.rates[r] * 100).toFixed(0)}%</span>`).join('') + `<span>· 중복은 코어 링크 +1 (최대 ${D.LINK_MAX})</span>`;
+    $('rates').innerHTML = D.RANK_ORDER.map((r) => `<span>${rk(r)}${(G_.rates[r] * 100).toFixed(0)}%</span>`).join('') + `<span>· 중복은 그 대원의 카드 (업그레이드 재료)</span>`;
     $('pity').innerHTML = `SS 확정까지 <b>${G_.pity - save.pity}</b>회 · 픽업 ${f.name} ${(G_.rates.SS * G_.featuredShare * 100).toFixed(1)}%<div class="pity-bar"><i style="width:${(save.pity / G_.pity) * 100}%"></i></div>`;
     $('pull1').disabled = save.parts < G_.cost1;
     $('pull10').disabled = save.parts < G_.cost10;
@@ -744,35 +768,44 @@
     SS.forEach((u) => box.appendChild(unitCard(u, () => openDetail(u))));
   }
 
-  // recruit shop: any unit for tuna; an owned unit is bought as a core link (until full link)
+  // recruit shop: any unit for tuna (an owned one comes as copies of its card), and wild cards
   let shopFilter = 'SS';
   function renderShop() {
     const fl = $('shopFilter');
     fl.innerHTML = D.RANK_ORDER.slice().reverse().map((r) => `<button data-r="${r}" class="${shopFilter === r ? 'on' : ''}">${rk(r)}${r}</button>`).join('') +
-      '<span class="count">참치로 원하는 대원을 확정 영입 · 보유 대원은 코어 링크 재료</span>';
+      '<span class="count">참치로 원하는 대원을 확정 영입 · 보유 대원은 카드로 받아 업그레이드 재료</span>';
     fl.querySelectorAll('button').forEach((b) => { b.onclick = () => { shopFilter = b.dataset.r; renderShop(); }; });
     const box = $('shopList');
     box.innerHTML = '';
+    // wild cards of this rank
+    const w = D.WILD_SHOP[shopFilter];
+    const wb = document.createElement('button');
+    wb.className = `wildbuy r-${shopFilter}`;
+    wb.innerHTML = `<i class="wild-i r-${shopFilter}">${shopFilter}</i><b>${shopFilter} 와일드카드 ×${w.n}</b><small>${shopFilter} 등급 아무 카드나 대신 · 보유 ${fmt(save.wild[shopFilter])}</small><span class="price"><i class="tuna-i"></i>${fmt(w.price)}</span>`;
+    wb.onclick = () => {
+      if (save.tuna < w.price) return GAME.toast('참치가 부족합니다');
+      save.tuna -= w.price; save.wild[shopFilter] += w.n; persist();
+      AUDIO.play('purchase'); refresh(); GAME.toast(`${shopFilter} 와일드카드 +${w.n}`);
+    };
+    box.appendChild(wb);
     D.UNITS.filter((u) => u.rank === shopFilter).sort((a, b) => owned(a.id) - owned(b.id)).forEach((u) => {
-      const full = owned(u.id) && linkOf(u.id) >= D.LINK_MAX;
       const price = u.rank === 'SS' && !owned(u.id) ? D.SHOP_NEW_SS : D.SHOP_PRICE[u.rank];
+      const n = D.SHOP_CARDS[u.rank];
       const c = unitCard(u, () => {
-        if (full) return GAME.toast('이미 풀 링크입니다');
-        modal('확정 영입', `<div class="buy"><img src="${IMG['u_' + u.id]}" alt=""><div>${rk(u.rank)} <b>${u.name}</b><br>${owned(u.id) ? `보유 중 — 코어 링크 ${linkOf(u.id)} → ${linkOf(u.id) + 1}` : '새로 합류합니다'}
+        modal('확정 영입', `<div class="buy"><img src="${IMG['u_' + u.id]}" alt=""><div>${rk(u.rank)} <b>${u.name}</b><br>${owned(u.id) ? `보유 중 — 카드 +${n} (${fmt(cardsOf(u.id))} → ${fmt(cardsOf(u.id) + n)})` : '새로 합류합니다'}
           <br><i class="tuna-i"></i> <b>${fmt(price)}</b> (보유 ${fmt(save.tuna)})</div></div>`, [
           ['영입', () => {
             if (save.tuna < price) return GAME.toast('참치가 부족합니다');
             save.tuna -= price;
-            const r = obtain(u);
+            const r = obtain(u, false, n);
             persist(); closeModal(); refresh();
             AUDIO.play(u.rank === 'SS' ? 'pickSS' : 'purchase');
             if (window.VOICE && VOICE[u.id]) AUDIO.voice(VOICE[u.id]);
-            GAME.toast(r.isNew ? `${u.name} 합류!` : `${u.name} 코어 링크 ${r.link}`);
+            GAME.toast(r.isNew ? `${u.name} 합류!` : `${u.name} 카드 +${r.cards}`);
           }, save.tuna >= price ? '' : 'd'],
           ['취소', closeModal, 'd'],
         ]);
       }, price);
-      if (full) c.classList.add('full');
       box.appendChild(c);
     });
   }
@@ -818,10 +851,10 @@
     const grid = $('gresGrid');
     grid.className = 'gres-grid' + (out.length === 1 ? ' one' : '');
     grid.innerHTML = '';
-    const cards = out.map(({ u, isNew, xp, link }) => {
+    const cards = out.map(({ u, isNew, cards: n }) => {
       const c = document.createElement('div');
       c.className = `gcard r-${u.rank}`;
-      c.innerHTML = `<img src="${IMG['u_' + u.id]}" alt="">${rk(u.rank)}${isNew ? '<span class="new">NEW</span>' : xp ? `<span class="dup">+${xp} XP</span>` : `<span class="dup lk">LINK ${link}</span>`}<div class="nm">${u.name}</div>`;
+      c.innerHTML = `<img src="${IMG['u_' + u.id]}" alt="">${rk(u.rank)}${isNew ? '<span class="new">NEW</span>' : `<span class="dup">카드 +${n}</span>`}<div class="nm">${u.name}</div>`;
       grid.appendChild(c);
       return c;
     });
@@ -858,7 +891,7 @@
     AUDIO.play('pickSS');
     setArt($('soloArt'), o.u.id);
     $('soloName').textContent = o.u.name;
-    $('soloNew').textContent = o.isNew ? 'NEW!' : o.xp ? `+${o.xp} XP` : `CORE LINK ${o.link}`;
+    $('soloNew').textContent = o.isNew ? 'NEW!' : `카드 +${o.cards}`;
     const solo = $('gresSolo');
     setTimeout(() => {
       solo.classList.add('show');
@@ -885,8 +918,8 @@
   let deckEls = [];
   // st: a stage object (campaign, hard or an infinite floor)
   async function launch(st) {
-    const deck = st.squad ? st.squad.map((id) => ({ def: D.UNIT[id], lv: st.squadLv, link: 0 })) // daily: a fixed squad
-      : save.deck.map((id) => ({ def: D.UNIT[id], lv: lvOf(id), link: linkOf(id) }));
+    const deck = st.squad ? st.squad.map((id) => ({ def: D.UNIT[id], lv: st.squadLv })) // daily: a fixed squad (battle level)
+      : save.deck.map((id) => ({ def: D.UNIT[id], lv: relOf(id) }));
     show('loading');
     $('loadCode').textContent = st.code;
     $('loadTitle').textContent = st.name;
@@ -989,7 +1022,7 @@
     save.parts = Math.max(0, save.parts - G_.cost10);
     save.pulls += 10; save.pity += 10;
     save.tutPulled = 1;
-    const out = TUT_PULL.map((id) => Object.assign({ u: D.UNIT[id] }, obtain(D.UNIT[id], true)));
+    const out = TUT_PULL.map((id) => Object.assign({ u: D.UNIT[id] }, obtain(D.UNIT[id], true, D.PULL_CARDS[D.UNIT[id].rank][0])));
     persist();
     return out;
   }
@@ -1081,7 +1114,7 @@
     if (!save.deck.includes(TUT_ADD) && fits(TUT_ADD)) save.deck.push(TUT_ADD);
     const m = D.MISSIONS.find((x) => x.id === 'tut1');
     save.claimed = save.claimed || {};
-    if (!save.claimed.tut1) { save.claimed.tut1 = 1; save.tuna += m.reward.tuna; save.parts += m.reward.parts; }
+    if (!save.claimed.tut1) { save.claimed.tut1 = 1; save.tuna += m.reward.tuna; save.parts += m.reward.parts; addWild(m.reward.wild); }
     finishTutorial();
     mode = 'normal';
     openLobby('campaign', 0);
@@ -1289,8 +1322,10 @@
     mode = st.hard ? 'hard' : 'normal';
     openLobby('campaign', st.chapter);
   }
-  const rwRes = (r) => `<div class="rws"><span class="x"><i></i>+${fmt(r.xp)}</span><span class="p"><i></i>+${fmt(r.parts)}</span>${r.tuna ? `<span class="t"><i></i>+${fmt(r.tuna)}</span>` : ''}</div>`;
-  const gain = (r) => { save.xp += r.xp; save.parts += r.parts; save.tuna += r.tuna; };
+  const wildHtml = (w) => (w ? Object.entries(w).filter(([, n]) => n).map(([r, n]) => `<span class="w"><i class="wild-i r-${r}">${r}</i>+${fmt(n)}</span>`).join('') : '');
+  const rwRes = (r) => `<div class="rws"><span class="x"><i></i>+${fmt(r.xp)}</span><span class="p"><i></i>+${fmt(r.parts)}</span>${r.tuna ? `<span class="t"><i></i>+${fmt(r.tuna)}</span>` : ''}${wildHtml(r.wild)}</div>`;
+  const addWild = (w) => { for (const r in w || {}) save.wild[r] = (save.wild[r] || 0) + w[r]; };
+  const gain = (r) => { save.xp += r.xp; save.parts += r.parts; save.tuna += r.tuna; addWild(r.wild); };
 
   // stars: 1 for the win, 2 within 6 minutes, 3 within 6 minutes with the base at 80% or more
   function result(st, kind) {

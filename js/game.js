@@ -468,10 +468,9 @@
     if (G.allies.length >= 40) { toast('필드가 가득 찼습니다'); return false; }
     if (onField(def)) { toast(`${def.name}은(는) 이미 출격 중입니다 (SS는 한 명씩)`); AUDIO.play('fail', 0.6); return false; }
     G.money -= def.cost;
-    const link = slot.link || 0; // core link: duplicates make the unit stronger
-    G.cds[i] = def.cd * D.linkCd(link) * Math.pow(0.88, buffN(G.st, 'cd')) * (G.syn.has('lean') ? 0.7 : 1) *
+    G.cds[i] = def.cd * Math.pow(0.88, buffN(G.st, 'cd')) * (G.syn.has('lean') ? 0.7 : 1) *
       (G.syn.has('tide') && (def.id === 'undine' || def.id === 'thetis') ? 0.75 : 1);
-    const f = makeFighter(1, def, def.id, 0.9, D.lvMul(slot.lv) * D.linkMul(link));
+    const f = makeFighter(1, def, def.id, 0.9, D.lvMul(slot.lv)); // slot.lv: battle level (levels above the card's start)
     f.atk *= 1 + 0.12 * buffN(G.st, 'atk'); f.hp = f.maxHp = f.maxHp * (1 + 0.15 * buffN(G.st, 'hp'));
     // squad synergies (data.js SYNERGIES)
     const t = def.type;
