@@ -769,10 +769,10 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 @keyframes pwfull { to { filter: brightness(1.5); box-shadow: 0 0 16px #ffd200; } }
 @media (max-width: 640px) { .power { font-size: 20px; padding: 4px 12px; gap: 8px; } .power .pw-head { font-size: 12px; } .power .pw-num small { font-size: 12px; } .power .pw-bar { height: 6px; } }
 
-/* deck row + swap button (phones only: two pages of five) */
+/* deck row + swap button (phones only, either orientation: two pages of five) */
 .deck-row { flex: 1; min-width: 0; display: flex; gap: 6px; align-items: stretch; }
 .swap { display: none; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (max-height: 520px) { /* phones, portrait or landscape */
   /* the two rows share one grid cell: the active row in front, the other peeking out behind it, dimmed */
   .deck { display: grid; grid-template-areas: "row"; padding-top: 16px; }
   .dpage { grid-area: row; transition: transform 0.32s cubic-bezier(0.25, 1.35, 0.5, 1), filter 0.32s, opacity 0.32s; transform-origin: 50% 0; }
@@ -923,7 +923,7 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 .power.full::after { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); z-index: 1; }
 .power .pw-num { min-width: 5.2em; }
 /* swap button: its place is kept even when the deck has five or fewer */
-@media (max-width: 640px) { .swap { display: flex; visibility: hidden; flex: none; width: 44px; } .swap.on { visibility: visible; } }
+@media (max-width: 640px), (max-height: 520px) { .swap { display: flex; visibility: hidden; flex: none; width: 44px; } .swap.on { visibility: visible; } }
 
 /* card bars: readable numbers (bold, outlined, larger) */
 .crc-xp { height: 16px; border-radius: 8px; }
