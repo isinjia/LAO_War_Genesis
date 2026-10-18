@@ -1177,11 +1177,15 @@
     makeOutline(geo, tpl) {
       const mk = (add, side) => {
         const m = new THREE.MeshBasicMaterial({ map: tpl.atlas.tex, color: 0x000000, vertexColors: true, transparent: true, depthTest: false, depthWrite: false,
-          alphaTest: 0.3, side, opacity: OL.alpha, visible: !add }); // additive glows get no outline
+          alphaTest: 0.5, side, opacity: OL.alpha, visible: !add }); // additive glows get no outline
         m.userData.sd = this.sdU;
         m.onBeforeCompile = (sh) => {
           sdShader(sh, m);
           sh.uniforms.sdOl = OL.px;
+          // only solid parts get an outline: faded afterimages / blur sprites (vertex alpha under 0.9) would
+          // otherwise become dark blobs behind the character (Thetis' attack)
+          sh.fragmentShader = sh.fragmentShader.replace('#include <alphatest_fragment>',
+            '#ifdef USE_COLOR_ALPHA\nif (vColor.a < 0.9) discard;\n#endif\n#include <alphatest_fragment>');
           sh.vertexShader = sh.vertexShader
             .replace('#include <common>', '#include <common>\nuniform vec2 sdOl;')
             .replace('#include <project_vertex>', 'vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);\ngl_Position = projectionMatrix * mvPosition;\n#ifdef USE_INSTANCING\ngl_Position.xy += instanceMatrix[3].xy * sdOl * gl_Position.w;\n#endif');
@@ -1196,7 +1200,7 @@
       ol.frustumCulled = false;
       ol.onBeforeRender = baFlush;
       this.ol = ol;
-      this.root.add(ol);
+      this.mesh.add(ol); // a child of the body: it follows the root-motion pin offset the body gets in attack clips
     }
 
     setOrder(base) { this.mesh.renderOrder = base; if (this.ol) this.ol.renderOrder = base - 0.5; }

@@ -77,7 +77,20 @@
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
   if (window.UIA) $('logo').src = UIA.logo.u;
-  $('btnStart').onclick = () => { AUDIO.play('click', 1, 0.8); openLobby('campaign'); };
+  // a commander who hasn't finished the tutorial goes straight into it: the story intro, then 1-1 with the coach,
+  // with the squad set up for it (the three starters, in the order the coach talks about them)
+  $('btnStart').onclick = () => {
+    AUDIO.play('click', 1, 0.8);
+    if (!save.tut && save.cleared === 0) {
+      D.STARTERS.forEach((id) => { save.owned[id] = 1; });
+      save.deck = D.STARTERS.slice();
+      persist();
+      openLobby('campaign', 0);
+      startStage(D.STAGES[0]);
+      return;
+    }
+    openLobby('campaign');
+  };
   AUDIO.music('title');
 
   // ── lobby ──────────────────────────────────────────────

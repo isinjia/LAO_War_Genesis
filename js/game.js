@@ -12,6 +12,7 @@
   const ALLY_K = 0.21; // world units per rig unit for every ally (brownie ~1.7 tall)
   // parts of an original rig left out: Hela's summoned mechs, Andvari's cargo box (as in the defence game)
   const RIG_HIDE = { hela: /^(Meca_\d+|Summons)$/, andvari: /^(Bone_Cargo_Box|Bone_InBox|bone_shadow_box)$/ };
+  const SCREEN_FX = /black_?quad/i; // rig parts that darken the whole screen in the original (Thetis' BG_Black_Quad_FX)
   const UNIT_SCALE = 1.2; // drawn size over the data heights (reach / hit points use the data heights)
 
   let renderer, scene, camera, overlay, octx, dpr = 1;
@@ -35,6 +36,7 @@
     SD.renderer = renderer;
     SD.crossfade = 0.14;
     SD.pinRoot = true;
+    SD.pinSkip = { labiata: ['skill'] }; // her skill is a leap off the top of the screen and a slam: keep its flight
     SD.mipmaps = renderer.capabilities.isWebGL2;
     const mobile = Math.min(screen.width, screen.height) < 600;
     SD.texScale = mobile ? 0.35 : 0.5;
@@ -411,6 +413,8 @@
     const c = SD.acquire(sdId); // pooled for allies too: no typed arrays / materials per deploy
     if (c) {
       if (RIG_HIDE[sdId] && c.hideNodes) c.hideNodes(RIG_HIDE[sdId]);
+      if (c.hideNodes) c.hideNodes(SCREEN_FX); // the original's full-screen dimmers (a black quad behind a skill) aren't part of the unit
+      if (def.fly && c.hideNodes) c.hideNodes(/shadow/i); // a flyer's own baked shadow would float under it: ours sits on the lane
       c.root.scale.set(k, k, 1);
       // allies stand on the rig's own ground pivot (drones / big weapons would shift the bounds), monsters on their bounds
       if (ally) c.root.position.set(-c.W[9] * k, -c.W[10] * k, 0);
@@ -492,6 +496,9 @@
   // nearest living opponent in reach (or the base)
   // enemy traits: flyers are out of reach for short-range units (walls / melee)
   const ANTI_AIR = 2.4;
+  // flyers keep a clear band above the ground fight (their shadow stays on the lane)
+  const FLY_H = 1.9;
+  const aimY = (o) => o.dy + (o.def.fly ? FLY_H : 0) + o.h * 0.5; // the middle of the body as drawn
   const canHit = (f, o) => !(o.def.fly && f.ally && f.def.range < ANTI_AIR);
   function target(f) {
     let best = null, bd = Infinity;
@@ -524,12 +531,15 @@
     const sp = Math.max(1, Math.min(ATK_SPEED_MAX, dur / want));
     const cycle = dur / sp;
     const ev = f.ally && window.ANIM_EV && ANIM_EV[f.def.id] && ANIM_EV[f.def.id][name];
-    let hits = ev && ev.t.length ? ev.t.map((t) => t / sp).filter((t) => t < cycle) : [];
+    // hit times from the clip's events, with the fire point (muzzle #) each one leaves from
+    let idx = ev && ev.t.length ? ev.t.map((_, i) => i).filter((i) => ev.t[i] / sp < cycle) : [];
+    if (idx.length > 8) { const k = idx.length / 8; idx = Array.from({ length: 8 }, (_, i) => idx[Math.floor(i * k)]); }
+    let hits = idx.map((i) => ev.t[i] / sp);
+    const fn = idx.map((i) => (ev.f ? ev.f[i] : 1));
     if (!hits.length) hits = [cycle * (f.ally ? 0.4 : 0.45)];
-    if (hits.length > 8) { const k = hits.length / 8; hits = Array.from({ length: 8 }, (_, i) => hits[Math.floor(i * k)]); }
     const mult = ordered ? SKILL[f.def.rank].mult : skill ? 2.6 : 1;
     if (ordered) telegraph(f, hits[0] || cycle * 0.4);
-    f.act = { t: 0, cycle, hits, i: 0, per: (f.atk * mult) / hits.length, skill };
+    f.act = { t: 0, cycle, hits, fn, i: 0, per: (f.atk * mult) / hits.length, skill };
     f.cool = Math.max(f.def.rate, cycle);
     f.state = 'atk';
     if (f.sd) { f.sd.play(name, null, false); f.sd.speed = sp; }
@@ -543,18 +553,31 @@
     }
   }
 
+  // skills that come down from the sky: the landing hits the ground hard (Labiata's 백화요란)
+  const SLAM = { labiata: 0xffd36e };
+  function slam(f, x) {
+    const c = SLAM[f.def.id];
+    sheet('aura', x, 1.6, c, 6, 0.6); sheet('burst', x, 0.8, 0xffffff, 4.2, 0.25);
+    sheet('smoke', x - 1, 0.5, 0xd8c8a8, 3.4, 0.9, { grow: 0.6 }); sheet('smoke', x + 1, 0.5, 0xd8c8a8, 3.4, 0.9, { grow: 0.6 });
+    ring(x, 0.05, c, 7, 0.55); ring(x, 0.05, 0xffffff, 4, 0.35);
+    debris(x, 0.4, 14, c);
+    shake(0.6, 0.6); hitstop(0.12);
+    AUDIO.play('expB', 0.9);
+  }
   function hit(f) {
     const a = f.act;
+    if (a.skill && f.ally && SLAM[f.def.id] && a.i === 0) { const t = target(f); slam(f, t && t !== 'base' ? t.x : f.x + f.dir * 1.5); }
     const area = f.def.area || a.skill;
     let any = false;
     const orig = f.ally && origFor(f.def.id, a.skill ? 'skill' : 'atk');
+    const mz = muzzle(f, a.fn && a.fn[a.i] != null ? a.fn[a.i] : 1); // where this shot leaves the weapon
     let shots = 0;
     const hitOne = (o) => {
       damage(o, a.per, f);
-      if (a.skill && f.ally && shots === 0) { text(o.x, o.dy + o.h + 0.2, fmtDmg(a.per), '#fff2a8', 1.2); hitstop(0.05); }
+      if (a.skill && f.ally && shots === 0) { text(o.x, aimY(o) + o.h * 0.5 + 0.2, fmtDmg(a.per), '#fff2a8', 1.2); hitstop(0.05); }
       if (f.def.slow) { o.slowT = f.def.slow[1] * (o.boss ? 0.5 : 1) * (f.slowMul || 1); o.slowK = f.def.slow[0]; }
       // the original projectile / effect (one or two per volley), else the effect sheets
-      if (!(orig && shots < 2 && origShot(f, orig, o.x, o.dy + o.h * 0.5))) hitFx(f, o.x, o.dy + o.h * 0.5);
+      if (!(orig && shots < 2 && origShot(f, orig, o.x, aimY(o), mz))) hitFx(f, o.x, aimY(o), mz);
       shots++;
       any = true;
     };
@@ -571,7 +594,7 @@
       if (f.def.artillery && !f.ally) { sheet('smoke', baseFront(f) - 0.3, 1 + Math.random() * 2, 0xff8855, 2, 0.5, { grow: 0.5 }); shake(0.08, 0.15); }
       b.hp = Math.max(0, b.hp - a.per * (shell ? 0.5 : 1));
       b.flash = 0.12;
-      hitFx(f, baseFront(f) + f.dir * 0.4, 1.4 + Math.random());
+      hitFx(f, baseFront(f) + f.dir * 0.4, 1.4 + Math.random(), mz);
       any = true;
     }
     if (any || a.i === 0) attackSfx(f);
@@ -585,11 +608,11 @@
     // shield: soaks its share before the hull takes damage (shown as a blue ring)
     if (o.shield > 0) {
       const sh = Math.min(o.shield, dmg); o.shield -= sh; dmg -= sh;
-      if (Math.random() < 0.5) sheet('hit', o.x + o.dir * 0.3, o.dy + o.h * 0.5, 0x8fb8ff, o.h * 0.9, 0.18); // the shield takes it: blue flash
-      if (o.shield <= 0) { sheet('blue', o.x, o.dy + o.h * 0.5, 0x9fe8ff, o.h * 1.8, 0.4); text(o.x, o.dy + o.h + 0.4, 'SHIELD BREAK', '#b9d4ff', 1.1); AUDIO.play('elec', 0.5); }
+      if (Math.random() < 0.5) sheet('hit', o.x + o.dir * 0.3, aimY(o), 0x8fb8ff, o.h * 0.9, 0.18); // the shield takes it: blue flash
+      if (o.shield <= 0) { sheet('blue', o.x, aimY(o), 0x9fe8ff, o.h * 1.8, 0.4); text(o.x, aimY(o) + o.h * 0.5 + 0.4, 'SHIELD BREAK', '#b9d4ff', 1.1); AUDIO.play('elec', 0.5); }
     }
     // armour shrugs splash off: grey sparks and a ping
-    if (o.def.armor && src && src.ally && src.def.area && src.def.type !== 'snipe' && Math.random() < 0.4) { sheet('spark', o.x, o.dy + o.h * 0.6, 0xd8d8d8, 0.8, 0.2); AUDIO.play('handgun', 0.25); }
+    if (o.def.armor && src && src.ally && src.def.area && src.def.type !== 'snipe' && Math.random() < 0.4) { sheet('spark', o.x, aimY(o) + o.h * 0.1, 0xd8d8d8, 0.8, 0.2); AUDIO.play('handgun', 0.25); }
     o.hp -= dmg;
     o.flashT = 0.08;
     const kbAt = (n) => o.maxHp * (1 - n / o.def.kb);
@@ -620,16 +643,16 @@
       G.kills++;
       const m = o.money || 0;
       G.money = Math.min(wallet(), G.money + m);
-      text(o.x, o.dy + o.h + 0.3, '+' + m, '#ffd35a');
+      text(o.x, aimY(o) + o.h * 0.5 + 0.3, '+' + m, '#ffd35a');
       if (o.boss) {
         AUDIO.play('expB'); AUDIO.music(battleMusic(G.st)); shake(0.35, 0.6); hitstop(0.12);
         sheet('aura', o.x, o.dy + 2, 0xffaa33, 5, 0.8); sheet('smoke', o.x, o.dy + 1.2, 0xffcc88, 4.5, 0.9, { grow: 0.6 });
       } else if (o.h > 1.8) AUDIO.play('expS', 0.5);
-      sheet('smoke', o.x, o.dy + o.h * 0.45, 0xffb080, o.h * 1.5, 0.55, { grow: 0.5 });
-      debris(o.x, o.dy + o.h * 0.5, Math.round(3 + o.h * 2), 0xffc070);
-      sheet('burst', o.x, o.dy + o.h * 0.5, 0xffd080, o.h * 1.2, 0.2);
+      sheet('smoke', o.x, aimY(o) - o.h * 0.05, 0xffb080, o.h * 1.5, 0.55, { grow: 0.5 });
+      debris(o.x, aimY(o), Math.round(3 + o.h * 2), 0xffc070);
+      sheet('burst', o.x, aimY(o), 0xffd080, o.h * 1.2, 0.2);
     } else {
-      sheet('hit', o.x, o.dy + o.h * 0.5, 0x9fe8ff, o.h * 1.3, 0.3);
+      sheet('hit', o.x, aimY(o), 0x9fe8ff, o.h * 1.3, 0.3);
     }
   }
 
@@ -874,9 +897,9 @@
       c.hit.add(e);
       damage(e, dmg);
       text(e.x, e.dy + e.h + 0.2, fmtDmg(dmg), '#9ee8ff', 1.1);
-      sheet('bolt', e.x, e.dy + e.h * 0.6, 0x9fe8ff, 1.6, 0.3);
+      sheet('bolt', e.x, aimY(e) + e.h * 0.1, 0x9fe8ff, 1.6, 0.3);
       if (!e.dead) knockback(e, 1.6);
-      sheet('blue', e.x, e.dy + e.h * 0.5, 0xbff4ff, 1.8, 0.35);
+      sheet('blue', e.x, aimY(e), 0xbff4ff, 1.8, 0.35);
     }
     if (c.t > 0.95) { G.root.remove(c.beam); c.beam.material.dispose(); c.beam.geometry.dispose(); G.cannonFire = null; }
   }
@@ -1022,8 +1045,92 @@
     G.sfx.push(inst);
     return true;
   }
+  // ── muzzles: where the original fires from (ported from 5_LAO_Defence) ──
+  // EventThrowProjectileFire<n> leaves from the character script's _fire<n> transform (tools/build_events.py:
+  // ANIM_EV[id].fire[n] = the chain from that point up to the model root). The point is usually pruned from the
+  // rig, so it rides on its nearest kept ancestor bone with the fixed offset of the pruned levels and follows the
+  // animated bone every frame.
+  const _mv = new THREE.Vector3(), _mq = new THREE.Quaternion(), _ms = new THREE.Vector3();
+  function fireAnchor(t, ch) {
+    const N = t.data.nodes;
+    const chainOk = (i, k) => { for (let j = k; j < ch.length && i >= 0; j++, i = N[i].p) if (N[i].n !== ch[j][0]) return false; return true; };
+    for (let k = 0; k < ch.length; k++) {
+      const cand = [];
+      N.forEach((nd, i) => { if (nd.n === ch[k][0] && chainOk(i, k)) cand.push(i); });
+      if (!cand.length) continue;
+      const p = new THREE.Vector3();
+      for (let j = 0; j < k; j++) { // Unity space, fire point -> anchor
+        const [, T, Q, S] = ch[j];
+        p.multiply(_ms.set(S[0], S[1], S[2])).applyQuaternion(_mq.set(Q[0], Q[1], Q[2], Q[3])).add(_mv.set(T[0], T[1], T[2]));
+      }
+      return { cand, p: [p.x, p.y, -p.z] }; // the rig mirrors z
+    }
+    return null;
+  }
+  function muzzleAt(f, ix, px, py, pz) {
+    const W = f.sd.W, i = ix * 12;
+    _mv.set(W[i] * px + W[i + 3] * py + W[i + 6] * pz + W[i + 9],
+      W[i + 1] * px + W[i + 4] * py + W[i + 7] * pz + W[i + 10],
+      W[i + 2] * px + W[i + 5] * py + W[i + 8] * pz + W[i + 11]);
+    f.sd.root.localToWorld(_mv);
+    return G.root.worldToLocal(_mv);
+  }
+  const WEAPON = /gun|rifle|revolver|pistol|cannon|launcher|bazooka|weapon|barrel/i;
+  // a point authored on the static root marks the gun only in the original's choreography: fire from the tip of
+  // the visible weapon sprite nearest to it (its forward-most vertex)
+  function weaponTip(f, ix, p) {
+    const sd = f.sd, t = sd.tpl, N = t.data.nodes, W = sd.W;
+    const ws = t.weapons || (t.weapons = t.rends.map((r, k) => (r.kind === 0 && WEAPON.test(N[r.node].n) ? k : -1)).filter((k) => k >= 0));
+    if (!ws.length) return null;
+    const i0 = ix * 12;
+    const ax = W[i0] * p[0] + W[i0 + 3] * p[1] + W[i0 + 9], ay = W[i0 + 1] * p[0] + W[i0 + 4] * p[1] + W[i0 + 10];
+    let best = null, bd = Infinity;
+    for (const k of ws) {
+      const r = t.rends[k];
+      if (!sd.EA[r.node] || !sd.rEn[k] || sd.rCol[k * 4 + 3] < 0.1) continue;
+      const sp = t.sprites[sd.rKey[k]];
+      if (!sp || !sp.gv) continue;
+      const i = r.node * 12, g = sp.gv;
+      let tx = 0, ty = 0, mx = -Infinity;
+      for (let j = 0; j < g.length; j += 2) {
+        const x = W[i] * g[j] + W[i + 3] * g[j + 1] + W[i + 9], y = W[i + 1] * g[j] + W[i + 4] * g[j + 1] + W[i + 10];
+        if (x > mx) { mx = x; tx = x; ty = y; }
+      }
+      const d = (tx - ax) ** 2 + (ty - ay) ** 2;
+      if (d < bd) { bd = d; best = [tx, ty]; }
+    }
+    if (!best) return null;
+    _mv.set(best[0], best[1], 0);
+    sd.root.localToWorld(_mv);
+    G.root.worldToLocal(_mv);
+    return [_mv.x, _mv.y];
+  }
+  // fire point n (0: a contact hit) of fighter f, in field coordinates; in front of the chest when the rig has none
+  function muzzle(f, n) {
+    const front = [f.x + f.dir * f.h * 0.35, f.dy + (f.hop || 0) + f.h * 0.55];
+    const all = window.ANIM_EV && ANIM_EV[f.def.id];
+    const ch = n > 0 && f.ally && all && all.fire && (all.fire[n] || all.fire[1]);
+    if (!ch || !f.sd || !f.sd.W) return front;
+    const t = f.sd.tpl, fire = t.fire || (t.fire = {});
+    const key = all.fire[n] ? n : 1;
+    if (!(key in fire)) fire[key] = fireAnchor(t, ch);
+    const fp = fire[key];
+    if (!fp) return front;
+    const ea = f.sd.EA, ix = fp.cand.find((c) => !ea || ea[c]) ?? fp.cand[0]; // the copy on screen
+    placeHolder(f);
+    f.holder.updateMatrixWorld(true);
+    if (t.data.nodes[ix].p < 0 || /^(size_root|model_|fx$)/i.test(t.data.nodes[ix].n)) {
+      const tip = weaponTip(f, ix, fp.p);
+      if (tip) return tip;
+    }
+    const behind = (v) => (v.x - f.x) * f.dir < -0.2 * f.h;
+    let v = muzzleAt(f, ix, fp.p[0], fp.p[1], fp.p[2]);
+    if (behind(v)) v = muzzleAt(f, ix, -fp.p[0], fp.p[1], fp.p[2]); // a point on the far side of a mirrored bone
+    return behind(v) ? front : [v.x, v.y];
+  }
+
   // fire the unit's original projectile at (tx, ty) (its hit effect plays on arrival), or play its thrown effect there
-  function origShot(f, o, tx, ty) {
+  function origShot(f, o, tx, ty, mz) {
     const k = ALLY_K;
     if (o.bullet && FXB.ready(o.bullet) && fxRoom()) {
       const meta = FX_META.meta[o.bullet];
@@ -1031,7 +1138,7 @@
       inst.root.scale.set(k, k, 1);
       inst.setOrder(1400);
       G.root.add(inst.root);
-      const sx = f.x + f.dir * f.h * 0.35, sy = f.dy + f.h * 0.55;
+      const [sx, sy] = mz || muzzle(f, 1);
       G.bfx.push({ inst, t: 0, T: Math.max(0.08, meta.T), type: meta.type, sx, sy, ex: tx, ey: ty, hit: meta.hit, hs: meta.hitScale || 1, k, h: 0.1 + Math.random() * 0.3 });
       return true;
     }
@@ -1101,9 +1208,9 @@
     return best;
   }
 
-  function hitFx(f, tx, ty) {
+  function hitFx(f, tx, ty, mz) {
     const c = f.def.color || 0xff8855;
-    const mx = f.x + f.dir * f.h * 0.35, my = f.dy + f.h * 0.55;
+    const [mx, my] = mz || muzzle(f, 1);
     const jx = tx + (Math.random() - 0.5) * 0.3, jy = ty + (Math.random() - 0.5) * 0.4;
     if (!f.ally) {
       if (f.def.area) { sheet('smoke', jx, jy, 0xff8a5a, 1.4, 0.4, { grow: 0.5 }); sheet('burst', jx, jy, c, 0.9, 0.18); }
@@ -1190,6 +1297,12 @@
     drawOverlay();
   }
 
+  // the fighter's drawn position (also used before solving a muzzle, so a shot leaves from where the unit is now)
+  function placeHolder(f) {
+    const lift = f.def.fly ? FLY_H + Math.sin(G.t * 3 + f.dy * 9) * 0.08 : 0; // flyers hover above the lane
+    f.holder.position.set(f.x + (f.cx || 0), f.dy + (f.hop || 0) + lift, 0);
+    return lift;
+  }
   // drawing only (the simulation keeps its x): units piled on one spot are shown in ranks stepping back from the front,
   // so a dense group reads as a formation instead of one blob
   function crowd(list) {
@@ -1211,8 +1324,7 @@
     crowd(G.allies); crowd(G.enemies);
     for (let i = 0; i < all.length; i++) {
       const f = all[i];
-      const lift = f.def.fly ? 0.7 + Math.sin(G.t * 3 + f.dy * 9) * 0.08 : 0; // flyers hover above the lane
-      f.holder.position.set(f.x + (f.cx || 0), f.dy + (f.hop || 0) + lift, 0);
+      const lift = placeHolder(f);
       const sq = f.flashT > 0 ? f.flashT / 0.08 : 0; // a quick squash on every hit
       f.holder.scale.set(1 + 0.08 * sq, 1 - 0.08 * sq, 1);
       f.shadow.position.y = -(f.hop || 0) - lift;
@@ -1271,7 +1383,7 @@
     // HP slivers over hurt fighters
     for (const list of [G.allies, G.enemies]) for (const f of list) {
       if (f.dead || f.hp >= f.maxHp || f.boss) continue;
-      const [sx, sy] = toScreen(f.x, f.dy + f.h * UNIT_SCALE + (f.def.fly ? 0.8 : 0.1));
+      const [sx, sy] = toScreen(f.x, f.dy + f.h * UNIT_SCALE + (f.def.fly ? FLY_H + 0.1 : 0.1));
       if (sx < -20 || sx > innerWidth + 20) continue;
       const w = 26;
       g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(sx - w / 2 - 1, sy - 1, w + 2, 5);
@@ -1343,6 +1455,8 @@
       renderer.getContext().finish();
       return (performance.now() - t0) / n;
     },
+    // tests: fire point n of a fighter in field coordinates (muzzle solver)
+    muzzle: (f, n = 1) => muzzle(f, n),
     // tests: point the camera at world x (captures in a throttled preview, where the pan barely runs)
     look(x) { if (!G) return; pan = null; G.userCam = performance.now(); camX = x; clampCam(); updateCam(); },
     // tests: advance the battle by `sec` simulated seconds without drawing
