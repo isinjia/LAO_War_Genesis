@@ -970,3 +970,27 @@ body.carddrag #deckEdit .crc:nth-child(2n):not(.dragging):not(.empty) { animatio
 body.carddrag #deckEdit .crc:nth-child(3n):not(.dragging):not(.empty) { animation-duration: 0.36s; }
 body.carddrag #deckEdit .crc.drop-hover { animation: none !important; }
 @keyframes dragwig { from { transform: rotate(-1.25deg) translateX(-0.5px); } to { transform: rotate(1.25deg) translateX(0.5px); } }
+/* readability pass: crisp outlines (a real stroke under the fill, not stacked shadows), larger labels, cost in a dark pill */
+.crc, .card-menu, .cr-sec, #rankFilter { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.crc-lv { height: 19px; line-height: 19px; font-size: 14px; font-weight: 700; letter-spacing: 0.2px; text-shadow: none;
+  -webkit-text-stroke: 3px rgba(0, 0, 0, 0.85); paint-order: stroke fill; }
+.crc-xp { height: 18px; border-radius: 9px; }
+.crc-xp span { font-size: 13px; font-weight: 700; line-height: 18px; letter-spacing: 0.4px; text-shadow: none;
+  -webkit-text-stroke: 3px #000; paint-order: stroke fill; }
+.crc-xp.crc-name { font-size: 12px; line-height: 16px; color: #c4c8d2; -webkit-text-stroke: 0; }
+.cr-sec b { font-size: 17px; } .cr-sec small { font-size: 13px; color: #b9bdc9; }
+#rankFilter .count { font-size: 13px; color: #c4c8d2; }
+.card-menu { min-width: 124px; padding: 6px; gap: 5px; }
+.card-menu button { height: 42px; }
+.card-menu button b { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; text-shadow: none; -webkit-text-stroke: 3px rgba(0, 0, 0, 0.45); paint-order: stroke fill; }
+.card-menu .cm-use b { -webkit-text-stroke: 0; }
+.card-menu .cm-up { height: 56px; gap: 3px; }
+.card-menu button small { font-size: 14px; font-weight: 700; padding: 1px 9px 1px 6px; border-radius: 9px; background: rgba(0, 0, 0, 0.45); color: #fff; }
+.card-menu small.short { color: #ff8a8a; text-shadow: none; }
+.xp-i { width: 16px; height: 15px; }
+@media (max-width: 640px) {
+  .crc-lv { height: 15px; line-height: 15px; font-size: 12px; -webkit-text-stroke: 2.5px rgba(0, 0, 0, 0.85); }
+  .crc-xp { height: 15px; } .crc-xp span { font-size: 11.5px; line-height: 15px; -webkit-text-stroke: 2.5px #000; }
+  .crc-xp.crc-name { font-size: 10px; line-height: 13px; }
+  .cr-sec small { font-size: 11.5px; } #rankFilter .count { font-size: 11.5px; }
+}
