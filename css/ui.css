@@ -1070,3 +1070,7 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
   .op-copy p { min-height: 0; margin-bottom: 9px; font-size: 13px; }
   .op-foot { min-height: 44px; padding: 0 20px; }
 }
+/* Portrait phones: reserve the header for currencies and settings. */
+@media (max-width: 640px) and (orientation: portrait) {
+  .topbar .tb-title { display: none; }
+}
