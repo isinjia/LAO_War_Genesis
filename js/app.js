@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.35'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.36'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -662,7 +662,7 @@
     fl.querySelectorAll('button').forEach((b) => { b.onclick = () => { filter = b.dataset.r; renderSquad(); }; });
     const box = $('squadList');
     box.innerHTML = '';
-    D.UNITS.filter((u) => filter === 'ALL' || u.rank === filter)
+    D.UNITS.filter((u) => (filter === 'ALL' || u.rank === filter) && !save.deck.includes(u.id)) // deck cards live only in the deck (Clash Royale)
       .sort((a, b) => (owned(b.id) - owned(a.id)) || (rankIx(b) - rankIx(a)) || (a.cost - b.cost))
       .forEach((u) => { const c = crCard(u, () => cardMenu(u, c)); box.appendChild(c); });
   }
