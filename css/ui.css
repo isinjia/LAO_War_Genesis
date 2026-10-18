@@ -994,3 +994,20 @@ body.carddrag #deckEdit .crc.drop-hover { animation: none !important; }
   .crc-xp.crc-name { font-size: 10px; line-height: 13px; }
   .cr-sec small { font-size: 11.5px; } #rankFilter .count { font-size: 11.5px; }
 }
+/* tutorial skip: an angled HUD plate (like the deck tabs), SKIP + label, two chevrons that keep sliding right */
+.tut-skip { right: 0; top: 62px; padding: 0; border: 0; background: none; color: #fff; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55)); }
+.tut-skip.show { display: flex; animation: tsin 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+@keyframes tsin { from { transform: translateX(100%); } }
+.tut-skip::before { content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(38, 42, 52, 0.96), rgba(14, 16, 22, 0.96)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+.tut-skip::after { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 4px; background: var(--y); transform: skewX(-15deg); }
+.tut-skip .ts-txt { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding: 6px 4px 6px 22px; line-height: 1; }
+.tut-skip .ts-txt b { font-family: var(--en); font-weight: 900; font-style: italic; font-size: 17px; letter-spacing: 2px; color: var(--y); }
+.tut-skip .ts-txt small { margin-top: 3px; font-size: 11px; font-weight: 700; color: #c9cdd8; -webkit-font-smoothing: antialiased; }
+.tut-skip .ts-arw { display: flex; align-items: center; padding: 0 14px 0 6px; }
+.tut-skip .ts-arw i { width: 9px; height: 9px; margin-left: -2px; border: solid var(--y); border-width: 3px 3px 0 0; transform: rotate(45deg); animation: tsarw 1s ease-in-out infinite; }
+.tut-skip .ts-arw i + i { animation-delay: 0.15s; opacity: 0.6; }
+@keyframes tsarw { 0%, 100% { translate: 0 0; } 50% { translate: 4px 0; } }
+.tut-skip:hover::before { background: linear-gradient(180deg, rgba(60, 64, 76, 0.98), rgba(22, 24, 32, 0.98)); }
+.tut-skip:active { transform: translateY(1px); }
+@media (max-width: 640px) { .tut-skip { top: 56px; } .tut-skip .ts-txt b { font-size: 15px; } .tut-skip .ts-txt small { font-size: 10px; } }
