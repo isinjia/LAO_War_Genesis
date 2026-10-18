@@ -79,7 +79,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.27'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.28'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -950,13 +950,21 @@
     $('deck').dataset.page = p;
     $('swapPage').textContent = `${p + 1}/2`;
   }
-  $('btnSwap').onpointerdown = (e) => { e.preventDefault(); AUDIO.play('click', 0.4, 1.3); setDeckPage(deckPage ? 0 : 1); };
+  $('btnSwap').onpointerdown = (e) => {
+    e.preventDefault(); AUDIO.play('click', 0.4, 1.3);
+    const d = $('deck');
+    d.classList.remove('swapping'); void d.offsetWidth; d.classList.add('swapping'); // replay the sweep
+    setDeckPage(deckPage ? 0 : 1);
+    clearTimeout(d.swapT); d.swapT = setTimeout(() => d.classList.remove('swapping'), 360);
+  };
   function buildDeck(deck) {
     const el = $('deck');
     setDeckPage(0);
     $('btnSwap').classList.toggle('on', deck.length > 5);
     el.innerHTML = '';
     deckEls = [];
+    // two rows of five, each its own layer: on phones the second sits behind the first (as in Battle Cats)
+    const rows = [0, 1].map((p) => { const d = document.createElement('div'); d.className = 'dpage'; d.dataset.p = p; el.appendChild(d); return d; });
     for (let i = 0; i < 10; i++) {
       const s = deck[i];
       const b = document.createElement('button');
@@ -968,7 +976,7 @@
         b.title = `${s.def.name} (${s.def.rank} ${s.def.role})  [${(i + 1) % 10}]`;
         b.onpointerdown = (e) => { e.preventDefault(); GAME.deploy(i); };
       }
-      el.appendChild(b);
+      rows[i < 5 ? 0 : 1].appendChild(b);
       deckEls.push(s ? { b, cd: b.querySelector('.cd'), def: s.def, sk: b.querySelector('.sk') } : null);
     }
   }

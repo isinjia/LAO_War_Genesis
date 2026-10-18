@@ -4,11 +4,12 @@
 
 ## 실행
 
-```
-python -m http.server 8790
-```
+- **Windows:** `start_game.bat` 더블클릭 → 로컬 서버(포트 8790)가 켜지고 브라우저에서 게임이 열립니다. 창을 닫으면 서버가 꺼집니다. 이미 켜져 있으면 브라우저만 엽니다.
+- **macOS / Linux:** `sh start_game.sh`
+- **직접:** `python -m http.server 8790` → http://localhost:8790
+- **온라인:** https://isinjia.github.io/LAO_War_Genesis/
 
-→ http://localhost:8790 (`index.html`을 바로 열어도 동작합니다)
+Python 3이 필요합니다(설치 시 "Add python.exe to PATH" 체크).
 
 ## 캠페인 · 스토리
 
