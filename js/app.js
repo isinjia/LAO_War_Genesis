@@ -97,7 +97,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.57'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.58'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -753,16 +753,7 @@
     m.classList.toggle('above', !below);
   }
   function cardAction(u, k) {
-    if (k === 'info') { closeCardMenu(); return openDetail(u); }
-    if (k === 'up') {
-      const lv = lvOf(u.id), need = D.cardsNeed(u.rank, lv), cost = D.xpNeed(u.rank, lv);
-      if (cardsOf(u.id) < need) return GAME.toast('카드가 부족합니다');
-      if (save.xp < cost) return GAME.toast(`XP가 부족합니다 (${fmt(save.xp)} / ${fmt(cost)})`);
-      save.xp -= cost; save.cards[u.id] = cardsOf(u.id) - need; save.lv[u.id] = lv + 1; persist();
-      AUDIO.play('levelup'); closeCardMenu(); refresh();
-      GAME.toast(`${u.name} 레벨 ${lv + 1}!`);
-      return;
-    }
+    if (k === 'info' || k === 'up') { closeCardMenu(); return openDetail(u); }
     if (k === 'remove') {
       if (save.deck.length <= 1) return GAME.toast('최소 1명은 편성해야 합니다');
       save.deck = save.deck.filter((x) => x !== u.id); persist();
@@ -920,6 +911,8 @@
     const lv = have ? lvOf(u.id) : D.START_LV[u.rank], m = D.lvMul(D.relLv(u.rank, lv)), cost = D.xpNeed(u.rank, lv);
     const need = lv < D.MAX_LV ? D.cardsNeed(u.rank, lv) : 0, n = cardsOf(u.id), short = Math.max(0, need - n);
     const inDeck = save.deck.includes(u.id);
+    const nextM = have && lv < D.MAX_LV ? D.lvMul(D.relLv(u.rank, lv + 1)) : m;
+    const stat = (value) => `<b>${fmt(value * m)}</b>` + (nextM > m ? `<span class="stat-next">→ ${fmt(value * nextM)} <small>+${fmt(value * nextM - value * m)}</small></span>` : '');
     const fx = u.slow ? (u.slow[0] >= 1 ? ` · 맞은 적 ${u.slow[1]}초 기절` : ` · 맞은 적 ${Math.round(u.slow[0] * 100)}% 둔화`) : '';
     const body = `<div class="detail"><img class="art${hasFull(u.id) ? '' : ' portrait'}" src="${art(u.id)}" alt="" style="${have ? '' : 'filter:brightness(0.12) grayscale(1)'}">
       <div class="stats"><div class="nm">${rk(u.rank)}${u.name} ${have ? `<small>LV.${lv}</small>` : ''}</div>
@@ -928,13 +921,13 @@
       <div>${have ? u.desc : howToGet(u)}</div>
       ${have ? `<div class="card-row"><span>카드</span><div class="crc-xp"><i style="width:${need ? Math.min(100, (n / need) * 100) : 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>${short && save.wild[u.rank] ? `<small>${u.rank} 와일드카드 ${fmt(save.wild[u.rank])}장 보유</small>` : ''}</div>` : ''}
       <div class="stat-grid"><span>비용 <b>${u.cost}</b></span><span>재배치 <b>${u.cd}s</b></span>
-      <span>체력 <b>${fmt(u.hp * m)}</b></span><span>공격 <b>${fmt(u.atk * m)}</b></span>
+      <span>체력 ${stat(u.hp)}</span><span>공격 ${stat(u.atk)}</span>
       <span>사거리 <b>${u.range}</b></span><span>이동 <b>${u.spd}</b></span>
       <span>넉백 <b>${u.kb}회</b></span><span>${u.skill ? `스킬 <b>${u.skill}타</b>` : ''}</span></div>
       ${have && lv < D.MAX_LV ? `<div style="margin-top:6px">업그레이드 → 레벨 ${lv + 1}: 카드 <b>${fmt(need)}</b> · <b>${fmt(cost)} XP</b> (보유 ${fmt(save.xp)})</div>` : have ? '<div style="margin-top:6px">최대 레벨</div>' : ''}</div></div>`;
     const btns = [];
     if (have) {
-      if (lv < D.MAX_LV) btns.push([`업그레이드`, () => {
+      if (lv < D.MAX_LV) btns.push([`업그레이드 · ${fmt(cost)} XP`, () => {
         if (n < need) return GAME.toast(`카드가 ${fmt(need - n)}장 부족합니다`);
         if (save.xp < cost) return GAME.toast('XP가 부족합니다');
         save.xp -= cost; save.cards[u.id] = n - need; save.lv[u.id] = lv + 1; persist();
@@ -956,6 +949,7 @@
     }
     btns.push(['닫기', closeModal, 'd']);
     modal('', body, btns, true);
+    if (have && lv < D.MAX_LV) $('modalBtns').firstElementChild.dataset.action = 'upgrade';
     if (have && window.VOICE && VOICE[u.id]) AUDIO.voice(VOICE[u.id]);
   }
 

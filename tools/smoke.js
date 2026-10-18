@@ -72,6 +72,27 @@
       }
       return 'all 3 modes: desktop keeps tabs, mobile uses centered back';
     });
+    await step('card upgrade opens details before spending resources', () => {
+      const id = 'brownie', u = D.UNIT[id], save = APP.save;
+      const old = { lv: save.lv[id], cards: save.cards[id], xp: save.xp };
+      try {
+        save.lv[id] = D.START_LV[u.rank];
+        const need = D.cardsNeed(u.rank, save.lv[id]), cost = D.xpNeed(u.rank, save.lv[id]);
+        save.cards[id] = need + 7; save.xp = cost + 1234;
+        APP.openLobby('squad');
+        document.querySelector(`.crc[data-id="${id}"]`).click();
+        document.querySelector('#cardMenu .cm-up').click();
+        if (!document.getElementById('modal').classList.contains('show')) throw new Error('upgrade skipped details');
+        if (save.lv[id] !== D.START_LV[u.rank] || save.cards[id] !== need + 7 || save.xp !== cost + 1234) throw new Error('menu spent resources');
+        if (document.querySelectorAll('.detail .stat-next').length !== 2) throw new Error('stat preview missing');
+        document.querySelector('#modalBtns [data-action="upgrade"]').click();
+        if (save.lv[id] !== D.START_LV[u.rank] + 1 || save.cards[id] !== 7 || save.xp !== 1234) throw new Error('confirmed upgrade incorrect');
+      } finally {
+        for (const key of ['lv', 'cards']) { if (old[key] == null) delete save[key][id]; else save[key][id] = old[key]; }
+        save.xp = old.xp; document.getElementById('modal').classList.remove('show'); APP.openLobby('campaign');
+      }
+      return 'menu opens preview; detail button spends XP and cards once';
+    });
     await step('battle 1-1: deploy, fight, enemies spawn', async () => {
       const G = await battle(D.STAGES[0], ['brownie', 'leprechaun', 'gnome'], 40);
       if (!G.allies.length && !G.over) throw new Error('no allies');

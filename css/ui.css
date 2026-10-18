@@ -1106,3 +1106,6 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
   .op-back-btn { height: 43px; }
   .operation-detail { padding: 20px 16px; margin: 0; }
 }
+.detail .stat-grid > span { min-height: 48px; }
+.detail .stat-next { display: block; color: #86ed8a; font-family: var(--en); font-weight: 700; }
+.detail .stat-next small { color: #a1d9a3; font-size: 11px; margin-left: 4px; white-space: nowrap; }
