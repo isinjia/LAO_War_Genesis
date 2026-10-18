@@ -816,6 +816,7 @@
   // then the operation title before the result
   // beats on battle time (G.overT), so a slow phone or a paused tab can't show the title before the boss has sunk
   function finale() {
+    G.speed = 1; // the ending plays at its own pace whatever the battle speed was
     document.body.classList.add('cine', 'finale-on');
     const beats = [];
     for (let i = 0; i < 18; i++) beats.push([0.4 + i * 0.19, () => {
@@ -1266,7 +1267,7 @@
       g.fillStyle = color; g.fillRect(sx - w / 2, sy + 5, w * Math.max(0, hp / max), 7);
     };
     bar(-0.7, 4.25, G.base.hp, G.base.max, '#48d8ff', '오르카 전진기지');
-    bar(G.len + 0.9, 4.45, G.ebase.hp, G.ebase.max, '#ff5566', '철충 요새');
+    if (!(G.over && G.st.finale)) bar(G.len + 0.9, 4.45, G.ebase.hp, G.ebase.max, '#ff5566', '철충 요새'); // the finale shows the fall, not a counter
     // HP slivers over hurt fighters
     for (const list of [G.allies, G.enemies]) for (const f of list) {
       if (f.dead || f.hp >= f.maxHp || f.boss) continue;
@@ -1320,7 +1321,7 @@
   window.GAME = {
     init, preload, start, stop, deploy, upgradeWorker, fireCannon, toast,
     get state() { return G; },
-    setSpeed(s) { if (G) G.speed = s; },
+    setSpeed(s) { if (G && !(G.over && G.st.finale)) G.speed = s; },
     setPaused(p) { if (G) G.paused = p; },
     wallet: () => (G ? wallet() : 0),
     orderSkill, skillState,
