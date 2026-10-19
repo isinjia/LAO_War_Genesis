@@ -666,6 +666,8 @@
       if (orig && shots < 2 && origShot(f, orig, o.x, aimY(o), mz)) {
         // the original bullet is small and quick: a flash at the barrel shows where it left
         if (orig.bullet && shots === 0) sheet('flash', mz[0] + f.dir * 0.08, mz[1], f.def.color || 0xffd27a, 0.7, 0.08);
+        // an original effect that only plays on the target (no bullet): a ranged unit still shows the shot leaving it
+        if (!orig.bullet && f.def.range >= ANTI_AIR && shots === 0) { sheet('flash', mz[0], mz[1], f.def.color || 0xffffff, 0.7, 0.1); streak(mz[0], mz[1], o.x, aimY(o), f.def.color || 0xffffff, 0.22, 0.2); }
       } else hitFx(f, o.x, aimY(o), mz);
       shots++;
       any = true;
@@ -1198,6 +1200,20 @@
     m.rotation.z = Math.atan2(y1 - y0, x1 - x0);
     addFx(m, life, (u) => { m.scale.set(len, width * (1 - u * 0.6), 1); m.material.opacity = 1 - u; });
   }
+  // a visible shot for effects that only had an impact: a glowing round from the weapon to the target
+  // (arc > 0 lobs it like a shell); the impact plays when it lands
+  function shot(x0, y0, x1, y1, color, life, arc, size, land) {
+    const m = sprite(tex.glow, color);
+    let landed = false;
+    addFx(m, life, (u) => {
+      const x = x0 + (x1 - x0) * u, y = y0 + (y1 - y0) * u + arc * 4 * u * (1 - u);
+      m.position.set(x, y, 0);
+      m.scale.set(size, size, 1);
+      m.material.opacity = 1;
+      if (u > 0.08 && Math.random() < 0.3) sheet('smoke', x, y, color, size * 1.1, 0.22, { grow: 0.4 }); // a short trail
+      if (u >= 1 && !landed) { landed = true; land(); }
+    });
+  }
   function tracer(x0, y0, x1, y1, color) {
     const m = sprite(tex.beam, color);
     m.rotation.z = Math.atan2(y1 - y0, x1 - x0);
@@ -1432,19 +1448,30 @@
     switch (f.def.fx) {
       case 'bullet': sheet('flash', mx, my, c, 0.5, 0.08); tracer(mx, my, tx, ty, c); sheet('hit', jx, jy, c, 1.0, 0.22); break;
       case 'snipe': sheet('flash', mx, my, c, 0.7, 0.1); streak(mx, my, tx, ty, c, 0.12, 0.18); sheet('burst', jx, jy, c, 1.2, 0.2); sheet('hit', jx, jy, 0xffffff, 1.3, 0.26); break;
-      case 'grenade': case 'missile': case 'fireball':
-        sheet('burst', jx, jy, c, 2.0, 0.18); sheet('smoke', jx, jy + 0.2, c, 2.2, 0.5, { grow: 0.5 }); ring(tx, 0.1, c, 2.4, 0.35); break;
+      case 'grenade': case 'missile': case 'fireball': { // launch flash, the round in flight (grenades lob), then the blast
+        const d = Math.abs(tx - mx), lob = f.def.fx === 'grenade' ? 0.8 + d * 0.22 : f.def.fx === 'missile' ? 0.3 + d * 0.06 : 0;
+        sheet('flash', mx, my, c, 0.8, 0.1);
+        shot(mx, my, jx, jy, c, f.def.fx === 'grenade' ? 0.42 : 0.24, lob, f.def.fx === 'fireball' ? 0.75 : 0.5,
+          () => { sheet('burst', jx, jy, c, 2.0, 0.18); sheet('smoke', jx, jy + 0.2, c, 2.2, 0.5, { grow: 0.5 }); ring(tx, 0.1, c, 2.4, 0.35); });
+        break;
+      }
       case 'flame': for (let i = 0; i < 2; i++) sheet('smoke', mx + f.dir * (0.4 + Math.random() * Math.abs(tx - mx)), my + (Math.random() - 0.5) * 0.4, c, 1.1, 0.35, { grow: 0.6 }); break;
       case 'wave': // sonic: a soft beam from the weapon, wave fronts rolling out along it, a burst on the target
         streak(mx, my, tx, ty, c, 0.5, 0.26);
         const ang = Math.atan2(ty - my, tx - mx);
         for (let k = 0; k < 3; k++) { const u = 0.2 + k * 0.3; arc(mx + (tx - mx) * u, my + (ty - my) * u, c, 0.9 + u * 0.8, 0.28, k * 0.05, ang); }
         ring(tx, ty, c, 1.9, 0.4); sheet('hit', jx, jy, c, 1.4, 0.3); break;
-      case 'frost': sheet('blue', jx, jy, 0xcff6ff, 1.6, 0.4); ring(tx, 0.1, c, 1.8, 0.45); break;
+      case 'frost': // an icy streak from the weapon, then the frost burst
+        sheet('flash', mx, my, 0xcff6ff, 0.7, 0.1); streak(mx, my, jx, jy, c, 0.18, 0.2);
+        shot(mx, my, jx, jy, 0xcff6ff, 0.2, 0, 0.45, () => { sheet('blue', jx, jy, 0xcff6ff, 1.6, 0.4); ring(tx, 0.1, c, 1.8, 0.45); });
+        break;
       case 'laser': streak(mx, my, tx + f.dir * 0.4, ty, c, 0.32, 0.22); sheet('burst', jx, jy, c, 1.3, 0.2); sheet('blue', jx, jy, c, 1.4, 0.3); break;
       case 'slash': sheet('slash', jx, jy, c, 1.5, 0.22, { aspect: 2, flip: f.dir < 0, rot: (Math.random() - 0.5) * 0.6 }); sheet('hit', jx, jy, 0xffffff, 1.2, 0.22); break;
       case 'lightning': bolt(mx, my, tx, ty, c); sheet('bolt', jx, jy + 0.6, c, 1.8, 0.3); sheet('spark', jx, jy, c, 1.0, 0.3); break;
-      case 'holy': sheet('aura', jx, ty + 0.6, c, 2.2, 0.45); sheet('burst', jx, jy, c, 1.4, 0.2); break;
+      case 'holy': // a mote of light from the weapon, then the holy burst
+        sheet('flash', mx, my, c, 0.8, 0.1);
+        shot(mx, my, jx, jy, c, 0.22, 0.15, 0.6, () => { sheet('aura', jx, ty + 0.6, c, 2.2, 0.45); sheet('burst', jx, jy, c, 1.4, 0.2); });
+        break;
       default: sheet('hit', jx, jy, c, 1.0, 0.22);
     }
   }
