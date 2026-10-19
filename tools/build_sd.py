@@ -345,6 +345,11 @@ SHOT_PREFABS = {
     "brunhild": {"atk": "Brunhild_N_Skill1_bullet"},
     "undine": {"skill": "Undine_skill2_bullet"},
     "thetis": {"skill": "Thetis_skill2_Small_Missile"},
+    # base models whose own projectile is not in the assets: the original shares projectiles between units
+    # (Nymph fires Leprechaun's), so these use the one their weapon matches
+    "amy": {"atk": "hand_gun_shot"},           # her rig's muzzle effect is "handgun_shot", Leona's handgun round
+    "sylphid": {"atk": "FX_Leprechaun_bullet"},  # SMG rounds, as Leprechaun / Nymph
+    "khan": {"atk": "Khan_NS2_skill1_bullet"},   # her own attack's projectile (the skin's copy is the one kept)
 }
 _fx_by_name = None
 
@@ -422,6 +427,26 @@ def fx_tree(path, atlas, life):
     for r in [k for k, d in tr.items() if int(d["m_Father"]["fileID"]) == 0]:
         walk(r, -1)
     return out if any(n.get("ps") for n in out) else []
+
+
+def hit_data(anim_paths, atlas):
+    """The hit effect each clip names in its EventHit events (data: the FX prefab, e.g. LRL's "Hit_x2"; "noHit"
+    means none): played on the target at every hit that has no projectile of its own."""
+    out = {}
+    for clip in ("atk", "skill"):
+        p = anim_paths.get(clip)
+        if not p or not os.path.exists(p):
+            continue
+        names = re.findall(r"functionName: EventHit\n    data: (\S+)", open(p, encoding="utf-8", errors="ignore").read())
+        names = [n for n in names if not n.lower().startswith("nohit")]
+        if not names:
+            continue
+        name = max(set(names), key=names.count)
+        path = fx_prefab(name)
+        tree = fx_tree(path, atlas, 1.0) if path else []
+        if tree:
+            out[clip] = {"name": name, "t": tree}
+    return out
 
 
 def shot_data(uid, atlas):
@@ -1214,6 +1239,7 @@ def build(uid):
     nodes = prune(nodes, clips)
     quantize_clips(clips)
     shots = shot_data(uid, atlas) if not uid.startswith("e_") else {}
+    hits = hit_data(anim_paths, atlas) if not uid.startswith("e_") else {}
     atlas_meta, atlas_files = packed_atlas([p for _, p, _, _ in atlas.textures], uid in hires_ids())
     data = {
         "fmt": FORMAT, "id": uid, "model": model, "nodes": nodes, "clips": clips,
@@ -1221,6 +1247,8 @@ def build(uid):
     }
     if shots:
         data["shots"] = shots
+    if hits:
+        data["hits"] = hits
     # Unity's own sprite meshes (tight sheets would bleed neighbouring sprites through a full-rect quad)
     mpath = unity_mesh(uid)
     if os.path.exists(mpath):

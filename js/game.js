@@ -689,6 +689,7 @@
       // the original projectile / effect (one or two per volley), else the effect sheets
       // the rig's own original particle effects (muzzle fire, hit bursts) are playing: they are the look, no stand-ins
       const own = f.ally && f.sd && f.sd.tpl.data.shots && f.sd.tpl.data.shots[a.skill ? 'skill' : 'atk'];
+      const hitTree = f.ally && f.sd && f.sd.tpl.data.hits && f.sd.tpl.data.hits[a.skill ? 'skill' : 'atk'] && f.sd.tpl.data.hits[a.skill ? 'skill' : 'atk'].t;
       if (own && !(orig && orig.bullet) && shots < 2 && window.SDPS) { // the original projectile, from the rig's own export
         SDPS.shot(f.sd, own, mz, [o.x, aimY(o)], G.root, Math.abs(f.sd.root.scale.y) || 1, f.dir, 1400);
       } else if (orig && shots < 2 && origShot(f, orig, o.x, aimY(o), mz)) {
@@ -696,6 +697,8 @@
         if (orig.bullet && shots === 0) sheet('flash', mz[0] + f.dir * 0.08, mz[1], f.def.color || 0xffd27a, 0.7, 0.08);
         // an original effect that only plays on the target (no bullet): a ranged unit still shows the shot leaving it
         if (!orig.bullet && !psLive && f.def.range >= ANTI_AIR && shots === 0) { sheet('flash', mz[0], mz[1], f.def.color || 0xffffff, 0.7, 0.1); streak(mz[0], mz[1], o.x, aimY(o), f.def.color || 0xffffff, 0.22, 0.2); }
+      } else if (hitTree && window.SDPS) { // the clip's own hit effect (EventHit), on the target
+        if (shots < 2) SDPS.burst(f.sd, hitTree, [o.x, aimY(o)], G.root, Math.abs(f.sd.root.scale.y) || 1, f.dir, 1400);
       } else if (!psLive) hitFx(f, o.x, aimY(o), mz); // stand-in sheets only when the original has no effect of its own here
       else if (shots < 2 && f.def.range >= ANTI_AIR) { // an instant hit (no projectile): the original's hit flash on the target
         sheet('hit', o.x + (Math.random() - 0.5) * 0.3, aimY(o) + (Math.random() - 0.5) * 0.4, f.def.color || 0xffffff, 1.0, 0.22);

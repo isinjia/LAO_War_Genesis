@@ -480,11 +480,20 @@
       }
     }
   }
+  // a hit effect played once on the target (the clip's EventHit effect, for hits without a projectile)
+  function burst(sd, tree, at, field, k, dir, order) {
+    const g = new THREE.Group();
+    g.position.set(at[0], at[1], 0); g.scale.set(k * dir, k, 1);
+    field.add(g);
+    const b = new Loose(tree, sd.tpl.atlas.tex, sd.tpl.atlas.rects, g, order);
+    b.place(0, 0, 0);
+    live.push({ g, b, hit: null, t: 0, T: 0, def: {}, done: true });
+  }
   function clearAll() { for (const e of live) { e.b.dispose(); if (e.hit) e.hit.dispose(); e.g.parent && e.g.parent.remove(e.g); } live.length = 0; }
 
   window.SDPS = {
     has: (tpl) => tpl.data.nodes.some((n) => n.ps),
     create: (sd) => new Set(sd),
-    shot, tick, clear: clearAll,
+    shot, burst, tick, clear: clearAll,
   };
 })();
