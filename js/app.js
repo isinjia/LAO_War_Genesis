@@ -114,7 +114,9 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.84'; // shown at the title's bottom right and in the settings
+  // TEST: every chapter opens and every story scene is listed for review (set false to close it again)
+  const STORY_ALL_OPEN = true;
+  const VERSION = 'V0.85'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -322,7 +324,8 @@
       const face = D.CHAPTER_REWARD[c];
       const b = document.createElement('button');
       b.className = 'chap' + (locked ? ' locked' : '') + (n >= D.PER_CH ? ' done' : '') + (isHard() ? ' hard' : '');
-      b.disabled = locked;
+      const peek = STORY_ALL_OPEN && !isHard(); // TEST: a locked normal chapter still opens (stories only)
+      b.disabled = locked && !peek;
       const unlockText = isHard() && save.cleared < ch.first + D.PER_CH ? '해당 노말 챕터 클리어 후 개방' : '이전 챕터 클리어 후 개방';
       b.dataset.ch = c;
       b.innerHTML = `<div class="img" style="background-image:url(${IMG[ch.bg]})"></div>
@@ -331,7 +334,7 @@
         <div class="txt"><div class="no">${isHard() ? 'HARD ' : ''}CHAPTER ${pad2(c + 1)}</div><div class="nm">${ch.title}</div><div class="sb">${ch.sub}</div>
         <div class="prog"><i style="width:${(n / D.PER_CH) * 100}%"></i></div></div>
         ${locked ? `<div class="lock"><i></i><span>${unlockText}</span></div>` : ''}`;
-      if (!locked) b.onclick = () => { AUDIO.play('click'); chapterOpen = c; selStage = -1; sheetOpen = false; refresh(); };
+      if (!locked || peek) b.onclick = () => { AUDIO.play('click'); chapterOpen = c; selStage = -1; sheetOpen = false; refresh(); };
       box.appendChild(b);
     });
   }
@@ -431,7 +434,7 @@
       const key = `c${c + 1}_${k}`;
       const clearedChapter = save.cleared >= ch.first + D.PER_CH;
       const available = k === 'outro' ? clearedChapter : k === 'after' ? save.seen[`c${c + 1}_outro`] : save.seen[key];
-      if (!STORY.S[key] || !available) return;
+      if (!STORY.S[key] || !(available || STORY_ALL_OPEN)) return;
       const b = document.createElement('button');
       b.textContent = '▶ ' + label + (!save.seen[key] ? ' NEW' : '');
       b.onclick = () => playStory(key, () => renderStages());

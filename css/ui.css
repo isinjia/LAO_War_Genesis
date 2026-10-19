@@ -48,7 +48,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 #title .title-cast { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 #title .title-cast img { position: absolute; bottom: 0; height: 92vh; max-width: none; filter: drop-shadow(0 0 24px rgba(0, 0, 0, 0.6)); animation: tcin 0.9s ease-out both; }
 #title .title-cast .tc-leprechaun { left: 4vw; height: 84vh; animation-delay: 0.15s; }
-#title .title-cast .tc-brownie { left: 50%; transform: translateX(-50%); height: 96vh; }
+#title .title-cast .tc-brownie { left: 50%; transform: translateX(-30%); height: 96vh; } /* her rifle reaches right: centre the body, not the picture */
 #title .title-cast .tc-gnome { right: 3vw; height: 82vh; animation-delay: 0.3s; }
 @keyframes tcin { from { opacity: 0; translate: 0 4vh; } }
 /* portrait: sized by the screen width so all three stay in view, standing above the logo (Brownie in front) */
@@ -61,14 +61,14 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 }
 #title .title-cast::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.85)); }
 #title .title-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 30%, rgba(0, 0, 0, 0.9)); }
-.title-box { position: absolute; left: 0; right: 0; bottom: 8vh; display: flex; flex-direction: column; align-items: center; padding: 0 16px; }
+.title-box { position: absolute; z-index: 4; left: 0; right: 0; bottom: 8vh; display: flex; flex-direction: column; align-items: center; padding: 0 16px; }
 .logo { width: min(460px, 78vw); filter: drop-shadow(0 0 18px rgba(0, 0, 0, 0.9)); }
 .logo-en { font-family: var(--en); font-weight: 900; font-style: italic; font-size: clamp(30px, 6vw, 56px); color: var(--y); letter-spacing: 6px; margin-top: 6px;
   text-shadow: 0 0 22px rgba(255, 204, 0, 0.45), 0 3px 0 #000; }
 .logo-ko { font-weight: 700; font-size: clamp(16px, 2.6vw, 22px); letter-spacing: 12px; margin: 2px 0 28px; text-shadow: 0 2px 4px #000; }
 .touch { margin-top: 18px; font-family: var(--en); font-weight: 600; letter-spacing: 6px; font-size: 13px; color: #cfcfcf; animation: blink 1.4s infinite; }
 @keyframes blink { 50% { opacity: 0.2; } }
-.ver { position: absolute; right: 14px; bottom: max(10px, env(safe-area-inset-bottom)); color: var(--dim); font-family: var(--en); font-weight: 700; font-size: 12px; letter-spacing: 1px; opacity: 0.8; }
+.ver { position: absolute; z-index: 4; right: 14px; bottom: max(10px, env(safe-area-inset-bottom)); color: #c9d2da; font-family: var(--en); font-weight: 700; font-size: 12px; letter-spacing: 1px; opacity: 0.8; }
 
 /* ── lobby frame ── */
 .lobby-bg { filter: brightness(0.35) saturate(0.8); }
