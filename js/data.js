@@ -31,7 +31,7 @@
     ['gnome', '노움', 'B', 'splash', 'grenade', 0xffa040, 'cannon', '유탄으로 무리 지은 적을 한 번에'],
     ['impet', '임펫', 'B', 'melee', 'flame', 0xff6a2a, 'spray', '화염방사로 근거리 적을 모두 태움'],
     ['daphne', '다프네', 'B', 'slow', 'wave', 0x9dffc8, 'laser', '음파로 적을 25% 느리게', { slow: [0.25, 1.6], cost: 0.8 }],
-    ['banshee', '밴시', 'A', 'slow', 'wave', 0x7affd4, 'laser', '넓은 음파로 적을 40% 느리게'],
+    ['banshee', '밴시', 'A', 'slow', 'wave', 0x7affd4, 'laser', '비행 · 넓은 음파로 적을 40% 느리게', { fly: 1 }],
     ['sylphid', '실피드', 'A', 'stun', 'bullet', 0xd78bff, 'gun', '고속 비행 사격, 맞은 적이 잠시 멈춤', { spd: 1.6, range: -0.4 }],
     ['raven', '레이븐', 'A', 'snipe', 'snipe', 0xfff2b0, 'handgun', '멀리서 한 발씩 정확하게'],
     ['nymph', '님프', 'A', 'slow', 'frost', 0x6fe3ff, 'laser', '냉기로 적을 45% 느리게', { slow: [0.45, 2.0] }],
@@ -85,6 +85,7 @@
       range: Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10,
       spd: Math.round(t.spd * (tw.spd || 1) * 100) / 100,
       kb: t.kb, area: t.area || 0,
+      fly: tw.fly ? 1 : 0, // flies over the lane: short-range enemies (melee / walls) cannot hit it
       slow: tw.slow || t.slow || null,
       skill: tw.skill || 0, // S / SS: ordered by the player (game.js SKILL); others none
       gacha: rank === 'SS' ? 1 : 0,

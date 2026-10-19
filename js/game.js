@@ -577,12 +577,12 @@
   const baseReach = (f) => { const d = (baseFront(f) - f.x) * f.dir; return d >= -0.5 && d <= f.def.range * (f.def.artillery ? 2 : 1); };
 
   // nearest living opponent in reach (or the base)
-  // enemy traits: flyers are out of reach for short-range units (walls / melee)
+  // flyers (either side) are out of reach for short-range units (walls / melee)
   const ANTI_AIR = 2.4;
   // flyers keep a clear band above the ground fight (their shadow stays on the lane)
   const FLY_H = 3.2;
   const aimY = (o) => o.dy + (o.def.fly ? FLY_H : 0) + o.h * 0.5; // the middle of the body as drawn
-  const canHit = (f, o) => !(o.def.fly && f.ally && f.def.range < ANTI_AIR);
+  const canHit = (f, o) => !(o.def.fly && f.def.range < ANTI_AIR);
   function target(f) {
     let best = null, bd = Infinity;
     if (!f.ally && f.def.artillery && baseReach(f)) return 'base';
