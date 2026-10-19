@@ -552,8 +552,9 @@
     if (S.has('grunt')) { f.atk *= 1.2; f.hp = f.maxHp = f.maxHp * 1.15; }
     G.deploys++;
     G.allies.push(f);
-    burst(0.9, f.dy + f.h * 0.4, 0x48d8ff, 1.4, 0.35);
-    if (def.rank === 'SS') { sheet('aura', 0.9, f.dy + f.h * 0.7, 0xffd200, f.h * 2.2, 0.6); ring(0.9, f.dy + 0.1, 0xffd200, 3, 0.5); shake(0.08, 0.2); }
+    const fy = flyY(f); // a flyer's deploy flash and aura are where it hovers (the gold ring stays on the ground)
+    burst(0.9, f.dy + fy + f.h * 0.4, 0x48d8ff, 1.4, 0.35);
+    if (def.rank === 'SS') { sheet('aura', 0.9, f.dy + fy + f.h * 0.7, 0xffd200, f.h * 2.2, 0.6); ring(0.9, f.dy + 0.1, 0xffd200, 3, 0.5); shake(0.08, 0.2); }
     AUDIO.play('deploy', 0.6);
     if (window.BARK && BARK[def.id]) AUDIO.voice(BARK[def.id].deploy, 'over'); // every deploy, overlapping
     return true;
@@ -629,10 +630,10 @@
     f.state = 'atk';
     if (f.sd) { f.sd.play(name, null, false); f.sd.speed = sp; }
     if (skill) {
-      sheet('aura', f.x, f.dy + f.h * 0.7, f.def.color || 0xffffff, f.h * 1.8, 0.5);
+      sheet('aura', f.x, f.dy + flyY(f) + f.h * 0.7, f.def.color || 0xffffff, f.h * 1.8, 0.5); // on the unit, flyers included
       AUDIO.play('charge', 0.7);
       if (f.ally) {
-        text(f.x, f.dy + f.h + 0.6, 'SKILL!', '#ffd200', 1.4);
+        text(f.x, f.dy + flyY(f) + f.h + 0.6, 'SKILL!', '#ffd200', 1.4);
         if (window.BARK && BARK[f.def.id]) AUDIO.voice(BARK[f.def.id].skill, true);
       }
     }
