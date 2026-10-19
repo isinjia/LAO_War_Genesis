@@ -27,46 +27,46 @@
   // [id, name, rank, type, fx, color, sfx, desc, tweaks]; tweaks multiply hp / atk / spd / rate, add range, set skill / slow
   const LIST = [
     ['brownie', '브라우니', 'B', 'single', 'bullet', 0xffe08a, 'rifle', '싸고 빠르게 뽑는 돌격소총병', { cost: 50 / 60, spd: 1.07 }],
-    ['leprechaun', '레프리콘', 'B', 'wall', 'bullet', 0x9dff7a, 'mg', '높은 체력으로 진격을 막는 기관총 벽'],
-    ['gnome', '노움', 'B', 'splash', 'grenade', 0xffa040, 'cannon', '유탄으로 무리 지은 적을 한 번에'],
+    ['leprechaun', '레프리콘', 'B', 'single', 'bullet', 0x9dff7a, 'mg', '기관총 연사로 전열의 적을 갈아내는 공격기', { rate: 0.8, hp: 1.3 }],
+    ['gnome', '노움', 'B', 'wall', 'grenade', 0xffa040, 'cannon', '발포 콘크리트 탄으로 전열을 막아서는 보호기'],
     ['impet', '임펫', 'B', 'melee', 'flame', 0xff6a2a, 'spray', '화염방사로 근거리 적을 모두 태움'],
     ['daphne', '다프네', 'B', 'slow', 'wave', 0x9dffc8, 'laser', '음파로 적을 25% 느리게', { slow: [0.25, 1.6], cost: 0.8 }],
-    ['banshee', '밴시', 'A', 'slow', 'wave', 0x7affd4, 'laser', '넓은 음파로 적을 40% 느리게'],
-    ['sylphid', '실피드', 'A', 'stun', 'bullet', 0xd78bff, 'gun', '고속 비행 사격, 맞은 적이 잠시 멈춤', { spd: 1.6, range: -0.4 }],
-    ['raven', '레이븐', 'A', 'snipe', 'snipe', 0xfff2b0, 'handgun', '멀리서 한 발씩 정확하게'],
-    ['nymph', '님프', 'A', 'slow', 'frost', 0x6fe3ff, 'laser', '냉기로 적을 45% 느리게', { slow: [0.45, 2.0] }],
+    ['banshee', '밴시', 'A', 'splash', 'wave', 0x7affd4, 'laser', '음파 폭격으로 무리를 휩쓰는 공격기'],
+    ['sylphid', '실피드', 'A', 'single', 'bullet', 0xd78bff, 'gun', '고속 비행 사격으로 몰아붙이는 공격기', { spd: 1.6, range: -0.4 }],
+    ['raven', '레이븐', 'A', 'slow', 'snipe', 0xfff2b0, 'handgun', '포격으로 적의 발을 묶는 지원기', { range: 0.6 }],
+    ['nymph', '님프', 'A', 'single', 'frost', 0x6fe3ff, 'laser', '냉기탄을 연사하는 공격기'],
     ['amy', '에이미 레이저', 'A', 'snipe', 'snipe', 0xd9ff8a, 'handgun', '연속 저격 탄막', { rate: 0.8, atk: 0.8 }],
-    ['andvari', '안드바리', 'A', 'splash', 'grenade', 0xffc070, 'cannon', '박격포로 넓게 포격', { range: 0.4 }],
+    ['andvari', '안드바리', 'A', 'stun', 'grenade', 0xffc070, 'cannon', '포격으로 적 전열을 잠시 멈추는 지원기', { range: 0.4 }],
     ['phoenix', '피닉스', 'S', 'splash', 'fireball', 0xff5a1f, 'expS', '화염탄 범위 폭격'],
     ['thetis', '테티스', 'S', 'chain', 'lightning', 0x66ccff, 'elec', '전격으로 무리를 꿰뚫음'],
-    ['hraesvelgr', '흐레스벨그', 'S', 'laser', 'laser', 0x9ab8ff, 'laserBig', '대구경 레이저 포격'],
-    ['undine', '운디네', 'S', 'slow', 'frost', 0x9feaff, 'ice', '멀리서 얼려 50% 느리게', { slow: [0.5, 2.6], range: 0.6 }],
+    ['hraesvelgr', '흐레스벨그', 'S', 'stun', 'laser', 0x9ab8ff, 'laserBig', '레이저로 적을 마비시키는 지원기', { range: 0.6 }],
+    ['undine', '운디네', 'S', 'wall', 'frost', 0x9feaff, 'ice', '낮게 떠서 전열을 막아서는 보호기'],
     ['valkyrie', '발키리', 'S', 'single', 'bullet', 0x9fd0ff, 'rifle', '빠른 발로 전선에 먼저 닿는 연사형', { spd: 1.7, rate: 0.65, hp: 1.2, cost: 2.4, cd: 2 }],
     // SS: gacha only
     ['zero', '쿠노이치 제로', 'SS', 'melee', 'slash', 0xff3b6b, 'slash', '질풍 같은 연속 베기', { spd: 1.6, rate: 0.8, skill: 4 }],
-    ['hela', '헬라', 'SS', 'chain', 'lightning', 0xc77dff, 'elec', '저승의 번개가 무리를 휩씀', { skill: 3 }],
-    ['azazel', '아자젤', 'SS', 'splash', 'holy', 0xffe9a0, 'energy', '성스러운 빛의 폭발', { skill: 3, atk: 1.1 }],
-    ['saraqael', '사라카엘', 'SS', 'stun', 'wave', 0xb28cff, 'energy', '파동으로 적 전열을 멈춤', { skill: 3 }],
-    ['leona', '철혈의 레오나', 'SS', 'laser', 'laser', 0xff9ad5, 'laserBig', '단단한 몸과 관통 레이저', { hp: 1.6, skill: 4 }],
+    ['hela', '헬라', 'SS', 'chain', 'lightning', 0xc77dff, 'elec', 'AGS 잔해를 조종하는 버뮤다 팀의 지원기', { skill: 3 }],
+    ['azazel', '아자젤', 'SS', 'wall', 'holy', 0xffe9a0, 'energy', '빛의 방벽으로 아군을 지키는 보호기', { skill: 3 }],
+    ['saraqael', '사라카엘', 'SS', 'wall', 'wave', 0xb28cff, 'energy', '율법의 방패로 전열을 지키는 보호기', { skill: 3 }],
+    ['leona', '철혈의 레오나', 'SS', 'stun', 'laser', 0xff9ad5, 'laserBig', '드론 사격으로 적을 묶는 지원기', { hp: 1.4, skill: 4 }],
     ['ullr', '우르', 'SS', 'laser', 'laser', 0x7fe8ff, 'laserBig', '초장거리 정밀 레이저', { range: 1.2, hp: 0.8, skill: 3 }],
     ['harpy', '하르페이아', 'SS', 'splash', 'missile', 0xff8a3d, 'missile', '미사일 융단 폭격', { range: 1.0, skill: 3 }],
-    ['eternity', '이터니티', 'SS', 'single', 'bullet', 0xffd98a, 'mg', '쉬지 않는 기관포 사격', { rate: 0.4, atk: 0.7, hp: 1.4, range: 1.0, cost: 3, cd: 2.5 }],
+    ['eternity', '이터니티', 'SS', 'wall', 'bullet', 0xffd98a, 'mg', '중장갑으로 전열을 지키며 기관포를 쏘는 보호기', { hp: 1.2, skill: 3 }],
     ['lemonadealpha', '레모네이드 알파', 'SS', 'chain', 'lightning', 0xffe14d, 'elec', '전장을 가르는 전격', { range: 0.8, skill: 3 }],
-    ['sleipnir', '슬레이프니르', 'SS', 'stun', 'missile', 0xffb070, 'missile', '미사일로 묶고 터뜨림', { range: 0.8, skill: 3 }],
+    ['sleipnir', '슬레이프니르', 'SS', 'wall', 'missile', 0xffb070, 'missile', '고속으로 전열에 끼어들어 막는 보호기', { spd: 1.6, skill: 3 }],
     ['blacklilith', '블랙 리리스', 'SS', 'melee', 'slash', 0xd0405a, 'slash', '거대한 낫의 학살', { atk: 1.2, skill: 3 }],
-    ['cyclopsprincess', '사이클롭스 프린세스', 'SS', 'melee', 'slash', 0xff3a5a, 'slash', '안대를 풀면 모든 것을 파괴', { hp: 1.3, skill: 3 }],
+    ['cyclopsprincess', '사이클롭스 프린세스', 'SS', 'stun', 'slash', 0xff3a5a, 'slash', '안대를 풀어 적을 얼어붙게 하는 지원기', { hp: 1.3, skill: 3 }],
     ['blindprincess', '블라인드 프린세스', 'SS', 'snipe', 'holy', 0xfff1b8, 'energy', '빛의 일격으로 처단', { range: 0.8, skill: 3 }],
     ['brunhild', '브륀힐드', 'SS', 'splash', 'fireball', 0xff5530, 'expM', '화염의 대검이 전장을 태움', { hp: 1.4, atk: 1.15, skill: 3 }],
     ['tiamat', '티아멧', 'SS', 'laser', 'laser', 0x6ef0ff, 'laserBig', '전장 끝까지 닿는 대구경 레이저', { range: 1.6, atk: 1.2, skill: 3 }],
     ['khan', '신속의 칸', 'SS', 'snipe', 'snipe', 0xffcf7a, 'rifle', '번개 같은 속사 저격', { rate: 0.6, atk: 0.75, spd: 1.8, skill: 3 }],
     ['labiata', '라비아타 프로토타입', 'SS', 'melee', 'slash', 0xffd36e, 'swing', '바이오로이드의 원점. 「백화요란」', { hp: 1.5, atk: 1.3, skill: 3 }],
-    ['lrl', 'LRL', 'SS', 'splash', 'holy', 0xb46bff, 'energy', '칠흑의 마법 포격', { range: 1.2, skill: 3 }],
-    ['constantia', '콘스탄챠 S2', 'SS', 'laser', 'laser', 0xff6af0, 'laserBig', '거대 함포 레이저', { range: 1.2, hp: 1.2, skill: 3 }],
-    ['titania', '티타니아 프로스트', 'SS', 'slow', 'frost', 0xaef4ff, 'ice', '광역 빙결로 전장을 얼림', { slow: [0.65, 2.6], range: 1.0, skill: 3 }],
-    ['mercury', '프랭스터 머큐리', 'SS', 'melee', 'slash', 0x7dffb0, 'slash', '초고속 연타', { rate: 0.6, spd: 1.8, skill: 4 }],
+    ['lrl', 'LRL', 'SS', 'slow', 'holy', 0xb46bff, 'energy', '칠흑의 마법으로 적을 느리게 하는 지원기', { range: 1.0, skill: 3 }],
+    ['constantia', '콘스탄챠 S2', 'SS', 'slow', 'laser', 0xff6af0, 'laserBig', '함포 사격으로 적을 묶는 지원기', { range: 1.0, skill: 3 }],
+    ['titania', '티타니아 프로스트', 'SS', 'splash', 'frost', 0xaef4ff, 'ice', '광역 빙결 폭발로 무리를 부수는 공격기', { range: 1.0, skill: 3 }],
+    ['mercury', '프랭스터 머큐리', 'SS', 'stun', 'slash', 0x7dffb0, 'slash', '초고속 연타로 적을 멈추는 지원기', { spd: 1.8, skill: 4 }],
     ['empress', '엠프리스', 'SS', 'splash', 'missile', 0x9fe6ff, 'expM', '빙결 미사일 폭격', { range: 1.4, slow: [0.3, 1.5], skill: 3 }],
-    ['fafnir', '파프니르', 'SS', 'chain', 'lightning', 0x5aa8ff, 'elec', '용의 뇌격', { hp: 1.5, range: 1.0, skill: 3 }],
-    ['ramiel', '라미엘', 'SS', 'stun', 'holy', 0xfff1b8, 'energy', '천벌의 빛으로 묶음', { range: 1.0, atk: 1.2, skill: 3 }],
+    ['fafnir', '파프니르', 'SS', 'chain', 'lightning', 0x5aa8ff, 'elec', '주피터로 생체 전기를 증폭하는 공작원', { hp: 1.5, range: 1.0, skill: 3 }],
+    ['ramiel', '라미엘', 'SS', 'splash', 'holy', 0xfff1b8, 'energy', '천벌의 빛을 터뜨리는 공격기', { range: 1.0, atk: 1.2, skill: 3 }],
   ];
   // the starting squad, and the unit each stage hands out on its first clear (stage index -> id)
   const STARTERS = ['brownie', 'leprechaun', 'gnome'];
@@ -74,6 +74,7 @@
 
   const r10 = (v) => Math.max(10, Math.round(v / 10) * 10);
   // 기동형 (the original's Mobility class) fly over the lane: short-range enemies (melee / walls) cannot hit them
+  // (a flying defender — type wall — hovers low to block, so they can)
   const FLYERS = new Set(['impet', 'daphne', 'banshee', 'sylphid', 'raven', 'phoenix', 'thetis', 'hraesvelgr', 'undine', 'zero',
     'azazel', 'saraqael', 'harpy', 'sleipnir', 'brunhild', 'tiamat', 'titania', 'mercury']);
   const UNITS = LIST.map(([id, name, rank, type, fx, color, sfx, desc, tw = {}]) => {
@@ -315,7 +316,7 @@
     applyMod(st, mods[Math.floor(rnd() * mods.length)], CHAPTERS[base.chapter], base.chapter, base.no - 1);
     const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
     const pick = (list, n) => shuffle(list).slice(0, n);
-    const walls = ['brownie', 'leprechaun'];
+    const walls = ['brownie', 'gnome']; // the cheap starters: the rifleman and the defender
     const pool = UNITS.filter((u) => u.rank !== 'SS' && !walls.includes(u.id));
     // the condition's counters are always in the squad: anti-air for air raids / flyers, snipers for armour and artillery
     const must = [];
