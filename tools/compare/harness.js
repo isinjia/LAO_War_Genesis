@@ -6,7 +6,9 @@
   const BG = [0x2a, 0x3a, 0x2a];
   let rnd, tex;
   async function init() {
+    SDPS.trailBake(true); // trails as the Unity bake drew them (see js/particles.js)
     const names = Object.keys(CMP.trees);
+    FXB.raw = true; // the reference is the Unity bake itself, without the game's hand tints
     await Promise.all(names.map((n) => FXB.prepare(n)));
     // createImageBitmap: Image.decode() stalls while the page is in the background
     const bm = await createImageBitmap(await fetch(CMP.img).then((r) => r.blob()));
@@ -60,7 +62,8 @@
           tt += dt;
           // the bake is in the projectile's own frame: it flies at dist/T and the view follows it, so only world-space
           // particles (trails) drift behind
-          if (proj) { const x = D * tt / Tf; L.place(x, 0, 0); g.position.x = -x; }
+          // stops at the target, as baked, and emits nothing more (what was emitted plays out)
+          if (proj) { const x = D * Math.min(1, tt / Tf); L.place(x, 0, 0); g.position.x = -x; L.set.halt = tt > Tf; }
           L.set.update(dt);
         };
       }

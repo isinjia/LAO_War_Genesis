@@ -6,8 +6,19 @@
 // Particles are drawn in the rig's model space as children of the body mesh, so they follow its flip and pin offset.
 (function () {
   'use strict';
+  // the Unity bake's trails never aged and first showed 0.1 s in: tools/compare reproduces that, the game does not
+  let TRAIL_AGE = true, TRAIL_HOLD = 0;
+  let GEO_VIEW = true; // Render Alignment = View (Unity default) for mesh particles
   let MESH_K = 1; // mesh sizes are exported in Unity units (FBX file scale applied)
   const MAX_PER_RIG = 600; // per character: crowds of units stay cheap
+
+  // Unity effect textures have no mipmaps (importer default for sprites / effects): a streak squeezed to a few pixels
+  // samples its bright core, not an average of its whole height. The rig atlas keeps mipmaps for the bodies, so
+  // particle materials read level 0 (a large negative bias).
+  function noMip(shader) {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>',
+      THREE.ShaderChunk.map_fragment.replace('texture2D( map, vUv )', 'texture2D( map, vUv, -16.0 )'));
+  }
 
   // ── curves ─────────────────────────────────────────────
   function curve(k, t) {
@@ -206,8 +217,8 @@
         if (!d.det || !this.n) { if (this.n) { this.set.total -= this.n; this.n = 0; } return; } // a spawned effect plays out
       } else if (!this.wasOn) { this.wasOn = true; if (d.awake && !d.isSub) this.play(); }
       dt *= d.sim || 1;
-      // emission
-      if (this.on) {
+      // emission (a set can be halted: its particles play out, nothing new starts)
+      if (this.on && !this.set.halt) {
         if (this.delay > 0) this.delay -= dt; else {
           const prev = this.t;
           this.t += dt;
@@ -288,7 +299,8 @@
         }
       }
       this.W = this.src.W;
-      const M = MAX_PER_RIG;
+      // quads: the particle budget plus room for real meshes (one quad per mesh polygon and particle)
+      const M = this.M = MAX_PER_RIG + this.sys.reduce((a, c) => a + (c.def.r.geo ? (c.def.r.geo.p.length / 12) * (c.def.r.gn || 1) : 0), 0);
       this.mk = (add) => {
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(M * 4 * 3), uv = new Float32Array(M * 4 * 2), col = new Float32Array(M * 4 * 4);
@@ -301,6 +313,7 @@
         geo.setDrawRange(0, 0);
         const mat = new THREE.MeshBasicMaterial({ map: this.src.tex, vertexColors: true, transparent: true, depthTest: false, depthWrite: false,
           side: THREE.DoubleSide, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending });
+        mat.onBeforeCompile = noMip; mat.customProgramCacheKey = () => 'sdps-nomip';
         const mesh = new THREE.Mesh(geo, mat);
         mesh.frustumCulled = false;
         mesh.renderOrder = this.src.order() + 2;
@@ -324,7 +337,7 @@
         const last = tr.pts[tr.pts.length - 1];
         if (!last || Math.hypot(x - last[0], y - last[1]) >= (tr.d.minv || 0.1)) tr.pts.push([x, y, this.clock]);
         tr.head = [x, y, this.clock];
-        while (tr.pts.length && this.clock - tr.pts[0][2] > tr.d.time) tr.pts.shift();
+        if (TRAIL_AGE) while (tr.pts.length && this.clock - tr.pts[0][2] > tr.d.time) tr.pts.shift();
       }
       this.draw();
     }
@@ -332,23 +345,35 @@
     drawGeo(s, L, rc, cnt, tint, Wd, o, li) {
       const g = s.def.r.geo, Pp = g.p, T = g.uv, d = s.def;
       for (let i = 0; i < s.n; i++) {
-        const b = i * 16, t = s.P[b + 6] / s.P[b + 7], k = s.P[b + 8] * MESH_K;
+        const b = i * 16, t = s.P[b + 6] / s.P[b + 7], P = s.P;
+        const k = P[b + 8] * MESH_K * (d.sz ? mm(d.sz.c, t, P[b + 13]) : 1);
+        const rot = -(P[b + 10] + P[b + 11]), cs = Math.cos(rot), sn = Math.sin(rot);
+        // the particle's place: local particles move in the node's frame, world ones are already placed
+        const world = d.space === 1;
+        // Render Alignment = View: the mesh keeps the camera's axes (only the node's scale applies)
+        const view = GEO_VIEW && d.r.align === 0 && d.r.gn, vsx = Math.hypot(Wd[o], Wd[o + 1], Wd[o + 2]), vsy = Math.hypot(Wd[o + 3], Wd[o + 4], Wd[o + 5]);
+        const ox = world ? P[b] : Wd[o] * P[b] + Wd[o + 3] * P[b + 1] + Wd[o + 6] * P[b + 2] + Wd[o + 9];
+        const oy = world ? P[b + 1] : Wd[o + 1] * P[b] + Wd[o + 4] * P[b + 1] + Wd[o + 7] * P[b + 2] + Wd[o + 10];
         const c = d.col ? mg(d.col, t, s.P[b + 14], _c1) : null;
         let cr = s.C[i * 4] * tint[0], cg = s.C[i * 4 + 1] * tint[1], cb = s.C[i * 4 + 2] * tint[2], ca = s.C[i * 4 + 3] * tint[3];
         if (c) { cr *= c[0]; cg *= c[1]; cb *= c[2]; ca *= c[3]; }
         if (ca <= 0.003) continue;
         for (let qd = 0; qd * 12 < Pp.length; qd++) {
           const q = cnt[li];
-          if (q >= MAX_PER_RIG) return;
+          if (q >= this.M) return;
           // atlas rects cannot wrap: shift the quad's uvs by whole tiles into 0..1
           const u0 = Math.floor(Math.min(T[qd * 8], T[qd * 8 + 2], T[qd * 8 + 4], T[qd * 8 + 6]) + 1e-4);
           const v0 = Math.floor(Math.min(T[qd * 8 + 1], T[qd * 8 + 3], T[qd * 8 + 5], T[qd * 8 + 7]) + 1e-4);
           for (let cc = 0; cc < 4; cc++) {
             const slot = cc === 2 ? 3 : cc === 3 ? 2 : cc; // polygon order 0 1 2 3 -> quad slots 0 1 3 2
-            const pi = qd * 12 + cc * 3, x = Pp[pi] * k, y = Pp[pi + 1] * k, z = Pp[pi + 2] * k;
+            const pi = qd * 12 + cc * 3, mx = Pp[pi] * k, my = Pp[pi + 1] * k, z = -Pp[pi + 2] * k; // Unity -> rig space: z mirrored
+            const x = cs * mx - sn * my, y = sn * mx + cs * my; // the particle's rotation (about its z)
             const pp = (q * 4 + slot) * 3, uu = (q * 4 + slot) * 2, ci = (q * 4 + slot) * 4;
-            L.pos[pp] = Wd[o] * x + Wd[o + 3] * y + Wd[o + 6] * z + Wd[o + 9];
-            L.pos[pp + 1] = Wd[o + 1] * x + Wd[o + 4] * y + Wd[o + 7] * z + Wd[o + 10]; L.pos[pp + 2] = 0;
+            if (view) { L.pos[pp] = x * vsx + ox; L.pos[pp + 1] = y * vsy + oy; } else {
+              L.pos[pp] = Wd[o] * x + Wd[o + 3] * y + Wd[o + 6] * z + ox;
+              L.pos[pp + 1] = Wd[o + 1] * x + Wd[o + 4] * y + Wd[o + 7] * z + oy;
+            }
+            L.pos[pp + 2] = 0;
             L.uv[uu] = rc[0] + Math.min(1, T[qd * 8 + cc * 2] - u0) * rc[2]; L.uv[uu + 1] = rc[1] + Math.min(1, T[qd * 8 + cc * 2 + 1] - v0) * rc[3];
             L.col[ci] = cr; L.col[ci + 1] = cg; L.col[ci + 2] = cb; L.col[ci + 3] = Math.min(1, ca);
           }
@@ -379,7 +404,7 @@
         if (r.geo) { this.drawGeo(s, L, rc, cnt, tint, Wd, o, r.add ? 1 : 0); continue; }
         for (let i = 0; i < s.n; i++) {
           const q = cnt[r.add ? 1 : 0];
-          if (q >= MAX_PER_RIG) break;
+          if (q >= this.M) break;
           const b = i * 16, t = P[b + 6] / P[b + 7];
           let x = P[b], y = P[b + 1], z = P[b + 2];
           let vx = P[b + 3], vy = P[b + 4];
@@ -446,7 +471,7 @@
       }
       // trails: quads between consecutive points, head (newest) to tail; width curve and colour gradient along it
       for (const tr of this.trails) {
-        if (!tr.head || !tr.pts.length) continue;
+        if (!tr.head || !tr.pts.length || this.clock < TRAIL_HOLD) continue;
         const d = tr.d, r = d.r, L = this.layers[r.add ? 1 : 0], rc = rects[r.t];
         if (!rc) continue;
         const P = [tr.head].concat(tr.pts.slice().reverse()); // head first
@@ -457,7 +482,7 @@
         const at = (i) => { const u = acc[i] / total; const w = (d.wc && d.wc.length ? curve(d.wc, u) : 1) * d.w; const c = gradAt(d.grad, u, [1, 1, 1, 1]); return { u, w, c }; };
         for (let i = 0; i < P.length - 1; i++) {
           const q = cnt[r.add ? 1 : 0];
-          if (q >= MAX_PER_RIG) break;
+          if (q >= this.M) break;
           const a = P[i], b = P[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], ln = Math.hypot(dx, dy) || 1e-6;
           const nx = -dy / ln, ny = dx / ln, A = at(i), B = at(i + 1);
           const pp = q * 12, uu = q * 8, cc = q * 16, pos = L.pos, uv = L.uv, col = L.col;
@@ -577,6 +602,8 @@
   function clearAll() { for (const e of live) { e.b.dispose(); if (e.hit) e.hit.dispose(); e.g.parent && e.g.parent.remove(e.g); } live.length = 0; }
 
   window.SDPS = {
+    trailBake: (on) => { TRAIL_AGE = !on; TRAIL_HOLD = on ? 0.09 : 0; }, // shown from the bake frame at 0.1 s
+    geoView: (on) => { GEO_VIEW = !!on; },
     meshK: (k) => { if (k != null) MESH_K = k; return MESH_K; },
     has: (tpl) => tpl.data.nodes.some((n) => n.ps || n.tr),
     create: (sd) => new Set(sd),

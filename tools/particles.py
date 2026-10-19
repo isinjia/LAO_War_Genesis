@@ -278,6 +278,12 @@ def export(ps, rend, atlas, guid_index, mat_additive):
         ext = mesh_extent(mp) if mp.lower().endswith(".fbx") else None
         if ext:
             o["r"]["mx"] = ext  # Mesh render mode: drawn as a quad the size of the mesh
+        # few particles of a small mesh (Thetis' exhaust: one fan of bolts): its real polygons instead
+        est = sum(max(_f(bu["n"].get("s", 1)), _f(bu["n"].get("a", 0))) * max(1, bu.get("cyc", 1)) for bu in o["emit"].get("b", []))
+        geo = mesh_geom(mp) if ext and o["emit"]["rate"].get("s", 0) == 0 and o["emit"]["rate"].get("m", 0) == 0 and est >= 1 else None
+        if geo and len(geo["p"]) // 12 * est <= 1500:
+            o["r"]["geo"] = geo
+            o["r"]["gn"] = int(est)
     sub = ps.get("SubModule") or {}
     if int(num(sub.get("enabled"), 0)):
         o["subs"] = [[str((s.get("emitter") or {}).get("fileID", 0)), int(num(s.get("type"), 0))]

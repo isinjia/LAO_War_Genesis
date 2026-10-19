@@ -107,7 +107,7 @@
         const bin = d.bo ? { p: view('p', Int16Array), u: view('u', Uint16Array), c: view('c', Uint8Array), i: view('i', Uint16Array) }
           : { p: b64(d.bin.p, Int16Array), u: b64(d.bin.u, Uint16Array), c: b64(d.bin.c, Uint8Array), i: b64(d.bin.i, Uint16Array) };
         d.bin = d.atlas = null; // decoded: drop the base64 strings
-        if (TINT[name]) tint(d, bin, TINT[name]);
+        if (TINT[name] && !FXB.raw) tint(d, bin, TINT[name]); // FXB.raw: exactly what Unity baked (tools/compare)
         const max = {};
         GROUPS.forEach((g, gi) => {
           max[g] = [0, 0];
