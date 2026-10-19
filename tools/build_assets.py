@@ -30,7 +30,7 @@ BG = {
     "bg_field": "BGImg/BG_7_1.png",
     "bg_city": "BGImg/BG_09_1.png",
     "bg_base": "BGImg/BG_5_1_1.png",
-    "bg_title": "BGImg/BG_13_1.png",
+    "bg_title": "BGImg/BG_7_5.png",
 }
 
 SFX = {

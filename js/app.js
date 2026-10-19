@@ -114,9 +114,11 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.81'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.82'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
+  // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
+  $('titleCast').innerHTML = ['leprechaun', 'brownie', 'gnome'].filter(hasFull).map((id) => `<img class="tc-${id}" src="${FULL[id]}" alt="">`).join('');
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
   if (window.UIA) $('logo').src = UIA.logo.u;
   // a commander who hasn't finished the tutorial goes straight into it: the story intro, then 1-1 with the coach,
