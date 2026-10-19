@@ -8,7 +8,7 @@
   'use strict';
   // the Unity bake's trails never aged and first showed 0.1 s in: tools/compare reproduces that, the game does not
   let TRAIL_AGE = true, TRAIL_HOLD = 0;
-  let GEO_VIEW = true; // Render Alignment = View (Unity default) for mesh particles
+  let GEO_VIEW = false; // mesh particles keep their node rotation (Thetis: the bolt shell's poles point backwards)
   let MESH_K = 1; // mesh sizes are exported in Unity units (FBX file scale applied)
   const MAX_PER_RIG = 600; // per character: crowds of units stay cheap
 
@@ -19,6 +19,9 @@
     shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>',
       THREE.ShaderChunk.map_fragment.replace('texture2D( map, vUv )', 'texture2D( map, vUv, -16.0 )'));
   }
+
+  // Vertex alpha is not clamped here: Unity's particle shaders multiply 2 x tint x vertex alpha by the texture's alpha
+  // and only the blend clamps the result, so a strong tint keeps soft texture edges bright.
 
   // ── curves ─────────────────────────────────────────────
   function curve(k, t) {
@@ -228,15 +231,17 @@
           const ne = Math.floor(this.acc);
           const Mx = this.Ws || this.set.W, mo = this.Ws ? 0 : o;
           if (ne > 0) { this.acc -= ne; this.emit(ne, Mx, mo); }
-          d.emit.b.forEach((bu, k) => {
+          const bursts = (from) => d.emit.b.forEach((bu, k) => {
             const cyc = bu.cyc || 1;
-            while (this.burst[k] < cyc && this.t >= bu.t + this.burst[k] * (bu.iv || 0.01) && prev <= bu.t + this.burst[k] * (bu.iv || 0.01) + 1e-6 + (this.t - prev)) {
+            while (this.burst[k] < cyc && this.t >= bu.t + this.burst[k] * (bu.iv || 0.01) && from <= bu.t + this.burst[k] * (bu.iv || 0.01) + 1e-6 + (this.t - from)) {
               this.burst[k]++;
               if (Math.random() <= (bu.p == null ? 1 : bu.p)) this.emit(Math.round(mm(bu.n, 0, Math.random())), Mx, mo);
             }
           });
+          bursts(prev);
           if (this.t >= d.dur) {
-            if (d.loop) { this.t %= Math.max(0.01, d.dur); this.burst.fill(0); } else this.on = false;
+            // a loop wraps: the new cycle's bursts that are already due fire in this same step, as in Unity
+            if (d.loop) { this.t %= Math.max(0.01, d.dur); this.burst.fill(0); bursts(0); } else this.on = false;
           }
         }
       }
@@ -254,14 +259,19 @@
         const gm = mm(d.grav, t, P[b + 12]);
         P[b + 4] += g * gm * dt;
         if (d.frc) { P[b + 3] += mm(d.frc.x, t, P[b + 13]) * dt; P[b + 4] += mm(d.frc.y, t, P[b + 13]) * dt; P[b + 5] -= mm(d.frc.z, t, P[b + 13]) * dt; }
-        let vx = P[b + 3], vy = P[b + 4], vz = P[b + 5];
-        if (d.vel) { vx += mm(d.vel.x, t, P[b + 14]); vy += mm(d.vel.y, t, P[b + 14]); vz -= mm(d.vel.z, t, P[b + 14]); }
         if (d.clamp) {
+          // Limit Velocity: the excess over the limit loses `dampen` of itself per 30 fps frame (rate independent),
+          // before this step moves the particle
           const lim = mm(d.clamp.mag, t, P[b + 15]), sp = Math.hypot(P[b + 3], P[b + 4], P[b + 5]);
-          if (sp > lim && sp > 0) { const k = 1 - (1 - lim / sp) * (d.clamp.damp || 0); P[b + 3] *= k; P[b + 4] *= k; P[b + 5] *= k; }
+          if (sp > lim && sp > 0) {
+            const dm = 1 - Math.pow(1 - Math.min(1, d.clamp.damp || 0), dt * 30);
+            const k = 1 - (1 - lim / sp) * dm; P[b + 3] *= k; P[b + 4] *= k; P[b + 5] *= k;
+          }
           const drag = mm(d.clamp.drag, t, P[b + 15]);
           if (drag > 0) { const k = Math.max(0, 1 - drag * dt); P[b + 3] *= k; P[b + 4] *= k; P[b + 5] *= k; }
         }
+        let vx = P[b + 3], vy = P[b + 4], vz = P[b + 5];
+        if (d.vel) { vx += mm(d.vel.x, t, P[b + 14]); vy += mm(d.vel.y, t, P[b + 14]); vz -= mm(d.vel.z, t, P[b + 14]); }
         P[b] += vx * dt; P[b + 1] += vy * dt; P[b + 2] += vz * dt;
         if (d.rv) P[b + 11] += mm(d.rv, t, P[b + 13]) * dt;
         if (w !== i) { P.copyWithin(w * 16, b, b + 16); C.copyWithin(w * 4, i * 4, i * 4 + 4); }
@@ -358,6 +368,15 @@
         let cr = s.C[i * 4] * tint[0], cg = s.C[i * 4 + 1] * tint[1], cb = s.C[i * 4 + 2] * tint[2], ca = s.C[i * 4 + 3] * tint[3];
         if (c) { cr *= c[0]; cg *= c[1]; cb *= c[2]; ca *= c[3]; }
         if (ca <= 0.003) continue;
+        // texture sheet animation applies to the mesh's uvs too (Thetis' bolts: one frame of a 2x2 fire sheet)
+        const uvm = d.uv, tx = uvm ? uvm.tx : 1, ty = uvm ? uvm.ty : 1, frames = tx * ty;
+        let fx = 0, fy = 0;
+        if (uvm && frames > 1) {
+          const f0 = mm(uvm.sf, t, P[b + 15]);
+          let f = Math.floor((mm(uvm.fot, t, P[b + 12]) * (uvm.cyc || 1) % 1) * (uvm.anim === 1 ? tx : frames) + f0);
+          if (uvm.anim === 1) { const row = uvm.rr ? Math.floor(P[b + 15] * ty) : uvm.row; fx = ((f % tx) + tx) % tx; fy = row; } else { f = ((f % frames) + frames) % frames; fx = f % tx; fy = Math.floor(f / tx); }
+        }
+        const fu = rc[2] / tx, fv = rc[3] / ty, bu = rc[0] + fx * fu, bv = rc[1] + (1 - (fy + 1) / ty) * rc[3];
         for (let qd = 0; qd * 12 < Pp.length; qd++) {
           const q = cnt[li];
           if (q >= this.M) return;
@@ -374,8 +393,8 @@
               L.pos[pp + 1] = Wd[o + 1] * x + Wd[o + 4] * y + Wd[o + 7] * z + oy;
             }
             L.pos[pp + 2] = 0;
-            L.uv[uu] = rc[0] + Math.min(1, T[qd * 8 + cc * 2] - u0) * rc[2]; L.uv[uu + 1] = rc[1] + Math.min(1, T[qd * 8 + cc * 2 + 1] - v0) * rc[3];
-            L.col[ci] = cr; L.col[ci + 1] = cg; L.col[ci + 2] = cb; L.col[ci + 3] = Math.min(1, ca);
+            L.uv[uu] = bu + Math.min(1, T[qd * 8 + cc * 2] - u0) * fu; L.uv[uu + 1] = bv + Math.min(1, T[qd * 8 + cc * 2 + 1] - v0) * fv;
+            L.col[ci] = cr; L.col[ci + 1] = cg; L.col[ci + 2] = cb; L.col[ci + 3] = ca;
           }
           cnt[li] = q + 1;
         }
@@ -465,7 +484,7 @@
           pos[pp + 6] = x - ax + bx; pos[pp + 7] = y - ay + by; pos[pp + 8] = 0;
           pos[pp + 9] = x + ax + bx; pos[pp + 10] = y + ay + by; pos[pp + 11] = 0;
           uv[uu] = u0; uv[uu + 1] = v0; uv[uu + 2] = u1; uv[uu + 3] = v0; uv[uu + 4] = u0; uv[uu + 5] = v1; uv[uu + 6] = u1; uv[uu + 7] = v1;
-          for (let k = 0; k < 4; k++) { col[cc + k * 4] = cr; col[cc + k * 4 + 1] = cg; col[cc + k * 4 + 2] = cb; col[cc + k * 4 + 3] = Math.min(1, ca); }
+          for (let k = 0; k < 4; k++) { col[cc + k * 4] = cr; col[cc + k * 4 + 1] = cg; col[cc + k * 4 + 2] = cb; col[cc + k * 4 + 3] = ca; }
           cnt[r.add ? 1 : 0] = q + 1;
         }
       }
@@ -493,7 +512,7 @@
           const ua = rc[0] + A.u * rc[2], ub = rc[0] + B.u * rc[2]; // texture stretched along the trail
           uv[uu] = ua; uv[uu + 1] = rc[1]; uv[uu + 2] = ub; uv[uu + 3] = rc[1]; uv[uu + 4] = ua; uv[uu + 5] = rc[1] + rc[3]; uv[uu + 6] = ub; uv[uu + 7] = rc[1] + rc[3];
           for (const [k, C] of [[0, A], [1, B], [2, A], [3, B]]) {
-            col[cc + k * 4] = C.c[0] * tint[0]; col[cc + k * 4 + 1] = C.c[1] * tint[1]; col[cc + k * 4 + 2] = C.c[2] * tint[2]; col[cc + k * 4 + 3] = Math.min(1, C.c[3] * tint[3]);
+            col[cc + k * 4] = C.c[0] * tint[0]; col[cc + k * 4 + 1] = C.c[1] * tint[1]; col[cc + k * 4 + 2] = C.c[2] * tint[2]; col[cc + k * 4 + 3] = C.c[3] * tint[3];
           }
           cnt[r.add ? 1 : 0] = q + 1;
         }

@@ -30,8 +30,16 @@
     const mx = sx / E, my = sy / E;
     return { E, c: [cr / E, cg / E, cb / E], mx, my, sx: Math.sqrt(Math.max(0, sxx / E - mx * mx)), sy: Math.sqrt(Math.max(0, syy / E - my * my)) };
   }
-  function score(a, b) {
-    const A = feat(a), B = feat(b);
+  // features of a few neighbouring frames, merged (brightness-weighted): random bursts that land a frame apart
+  // in the two engines are not counted as a difference
+  function merge(fs) {
+    const E = fs.reduce((t, f) => t + f.E, 0);
+    if (E < 1) return { E: 0 };
+    const w = (g) => fs.reduce((t, f) => t + (f.E ? g(f) * f.E : 0), 0) / E;
+    return { E: E / fs.length, c: [0, 1, 2].map((i) => w((f) => f.c[i])), mx: w((f) => f.mx), my: w((f) => f.my), sx: w((f) => f.sx), sy: w((f) => f.sy) };
+  }
+  function score(a, b) { return scoreF(feat(a), feat(b)); }
+  function scoreF(A, B) {
     if (Math.max(A.E, B.E) < 3000 * W * H / 16500) return 100; // both (nearly) empty: the 150x110 threshold, scaled
     if (!A.E || !B.E) return 0;
     const sE = Math.min(A.E, B.E) / Math.max(A.E, B.E);
@@ -62,14 +70,16 @@
           tt += dt;
           // the bake is in the projectile's own frame: it flies at dist/T and the view follows it, so only world-space
           // particles (trails) drift behind
-          // stops at the target, as baked, and emits nothing more (what was emitted plays out)
-          if (proj) { const x = D * Math.min(1, tt / Tf); L.place(x, 0, 0); g.position.x = -x; L.set.halt = tt > Tf; }
+          // stops at the target, as baked (Fx.cs keeps simulating there: emission goes on)
+          if (proj) { const x = D * Math.min(1, tt / Tf); L.place(x, 0, 0); g.position.x = -x; }
           L.set.update(dt);
         };
       }
       let t = 0; const shots = [];
-      for (const T of tq) { if (t === 0) { step(1e-3); t = 1e-3; } // frame 0 already shows what spawned on the first update
-        while (t < T - 1e-6) { const dt = Math.min(1 / 60, T - t); step(dt); t += dt; } shots.push(shot(scene, cam)); }
+      step(0); // frame 0 already shows what spawned at once (Fx.cs: Simulate(0, restart) on the first frame)
+      for (const T of tq) {
+        // the bake's own fixed step (Fx.cs: Simulate(1 / fps) per frame), so loops wrap on the same frames
+        while (t < T - 1e-6) { const dt = Math.min(1 / fps, T - t); step(dt); t += dt; } shots.push(shot(scene, cam)); }
       out.push(shots); obj.dispose();
     }
     return out;
@@ -77,11 +87,21 @@
   // four moments inside what the Unity pass actually baked (later frames only repeat its last one)
   const timesFor = (name) => { const c = FXB.info(name), d = Math.max(1, c.d.nf - 1) / c.d.fps; return [0.15, 0.4, 0.65, 0.9].map((k) => k * d); };
   // particles are random: average several plays per effect so one unlucky burst does not decide the score
-  function run(name, VH = 0.55, reps = 1) {
+  // win: also the bake frames this many either side of each moment (merged features, both engines alike)
+  function run(name, VH = 0.55, reps = 1, win = WIN) {
+    const c = FXB.info(name).d, end = (c.nf - 1) / c.fps, base = timesFor(name), ts = [];
+    base.forEach((T) => { for (let j = -win; j <= win; j++) ts.push(Math.min(end, Math.max(0, T + j / c.fps))); });
+    const n = 2 * win + 1;
     let acc = null, last;
-    for (let k = 0; k < reps; k++) { last = render(name, timesFor(name), VH); const s = last[0].map((cv, i) => score(cv, last[1][i])); acc = acc ? acc.map((v, i) => v + s[i]) : s; }
-    return { s: acc.map((v) => Math.round(v / reps)), u: last[0], o: last[1] };
+    for (let k = 0; k < reps; k++) {
+      last = render(name, ts, VH);
+      const s = base.map((_, i) => scoreF(merge(last[0].slice(i * n, i * n + n).map(feat)), merge(last[1].slice(i * n, i * n + n).map(feat))));
+      acc = acc ? acc.map((v, i) => v + s[i]) : s;
+    }
+    const mid = (arr) => base.map((_, i) => arr[i * n + win]);
+    return { s: acc.map((v) => Math.round(v / reps)), u: mid(last[0]), o: mid(last[1]) };
   }
+  let WIN = 0; // measured: merging neighbour frames changed nothing material, so single frames stay the default
   function runAll(VH = 0.55, names = Object.keys(CMP.trees), reps = 4) {
     const res = {};
     for (const n of names) { const s = run(n, VH, reps).s; res[n] = { s, avg: Math.round(s.reduce((a, b) => a + b, 0) / s.length) }; }
@@ -101,5 +121,5 @@
     }
   }
   function size(w, h) { W = w; H = h; rnd.setSize(W, H); }
-  window.CMPH = { size, init, run, runAll, show, feat, render };
+  window.CMPH = { win: (w) => { WIN = w; }, size, init, run, runAll, show, feat, render };
 })();
