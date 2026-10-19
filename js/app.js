@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.80'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.81'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -166,6 +166,23 @@
     else if (pane === 'campaign' && operationView !== 'hub') { operationView = 'hub'; refresh(); }
   };
   $('btnBackDesktop').onclick = () => $('btnBack').click();
+  // Esc: back one step (close the open window or menu, then up the lobby); in battle Esc stays the pause key
+  addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || story || tut || (GAME.state && !GAME.state.over)) return;
+    if ($('gachaResult').classList.contains('show')) { ($('gresOk').style.display === 'none' ? $('gresSkip') : $('gresOk')).click(); return; }
+    if ($('modal').classList.contains('show')) {
+      if (lockModal) return;
+      const bs = [...$('modalBtns').children], is = (re) => bs.find((x) => re.test(x.textContent.trim()));
+      const b = is(/^(닫기|취소|뒤로|나중에|계속하기)$/) || is(/^확인$/); // a cancel wins over an OK
+      if (b) b.click(); else if (!GAME.state) closeModal();
+      return;
+    }
+    if ($('cardMenu').classList.contains('show')) { closeCardMenu(); return; }
+    if (!$('lobby').classList.contains('show')) return;
+    if (sheetMode() && sheetOpen) { sheetOpen = false; renderStages(); }
+    else if (!$('btnBack').hidden) $('btnBack').click();
+    else if (pane !== 'campaign') { AUDIO.play('click', 0.5); setPane('campaign'); }
+  });
 
   function setPane(name) {
     if (name === 'campaign' && pane !== 'campaign') operationView = 'hub';
@@ -407,12 +424,13 @@
     $('chSub').textContent = isHard() ? `${ch.sub} · 하드 모드` : `${ch.sub} · 클리어 보상 ${D.UNIT[D.CHAPTER_REWARD[c]].name}`;
     const sc = $('chStory');
     sc.innerHTML = '';
-    if (!isHard()) [['intro', '도입'], ['elite', '중반'], ['boss', '결전'], ['outro', '결말']].forEach(([k, label]) => {
+    // seen scenes replay; the after-return talk (optional, never auto-played) opens with the outro
+    if (!isHard()) [['intro', '도입'], ['event', '사건'], ['elite', '중반'], ['boss', '결전'], ['outro', '결말'], ['after', '귀환 후']].forEach(([k, label]) => {
       const key = `c${c + 1}_${k}`;
-      if (!save.seen[key]) return;
+      if (!STORY.S[key] || !save.seen[k === 'after' ? `c${c + 1}_outro` : key]) return;
       const b = document.createElement('button');
-      b.textContent = '▶ ' + label;
-      b.onclick = () => playStory(key);
+      b.textContent = '▶ ' + label + (k === 'after' && !save.seen[key] ? ' NEW' : '');
+      b.onclick = () => playStory(key, () => renderStages());
       sc.appendChild(b);
     });
     const first = ch.first, stages = list().slice(first, first + D.PER_CH), done = progress();
@@ -488,6 +506,7 @@
     if (s.hard || s.infinite) return null;
     const c = s.chapter + 1;
     if (s.no === 1) return `c${c}_intro`;
+    if (s.no === 3 && STORY.S[`c${c}_event`]) return `c${c}_event`;
     if (s.elite) return `c${c}_elite`;
     if (s.last) return `c${c}_boss`;
     return null;
@@ -510,6 +529,7 @@
     AUDIO.music(sc.bgm || (key === 'c8_outro' ? 'ending' : /_boss$/.test(key) ? 'thrill' : /_outro$/.test(key) ? 'talk2' : 'talk'));
     $('stBg').style.backgroundImage = `url(${IMG[sc.bg] || IMG.bg_title})`;
     ['stL', 'stR'].forEach((id) => { $(id).className = 'st-char ' + id.slice(2); $(id).removeAttribute('src'); });
+    $('story').classList.remove('fx-shake', 'fx-flash'); // a cue left from the last scene would replay when shown again
     $('story').classList.add('show');
     nextLine();
   }
@@ -573,7 +593,7 @@
     const [who, text, sideArg, stage] = st.sc.lines[st.i];
     if (stage) { // staging cues: screen shake / white flash / a sound
       if (stage.sfx) AUDIO.play(stage.sfx, 0.8);
-      if (stage.fx) { const box = $('story'); box.classList.remove('fx-shake', 'fx-flash'); void box.offsetWidth; box.classList.add('fx-' + stage.fx); }
+      if (stage.fx) { const box = $('story'); box.classList.remove('fx-shake', 'fx-flash'); void box.offsetWidth; box.classList.add('fx-' + stage.fx); box.onanimationend = (ev) => { if (ev.target === box) box.classList.remove('fx-shake'); }; }
     }
     const unit = D.UNIT[who];
     const name = unit ? unit.name : STORY.NAMES[who] != null ? STORY.NAMES[who] : who;

@@ -588,7 +588,7 @@
   const FLY_H = 2.2; // above the ground fighters' heads, low enough that a flyer stays inside short (landscape) views
   const flyY = (o) => (o.def.fly ? FLY_H + (o.cy || 0) : 0); // + its rank in a stacked group of flyers
   const aimY = (o) => o.dy + flyY(o) + o.h * 0.5; // the middle of the body as drawn
-  const canHit = (f, o) => !(o.def.fly && o.def.type !== 'wall' && f.def.range < ANTI_AIR); // a flying defender hovers low to block
+  const canHit = (f, o) => !(o.def.fly && f.def.range < ANTI_AIR);
   function target(f) {
     let best = null, bd = Infinity;
     if (!f.ally && f.def.artillery && baseReach(f)) return 'base';

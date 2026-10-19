@@ -40,7 +40,7 @@
     ['phoenix', '피닉스', 'S', 'splash', 'fireball', 0xff5a1f, 'expS', '화염탄 범위 폭격'],
     ['thetis', '테티스', 'S', 'chain', 'lightning', 0x66ccff, 'elec', '전격으로 무리를 꿰뚫음'],
     ['hraesvelgr', '흐레스벨그', 'S', 'stun', 'laser', 0x9ab8ff, 'laserBig', '레이저로 적을 마비시키는 지원기', { range: 0.6 }],
-    ['undine', '운디네', 'S', 'wall', 'frost', 0x9feaff, 'ice', '낮게 떠서 전열을 막아서는 보호기'],
+    ['undine', '운디네', 'S', 'wall', 'frost', 0x9feaff, 'ice', '하늘에서 전열을 지키는 보호기'],
     ['valkyrie', '발키리', 'S', 'single', 'bullet', 0x9fd0ff, 'rifle', '빠른 발로 전선에 먼저 닿는 연사형', { spd: 1.7, rate: 0.65, hp: 1.2, cost: 2.4, cd: 2 }],
     // SS: gacha only
     ['zero', '쿠노이치 제로', 'SS', 'melee', 'slash', 0xff3b6b, 'slash', '질풍 같은 연속 베기', { spd: 1.6, rate: 0.8, skill: 4 }],
@@ -74,7 +74,6 @@
 
   const r10 = (v) => Math.max(10, Math.round(v / 10) * 10);
   // 기동형 (the original's Mobility class) fly over the lane: short-range enemies (melee / walls) cannot hit them
-  // (a flying defender — type wall — hovers low to block, so they can)
   const FLYERS = new Set(['impet', 'daphne', 'banshee', 'sylphid', 'raven', 'phoenix', 'thetis', 'hraesvelgr', 'undine', 'zero',
     'azazel', 'saraqael', 'harpy', 'sleipnir', 'brunhild', 'tiamat', 'titania', 'mercury']);
   const UNITS = LIST.map(([id, name, rank, type, fx, color, sfx, desc, tw = {}]) => {

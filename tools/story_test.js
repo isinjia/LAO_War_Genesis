@@ -26,7 +26,7 @@ for (const [key, scene] of Object.entries(S)) {
   if (key.startsWith('ep_')) assert.ok(UNIT[key.slice(3)], `${key}: episode has no unit`);
 }
 for (let chapter = 1; chapter <= 8; chapter++) {
-  for (const part of ['intro', 'elite', 'boss', 'outro']) {
+  for (const part of ['intro', 'event', 'elite', 'boss', 'outro', 'after']) {
     assert.ok(S[`c${chapter}_${part}`], `chapter ${chapter}: missing ${part}`);
   }
 }
@@ -36,4 +36,4 @@ for (const comms of BATTLE) {
     assert.ok(speaker(comms[key][0]) && comms[key][1].trim(), `invalid ${key} comms`);
   }
 }
-console.log(`PASS: 32 campaign scenes, ${Object.keys(S).filter(k => k.startsWith('ep_')).length} episodes, ${lines} dialogue lines, 24 battle comms; speakers/backgrounds/portraits valid`);
+console.log(`PASS: 48 campaign scenes, ${Object.keys(S).filter(k => k.startsWith('ep_')).length} episodes, ${lines} dialogue lines, 24 battle comms; speakers/backgrounds/portraits valid`);
