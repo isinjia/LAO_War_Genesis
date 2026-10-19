@@ -708,6 +708,8 @@
       if (this.gpu && SD.outline) this.makeOutline(geo, tpl);
       this.root.add(this.mesh);
       this.geo = geo;
+      // the rig's Unity ParticleSystems (attack effects: muzzle fire, hit bursts, smoke), js/particles.js
+      this.ps = window.SDPS && SDPS.has(tpl) ? SDPS.create(this) : null;
 
       this.time = 0;
       this.clip = null;
@@ -796,6 +798,7 @@
         this.apply();
         if (this.fadeD) { this.fadeT += dt; this.blend(); }
         this.render();
+        if (this.ps) this.ps.update(dt * this.speed);
       }
     }
 
@@ -1216,6 +1219,7 @@
       this.geo.dispose();
       for (const m of this.mats) m.dispose();
       if (this.olMats) for (const m of this.olMats) m.dispose();
+      if (this.ps) this.ps.dispose();
     }
   }
 
@@ -1297,6 +1301,7 @@
         c.setTint(1, 1, 1); c.setOpacity(1);
         c.root.position.set(0, 0, 0); c.root.scale.set(1, 1, 1); c.root.visible = true;
         c.clip = null; // a reused instance starts clean (no crossfade from its previous life)
+        if (c.ps) c.ps.reset();
         c.play('idle');
         return c;
       }

@@ -12,7 +12,9 @@
   const ALLY_K = 0.21; // world units per rig unit for every ally (brownie ~1.7 tall)
   // parts of an original rig left out: Hela's summoned mechs, Andvari's cargo box (as in the defence game)
   const RIG_HIDE = { hela: /^(Meca_\d+|Summons)$/, andvari: /^(Bone_Cargo_Box|Bone_InBox|bone_shadow_box)$/ };
-  const SCREEN_FX = /black_?quad/i; // rig parts that darken the whole screen in the original (Thetis' BG_Black_Quad_FX)
+  // rig parts never seen in the original: full-screen dimmers (Thetis' BG_Black_Quad_FX) and sprite masks, which only
+  // clip other parts (Cyclops Princess's parts_Sword_Mask drew as a white board)
+  const SCREEN_FX = /black_?quad|(^|_)mask$/i;
   const UNIT_SCALE = 1.2; // drawn size over the data heights (reach / hit points use the data heights)
 
   let renderer, scene, camera, overlay, octx, dpr = 1;
@@ -310,6 +312,7 @@
     if (!G) return;
     [...G.allies, ...G.enemies].forEach(disposeFighter);
     G.bfx.forEach((b) => b.inst.dispose()); G.sfx.forEach((f) => f.dispose());
+    if (window.SDPS) SDPS.clear(); // original projectiles / hit effects in flight
     if (G.baseRig) G.baseRig.dispose();
     if (G.ourRig) G.ourRig.dispose();
     scene.remove(G.root);
@@ -599,6 +602,19 @@
     return baseReach(f) ? 'base' : null;
   }
 
+  // does this clip switch on any of the rig's particle effects (a node with a ParticleSystem, or an ancestor of one)?
+  function clipHasPs(f, name) {
+    const tp = f.sd && f.sd.tpl;
+    if (!tp || !f.sd.ps) return false;
+    const cache = tp.psClip || (tp.psClip = {});
+    if (name in cache) return cache[name];
+    const nodes = tp.data.nodes, anc = new Set();
+    nodes.forEach((n, i) => { if (n.ps && !n.ps.det) { for (let p = i; p >= 0; p = nodes[p].p) anc.add(p); } });
+    nodes.forEach((n, i) => { if (n.ps && n.ps.det) { for (let p = i; p >= 0; p = nodes[p].p) anc.add(p); } });
+    const c = tp.data.clips[name];
+    cache[name] = !!(c && c.tracks.some((t) => t.k === 'a' && anc.has(t.i) && t.i !== 0));
+    return cache[name];
+  }
   function clipDur(f, name) {
     const c = f.sd && f.sd.tpl.data.clips[name];
     return c ? c.dur : 0.8;
@@ -626,6 +642,13 @@
     const mult = ordered ? SKILL[f.def.rank].mult : skill ? 2.6 : 1;
     if (ordered) telegraph(f, hits[0] || cycle * 0.4);
     f.act = { t: 0, cycle, hits, fn, i: 0, per: (f.atk * mult) / hits.length, skill };
+    // the original's move-to-target attacks (EventMoveMotion start / arrive / leave / home): the unit flies up to its
+    // target and back, drawn only (the simulation keeps its x); it stops one unit short of the target
+    if (ev && ev.mv) {
+      const tg = target(f), tx = tg && tg !== 'base' ? tg.x : tg === 'base' ? baseFront(f) : null;
+      const dist = tx == null ? 0 : Math.max(0, (tx - f.x) * f.dir - 1.0);
+      if (dist > 0.2) f.act.mv = { at: ev.mv.map((x) => x / sp), dist };
+    }
     f.cool = Math.max(f.def.rate, cycle);
     f.state = 'atk';
     if (f.sd) { f.sd.play(name, null, false); f.sd.speed = sp; }
@@ -657,18 +680,26 @@
     let any = false;
     const orig = f.ally && origFor(f.def.id, a.skill ? 'skill' : 'atk');
     const mz = muzzle(f, a.fn && a.fn[a.i] != null ? a.fn[a.i] : 1); // where this shot leaves the weapon
+    const psLive = !!(f.ally && clipHasPs(f, a.skill ? 'skill' : 'atk')); // the original's own effects belong to this clip
     let shots = 0;
     const hitOne = (o) => {
       damage(o, a.per, f);
       if (a.skill && f.ally && shots === 0) { text(o.x, aimY(o) + o.h * 0.5 + 0.2, fmtDmg(a.per), '#fff2a8', 1.2); hitstop(0.05); }
       if (f.def.slow) { o.slowT = f.def.slow[1] * (o.boss ? 0.5 : 1) * (f.slowMul || 1); o.slowK = f.def.slow[0]; }
       // the original projectile / effect (one or two per volley), else the effect sheets
-      if (orig && shots < 2 && origShot(f, orig, o.x, aimY(o), mz)) {
+      // the rig's own original particle effects (muzzle fire, hit bursts) are playing: they are the look, no stand-ins
+      const own = f.ally && f.sd && f.sd.tpl.data.shots && f.sd.tpl.data.shots[a.skill ? 'skill' : 'atk'];
+      if (own && !(orig && orig.bullet) && shots < 2 && window.SDPS) { // the original projectile, from the rig's own export
+        SDPS.shot(f.sd, own, mz, [o.x, aimY(o)], G.root, Math.abs(f.sd.root.scale.y) || 1, f.dir, 1400);
+      } else if (orig && shots < 2 && origShot(f, orig, o.x, aimY(o), mz)) {
         // the original bullet is small and quick: a flash at the barrel shows where it left
         if (orig.bullet && shots === 0) sheet('flash', mz[0] + f.dir * 0.08, mz[1], f.def.color || 0xffd27a, 0.7, 0.08);
         // an original effect that only plays on the target (no bullet): a ranged unit still shows the shot leaving it
-        if (!orig.bullet && f.def.range >= ANTI_AIR && shots === 0) { sheet('flash', mz[0], mz[1], f.def.color || 0xffffff, 0.7, 0.1); streak(mz[0], mz[1], o.x, aimY(o), f.def.color || 0xffffff, 0.22, 0.2); }
-      } else hitFx(f, o.x, aimY(o), mz);
+        if (!orig.bullet && !psLive && f.def.range >= ANTI_AIR && shots === 0) { sheet('flash', mz[0], mz[1], f.def.color || 0xffffff, 0.7, 0.1); streak(mz[0], mz[1], o.x, aimY(o), f.def.color || 0xffffff, 0.22, 0.2); }
+      } else if (!psLive) hitFx(f, o.x, aimY(o), mz); // stand-in sheets only when the original has no effect of its own here
+      else if (shots < 2 && f.def.range >= ANTI_AIR) { // an instant hit (no projectile): the original's hit flash on the target
+        sheet('hit', o.x + (Math.random() - 0.5) * 0.3, aimY(o) + (Math.random() - 0.5) * 0.4, f.def.color || 0xffffff, 1.0, 0.22);
+      }
       shots++;
       any = true;
     };
@@ -685,7 +716,7 @@
       if (f.def.artillery && !f.ally) { sheet('smoke', baseFront(f) - 0.3, 1 + Math.random() * 2, 0xff8855, 2, 0.5, { grow: 0.5 }); shake(0.08, 0.15); }
       b.hp = Math.max(0, b.hp - a.per * (shell ? 0.5 : 1));
       b.flash = 0.12;
-      hitFx(f, baseFront(f) + f.dir * 0.4, 1.4 + Math.random(), mz);
+      if (!psLive) hitFx(f, baseFront(f) + f.dir * 0.4, 1.4 + Math.random(), mz);
       any = true;
     }
     if (any || a.i === 0) attackSfx(f);
@@ -1330,7 +1361,7 @@
   }
   // fire point n (0: a contact hit) of fighter f, in field coordinates; in front of the chest when the rig has none
   function muzzle(f, n) {
-    const front = [f.x + f.dir * f.h * 0.35, f.dy + (f.hop || 0) + flyY(f) + f.h * 0.55]; // flyers fire from up where they hover
+    const front = [f.x + f.dir * (f.h * 0.35 + dashOf(f)), f.dy + (f.hop || 0) + flyY(f) + f.h * 0.55]; // flyers fire from up where they hover
     const all = window.ANIM_EV && ANIM_EV[f.def.id];
     const ch = n > 0 && f.ally && all && all.fire && (all.fire[n] || all.fire[1]);
     if (!ch || !f.sd || !f.sd.W) return front;
@@ -1478,6 +1509,7 @@
 
   function updateFx(dt) {
     updateOrig(dt);
+    if (window.SDPS) SDPS.tick(dt);
     for (let i = G.fx.length - 1; i >= 0; i--) {
       const e = G.fx[i];
       e.t += dt;
@@ -1542,9 +1574,20 @@
   }
 
   // the fighter's drawn position (also used before solving a muzzle, so a shot leaves from where the unit is now)
+  // how far along its dash a unit is drawn (0 at home, 1 at the target), from the original's move timings
+  function dashOf(f) {
+    const a = f.act, m = a && f.state === 'atk' && a.mv;
+    if (!m) return 0;
+    const [s0, s1, s2, s3] = m.at, t = a.t, ease = (u) => u * u * (3 - 2 * u);
+    let k = 0;
+    if (t >= s0 && t < s1) k = ease((t - s0) / Math.max(1e-3, s1 - s0));
+    else if (t >= s1 && t < s2) k = 1;
+    else if (t >= s2 && t < s3) k = 1 - ease((t - s2) / Math.max(1e-3, s3 - s2));
+    return k * m.dist;
+  }
   function placeHolder(f) {
     const lift = f.def.fly ? flyY(f) + Math.sin(G.t * 3 + f.dy * 9) * 0.08 : 0; // flyers hover above the lane
-    f.holder.position.set(f.x + (f.cx || 0), f.dy + (f.hop || 0) + lift, 0);
+    f.holder.position.set(f.x + (f.cx || 0) + f.dir * dashOf(f), f.dy + (f.hop || 0) + lift, 0);
     return lift;
   }
   // drawing only (the simulation keeps its x): units piled on one spot are shown in ranks stepping back from the front,

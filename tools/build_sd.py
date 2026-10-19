@@ -21,6 +21,9 @@ import re
 import sys
 
 import yaml
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import particles  # noqa: E402
 from PIL import Image
 
 ROOT = r"E:/LAO_Google_QA/Assets"
@@ -275,6 +278,178 @@ def alignment_pivot(align, piv):
     return table.get(align, (0.5, 0.5))
 
 
+# ── spawned FX prefabs (PlayMaker CreateObject) ───────────
+_fx_docs = {}
+
+
+def spawned_fx(fx_path, parent, ppath, nodes, atlas):
+    """Append the FX prefab's transforms under the spawner node; their particle systems are 'det' (detached: once
+    spawned they stay where they were created and play out even after the spawner turns off)."""
+    if fx_path not in _fx_docs:
+        try:
+            _fx_docs[fx_path] = load_docs(fx_path)
+        except Exception:  # noqa: BLE001
+            _fx_docs[fx_path] = None
+    docs = _fx_docs[fx_path]
+    if not docs:
+        return
+    go = {k: d for k, (c, d) in docs.items() if c == 1}
+    tr = {k: d for k, (c, d) in docs.items() if c in (4, 224) and "m_GameObject" in d}
+    psys, prend = {}, {}
+    for k, (c, d) in docs.items():
+        if c == 198 and "m_GameObject" in d:
+            psys[str(d["m_GameObject"]["fileID"])] = d
+        elif c == 199 and "m_GameObject" in d:
+            prend[str(d["m_GameObject"]["fileID"])] = d
+    if not psys:
+        return
+    roots = [k for k, d in tr.items() if int(d["m_Father"]["fileID"]) == 0]
+    base = (ppath + "/" if ppath else "") + "~fx:" + os.path.splitext(os.path.basename(fx_path))[0]
+
+    def walk(tid, par, pth, top):
+        t = tr[tid]
+        gid = str(t["m_GameObject"]["fileID"])
+        g = go.get(gid, {})
+        p, q, sc = t["m_LocalPosition"], t["m_LocalRotation"], t["m_LocalScale"]
+        n = {"n": g.get("m_Name", "?"), "p": par,
+             "t": [0, 0, 0] if top else [round(num(p["x"]), 5), round(num(p["y"]), 5), round(num(p["z"]), 5)],
+             "q": [round(num(q["x"]), 6), round(num(q["y"]), 6), round(num(q["z"]), 6), round(num(q["w"]), 6)],
+             "s": [round(num(sc["x"]), 5), round(num(sc["y"]), 5), round(num(sc["z"]), 5)],
+             "a": int(g.get("m_IsActive", 1)), "path": pth}
+        if gid in psys:
+            ex = particles.export(psys[gid], prend.get(gid), atlas, guid_index(), mat_additive)
+            if ex:
+                ex["det"] = 1
+                ex.pop("subs", None)
+                n["ps"] = ex
+        ix = len(nodes)
+        nodes.append(n)
+        for ch in t.get("m_Children") or []:
+            cid = str(ch["fileID"])
+            if cid in tr:
+                walk(cid, ix, pth + "/" + go.get(str(tr[cid]["m_GameObject"]["fileID"]), {}).get("m_Name", "?"), False)
+
+    for r in roots:
+        walk(r, parent, base, True)
+
+
+# ── original projectiles (Bullet_Effect prefabs) that the Unity bake lacks ─────
+# the attack (Skil_1) / skill (Skil_2) projectile per unit, by the original's naming; the projectile script gives
+# the flight time, path type, easing curve and hit effect name
+SHOT_PREFABS = {
+    "daphne": {"atk": "daphne_bullet"},
+    "andvari": {"atk": "Andvari_skill1_bullet"},
+    "hraesvelgr": {"atk": "Hraesvelgr_skill1_Lazer_bullet"},
+    "eternity": {"atk": "Eternity_skill1_bullet"},
+    "blacklilith": {"atk": "FX_blackLilith_bullet"},
+    "brunhild": {"atk": "Brunhild_N_Skill1_bullet"},
+    "undine": {"skill": "Undine_skill2_bullet"},
+    "thetis": {"skill": "Thetis_skill2_Small_Missile"},
+}
+_fx_by_name = None
+
+
+def fx_prefab(name):
+    """An FX / bullet prefab file by its name."""
+    global _fx_by_name
+    if _fx_by_name is None:
+        _fx_by_name = {}
+        for base in [ROOT + "/AssetBundleResource", ROOT + "/AssetBundleResourceSub"]:
+            for sub in ("Bullet_Effect", "FX"):  # a bullet's own prefab (with its projectile script) before FX copies
+                for dp, _, fn in os.walk(os.path.join(base, sub)):
+                    for f in fn:
+                        if f.endswith(".prefab"):
+                            _fx_by_name.setdefault(f[:-7], os.path.join(dp, f).replace("\\", "/"))
+    return _fx_by_name.get(name)
+
+
+def fx_tree(path, atlas, life):
+    """A prefab's transforms as a small node list {p, t, q, s, ps} (particle systems, and sprites as one-particle
+    systems aligned to their node) for effects played outside the rig (projectiles, hit effects)."""
+    try:
+        docs = load_docs(path)
+    except Exception:  # noqa: BLE001
+        return []
+    go = {k: d for k, (c, d) in docs.items() if c == 1}
+    tr = {k: d for k, (c, d) in docs.items() if c in (4, 224) and "m_GameObject" in d}
+    byg = {}
+    for k, (c, d) in docs.items():
+        if "m_GameObject" in d and c in (198, 199, 212):
+            byg.setdefault(str(d["m_GameObject"]["fileID"]), {})[c] = d
+    out = []
+
+    def walk(tid, par):
+        t = tr[tid]
+        gid = str(t["m_GameObject"]["fileID"])
+        g = go.get(gid, {})
+        p, q, sc = t["m_LocalPosition"], t["m_LocalRotation"], t["m_LocalScale"]
+        n = {"n": g.get("m_Name", "?"), "p": par,
+             "t": [round(num(p["x"]), 5), round(num(p["y"]), 5), round(num(p["z"]), 5)] if par >= 0 else [0, 0, 0],
+             "q": [round(num(q["x"]), 6), round(num(q["y"]), 6), round(num(q["z"]), 6), round(num(q["w"]), 6)],
+             "s": [round(num(sc["x"]), 5), round(num(sc["y"]), 5), round(num(sc["z"]), 5)],
+             "a": int(g.get("m_IsActive", 1))}
+        cs = byg.get(gid, {})
+        if 198 in cs:
+            ex = particles.export(cs[198], cs.get(199), atlas, guid_index(), mat_additive)
+            if ex:
+                ex.pop("subs", None)
+                n["ps"] = ex
+        elif 212 in cs and int(num(cs[212].get("m_Enabled", 1))):
+            d = cs[212]
+            key = atlas.sprite(d.get("m_Sprite"))
+            if key:
+                tx, x, y, w, h, px, py, ww, hh = atlas.sprites[key]
+                col = d.get("m_Color") or {}
+                mats = d.get("m_Materials") or []
+                mguid = mats[0].get("guid") if mats else None
+                n["ps"] = {"dur": life, "loop": 0, "awake": 1, "delay": {"m": 0, "s": 0}, "space": 0, "sim": 1, "scl": 2,
+                           "life": {"m": 0, "s": life}, "speed": {"m": 0, "s": 0}, "size": {"m": 0, "s": ww}, "s3": 1,
+                           "sy": {"m": 0, "s": hh}, "rot": {"m": 0, "s": 0},
+                           "color": {"m": 0, "c0": [round(num(col.get(k, 1)), 3) for k in "rgba"]},
+                           "grav": {"m": 0, "s": 0}, "max": 1,
+                           "emit": {"rate": {"m": 0, "s": 0}, "b": [{"t": 0, "n": {"m": 0, "s": 1}, "cyc": 1, "iv": 0.01, "p": 1}]},
+                           "r": {"t": tx, "add": mat_additive(mguid), "tint": None, "mode": 5, "ls": 2, "vs": 0,
+                                 "so": int(num(d.get("m_SortingOrder", 0))), "sub": [x, y, w, h],
+                                 "off": [round((0.5 - px) * ww, 4), round((0.5 - py) * hh, 4)],
+                                 "fx": int(num(d.get("m_FlipX", 0)))}}
+        ix = len(out)
+        out.append(n)
+        for ch in t.get("m_Children") or []:
+            cid = str(ch["fileID"])
+            if cid in tr:
+                walk(cid, ix)
+
+    for r in [k for k, d in tr.items() if int(d["m_Father"]["fileID"]) == 0]:
+        walk(r, -1)
+    return out if any(n.get("ps") for n in out) else []
+
+
+def shot_data(uid, atlas):
+    out = {}
+    for clip, name in SHOT_PREFABS.get(uid, {}).items():
+        path = fx_prefab(name)
+        if not path:
+            continue
+        sc = {}
+        for k, (c, d) in load_docs(path).items():
+            if c == 114 and "_projectileEndTime" in d:
+                sc = d
+                break
+        T = max(0.05, num(sc.get("_projectileEndTime", 0.3)))
+        shot = {"T": round(T, 3), "type": int(num(sc.get("_eProJectileType", 0))),
+                "curve": particles.keys(sc.get("animationCurve")), "b": fx_tree(path, atlas, T + 0.05)}
+        if re.search(r"lazer|laser|beam", name, re.I):
+            shot["laser"] = 1  # a beam anchored at the muzzle, aimed at the target (it does not fly)
+        hn = sc.get("_hitEffectName")
+        hp = fx_prefab(hn) if hn else None
+        if hp:
+            shot["hit"] = fx_tree(hp, atlas, 1.0)
+            shot["hs"] = round(num(sc.get("_scaleHitEffect", 1)), 3)
+        if shot["b"]:
+            out[clip] = shot
+    return out
+
+
 # ── prefab ────────────────────────────────────────────────
 def build_prefab(path, atlas):
     docs = load_docs(path)
@@ -284,6 +459,26 @@ def build_prefab(path, atlas):
     for k, (c, d) in docs.items():
         if c in (212, 137, 95) or (c == 114 and (d.get("m_Script") or {}).get("guid") in PUPPET_SCRIPTS + (BONE_SCRIPT,)):
             comps.setdefault(str(d["m_GameObject"]["fileID"]), []).append((c, d))
+    # particle systems (198) and their renderers (199): the attack effects nested in the model
+    psys, prend = {}, {}
+    for k, (c, d) in docs.items():
+        if c == 198 and "m_GameObject" in d:
+            psys[str(d["m_GameObject"]["fileID"])] = (k, d)
+        elif c == 199 and "m_GameObject" in d:
+            prend[str(d["m_GameObject"]["fileID"])] = d
+    ps_node = {}  # ParticleSystem component id -> node index (sub-emitter links)
+    # PlayMaker FSMs that CreateObject an FX prefab when their object is switched on (ground hits, smoke...)
+    spawns = {}
+    for k, (c, d) in docs.items():
+        if c == 114 and isinstance(d.get("fsm"), dict) and "m_GameObject" in d:
+            fs = json.dumps(d["fsm"])
+            if "CreateObject" not in fs:
+                continue
+            paths = [guid_index().get(g, "") for g in sorted(set(re.findall(r'"guid": "([0-9a-f]{32})"', fs)))]
+            paths = [x for x in paths if x.endswith(".prefab") and "/FX/" in x]
+            main = [x for x in paths if not x.endswith("FX_shot_flash.prefab")] or paths
+            if main:
+                spawns.setdefault(str(d["m_GameObject"]["fileID"]), []).extend(main)
     root = next(k for k, d in tr.items() if int(d["m_Father"]["fileID"]) == 0)
     go_tr = {str(d["m_GameObject"]["fileID"]): k for k, d in tr.items()}
     nodes, index = [], {}
@@ -357,9 +552,19 @@ def build_prefab(path, atlas):
                     "e": int(d.get("m_Enabled", 1)),
                     "mat": mats[0].get("guid") if mats else None,
                 }
+        gid = str(t["m_GameObject"]["fileID"])
+        if gid in psys:
+            pk, pd = psys[gid]
+            ex = particles.export(pd, prend.get(gid), atlas, guid_index(), mat_additive)
+            if ex:
+                n["ps"] = ex
         ix = len(nodes)
+        if gid in psys:
+            ps_node[str(psys[gid][0])] = ix
         nodes.append(n)
         index[tid] = ix
+        for fxp in spawns.get(gid, []):
+            spawned_fx(fxp, ix, path, nodes, atlas)
         for ch in t.get("m_Children") or []:
             cid = str(ch["fileID"])
             if cid in tr:
@@ -376,6 +581,14 @@ def build_prefab(path, atlas):
             n["path"] = ""
         elif base:
             n["path"] = "~" + n["path"]
+    # sub-emitters: the parent's links become node indices; a sub system only plays when its parent triggers it
+    for n in nodes:
+        ps = n.get("ps")
+        if ps and ps.get("subs"):
+            ps["subs"] = [[ps_node.get(fid, -1), ty] for fid, ty in ps["subs"] if ps_node.get(fid, -1) >= 0]
+            for si, _ in ps["subs"]:
+                if nodes[si].get("ps"):
+                    nodes[si]["ps"]["isSub"] = 1
     for n in nodes:
         if isinstance(n.get("skin"), dict):
             n["skin"]["bones"] = [index.get(b, -1) for b in n["skin"]["bones"]]
@@ -683,7 +896,7 @@ def prune(nodes, clips):
                 keep.update(b for b in m.get("bones", []) if b >= 0)
             if isinstance(n.get("skin"), dict):
                 keep.update(b for b in n["skin"]["bones"] if b >= 0)
-        if n.get("ik") or n.get("pc") or n.get("gc"):
+        if n.get("ik") or n.get("pc") or n.get("gc") or n.get("ps"):
             keep.add(i)
         if n.get("ik"):
             keep.update(n["ik"][k] for k in ("t", "m", "b", "end", "start") if n["ik"][k] >= 0)
@@ -707,6 +920,8 @@ def prune(nodes, clips):
             n["ik"] = dict(n["ik"], **{k: remap.get(n["ik"][k], -1) for k in ("t", "m", "b", "end", "start")})
         if n.get("pc"):
             n["pc"] = dict(n["pc"], bone=remap.get(n["pc"]["bone"], -1))
+        if n.get("ps") and n["ps"].get("subs"):
+            n["ps"] = dict(n["ps"], subs=[[remap.get(si, -1), ty] for si, ty in n["ps"]["subs"]])
         if n.get("mesh"):
             n["mesh"] = [dict(m, bones=[remap.get(b, -1) for b in m["bones"]]) if "bones" in m else m for m in n["mesh"]]
         out.append(n)
@@ -899,6 +1114,15 @@ def hires_ids():
 
 def tex_image(path, hires=False):
     im = Image.open(path).convert("RGBA")
+    # the Unity importer's alpha source (effect textures): 2 = alpha from grayscale, 0 = no alpha
+    meta = open(path + ".meta", encoding="utf-8", errors="ignore").read() if os.path.exists(path + ".meta") else ""
+    m = re.search(r"alphaSource: (\d)", meta) or re.search(r"alphaUsage: (\d)", meta)
+    mode = int(m.group(1)) if m else 1
+    if mode == 2:
+        r, g, b, _ = im.split()
+        im.putalpha(Image.merge("RGB", (r, g, b)).convert("L"))
+    elif mode == 0 and not path.lower().endswith(".png"):
+        im.putalpha(255)
     if TEX_SCALE != 1 and min(im.size) >= 256 and not hires:
         im = im.resize((max(1, int(im.width * TEX_SCALE)), max(1, int(im.height * TEX_SCALE))), Image.LANCZOS)
     return im
@@ -989,11 +1213,14 @@ def build(uid):
             print("  clip fail", uid, k, e)
     nodes = prune(nodes, clips)
     quantize_clips(clips)
+    shots = shot_data(uid, atlas) if not uid.startswith("e_") else {}
     atlas_meta, atlas_files = packed_atlas([p for _, p, _, _ in atlas.textures], uid in hires_ids())
     data = {
         "fmt": FORMAT, "id": uid, "model": model, "nodes": nodes, "clips": clips,
         "sprites": atlas.sprites, "atlas": atlas_meta,
     }
+    if shots:
+        data["shots"] = shots
     # Unity's own sprite meshes (tight sheets would bleed neighbouring sprites through a full-rect quad)
     mpath = unity_mesh(uid)
     if os.path.exists(mpath):
