@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.82'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.83'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -429,9 +429,11 @@
     // seen scenes replay; the after-return talk (optional, never auto-played) opens with the outro
     if (!isHard()) [['intro', '도입'], ['event', '사건'], ['elite', '중반'], ['boss', '결전'], ['outro', '결말'], ['after', '귀환 후']].forEach(([k, label]) => {
       const key = `c${c + 1}_${k}`;
-      if (!STORY.S[key] || !save.seen[k === 'after' ? `c${c + 1}_outro` : key]) return;
+      const clearedChapter = save.cleared >= ch.first + D.PER_CH;
+      const available = k === 'outro' ? clearedChapter : k === 'after' ? save.seen[`c${c + 1}_outro`] : save.seen[key];
+      if (!STORY.S[key] || !available) return;
       const b = document.createElement('button');
-      b.textContent = '▶ ' + label + (k === 'after' && !save.seen[key] ? ' NEW' : '');
+      b.textContent = '▶ ' + label + (!save.seen[key] ? ' NEW' : '');
       b.onclick = () => playStory(key, () => renderStages());
       sc.appendChild(b);
     });
@@ -505,7 +507,7 @@
 
   // story before a normal stage: the chapter's intro (x-1), elite (x-5) or boss (x-10) scene
   function storyBefore(s) {
-    if (s.hard || s.infinite) return null;
+    if (s.hard || s.infinite || s.daily) return null;
     const c = s.chapter + 1;
     if (s.no === 1) return `c${c}_intro`;
     if (s.no === 3 && STORY.S[`c${c}_event`]) return `c${c}_event`;
@@ -518,8 +520,16 @@
     if (lobbyTut() && !s.hard && s.ix === 1) finishTutorial(); // reaching 1-2 completes the tutorial
     const key = storyBefore(s);
     // 설정 > 스토리 다시 보기: on, every stage story plays each time; off, only the ones never seen
-    if (key && (!save.seen[key] || save.storyAlways)) playStory(key, () => launch(s));
-    else launch(s);
+    const begin = () => {
+      if (key && (!save.seen[key] || save.storyAlways)) playStory(key, () => launch(s));
+      else launch(s);
+    };
+    // Closing a result or going to the map does not silently mark its ending as read.
+    // Before the next chapter, recover an unread ending so its consequences are not lost.
+    const previous = !s.hard && !s.infinite && !s.daily && s.no === 1 && s.chapter > 0
+      && save.cleared >= D.CHAPTERS[s.chapter].first ? `c${s.chapter}_outro` : null;
+    if (previous && STORY.S[previous] && !save.seen[previous]) playStory(previous, begin);
+    else begin();
   }
 
   // ── story player ───────────────────────────────────────
@@ -531,7 +541,7 @@
     AUDIO.music(sc.bgm || (key === 'c8_outro' ? 'ending' : /_boss$/.test(key) ? 'thrill' : /_outro$/.test(key) ? 'talk2' : 'talk'));
     $('stBg').style.backgroundImage = `url(${IMG[sc.bg] || IMG.bg_title})`;
     ['stL', 'stR'].forEach((id) => { $(id).className = 'st-char ' + id.slice(2); $(id).removeAttribute('src'); });
-    $('story').classList.remove('fx-shake', 'fx-flash'); // a cue left from the last scene would replay when shown again
+    $('story').classList.remove('fx-shake', 'fx-flash', 'st-ominous'); // reset the previous scene's cues and ending mood
     $('story').classList.add('show');
     nextLine();
   }
@@ -594,6 +604,8 @@
     if (st.i >= st.sc.lines.length) return endStory();
     const [who, text, sideArg, stage] = st.sc.lines[st.i];
     if (stage) { // staging cues: screen shake / white flash / a sound
+      if (stage.bgm) AUDIO.music(stage.bgm);
+      if (stage.mood === 'ominous') $('story').classList.add('st-ominous');
       if (stage.sfx) AUDIO.play(stage.sfx, 0.8);
       if (stage.fx) { const box = $('story'); box.classList.remove('fx-shake', 'fx-flash'); void box.offsetWidth; box.classList.add('fx-' + stage.fx); box.onanimationend = (ev) => { if (ev.target === box) box.classList.remove('fx-shake'); }; }
     }
@@ -677,12 +689,12 @@
   function credits(done) {
     const el = $('credits');
     el.innerHTML = `<div class="cr-roll"><img src="${UIA.logo.u}" alt=""><h2>WAR GENESIS</h2>
-      <p>작전 「워 제네시스」 완료</p>
+      <p>해안 구출 작전 완료</p>
       <h3>원작 리소스</h3><p>라스트오리진 — SD 캐릭터 · 일러스트 · UI · 이펙트 · 사운드</p>
       <h3>오르카 전선</h3><p>${D.UNITS.map((u) => u.name).join(' · ')}</p>
       <h3>철충</h3><p>${Object.values(D.ENEMIES).map((e) => e.name).join(' · ')}</p>
       <h3>그리고</h3><p>끝까지 지휘해 준 사령관에게</p>
-      <p class="end">— THANK YOU FOR PLAYING —</p><p>하드 모드와 무한 전장이 열렸습니다.</p></div>`;
+      <p class="end">— TO BE CONTINUED —</p><p>하드 모드와 무한 전장이 열렸습니다.</p></div>`;
     el.classList.add('show');
     AUDIO.music('ending');
     const close = () => { el.classList.remove('show'); el.onclick = null; if (done) done(); };
@@ -1726,12 +1738,16 @@
       const btns = [];
       if (st.daily) { /* one daily stage */ } else if (st.infinite) btns.push(['다음 층', () => { closeModal(); GAME.stop(); pickBuff(st.floor + 1); }]);
       else {
-        const outro = !st.hard && st.last && first ? `c${st.chapter + 1}_outro` : null;
-        if (outro) { save.seen[outro] = 1; persist(); } // replayable from the chapter even if skipped now
+        const outroKey = `c${st.chapter + 1}_outro`;
+        const outro = !st.hard && st.last && STORY.S[outroKey] && (!save.seen[outroKey] || save.storyAlways) ? outroKey : null;
         const pool = st.hard ? D.HARD : D.STAGES;
         const next = pool[st.ix + 1];
         const nextOpen = next && (!st.hard || save.cleared >= D.CHAPTERS[next.chapter].first + D.PER_CH);
-        if (outro) btns.push(['스토리 보기', () => { closeModal(); GAME.stop(); show('lobby'); playStory(outro, () => titleCard(st.chapter, () => { mode = 'normal'; openLobby('campaign', next ? next.chapter : st.chapter); })); }]);
+        if (outro) btns.push(['스토리 보기', () => {
+          closeModal(); GAME.stop(); show('lobby');
+          const back = () => { mode = 'normal'; openLobby('campaign', next ? next.chapter : st.chapter); };
+          playStory(outro, () => st.chapter === D.CHAPTERS.length - 1 ? back() : titleCard(st.chapter, back));
+        }]);
         else if (nextOpen && !lobbyTut()) btns.push(['다음 작전', () => { closeModal(); GAME.stop(); startStage(next); }]); // the tutorial goes back to the lobby first
       }
       btns.push([st.infinite ? '나가기' : lobbyTut() ? '계속' : '작전 지도', leave, lobbyTut() ? '' : 'd']);

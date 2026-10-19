@@ -274,6 +274,8 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .story { position: fixed; inset: 0; z-index: 22; display: none; background: #000; overflow: hidden; }
 .story.show { display: block; }
 .st-bg { position: absolute; inset: 0; background-size: cover; background-position: center; filter: brightness(0.5) blur(1px); transform: scale(1.03); }
+.story.st-ominous .st-bg { filter: brightness(0.09) saturate(0.25) blur(3px); transition: filter 1.4s ease; }
+@media (prefers-reduced-motion: reduce) { .story.st-ominous .st-bg { transition: none; } }
 .st-char { position: absolute; bottom: 0; height: 92vh; max-width: 62vw; object-fit: contain; object-position: bottom; transition: filter 0.25s, transform 0.25s, opacity 0.25s; opacity: 0; }
 .st-char.L { left: 4vw; }
 .st-char.R { right: 4vw; }
@@ -526,7 +528,7 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .si-enemies .en { position: relative; }
 .si-enemies .en .tr { position: absolute; top: -4px; right: -4px; }
 .tr { display: inline-block; font-style: normal; font-size: 9px; font-weight: 700; padding: 0 3px; line-height: 14px; color: #111; background: #ddd; }
-.tr.fly { background: #7fd6ff; } .tr.armor { background: #c9b48a; } .tr.shield { background: #b9a4ff; }
+.tr.fly { background: #7fd6ff; } .tr.armor { background: #c9b48a; } .tr.shield { background: #b9a4ff; } .tr.phase { background: #e08cff; }
 .si-traits { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #c3c8ce; }
 .si-traits .tr { font-size: 11px; margin-right: 4px; }
 .utr { display: flex; gap: 6px; margin: 2px 0; }

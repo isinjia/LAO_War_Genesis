@@ -250,10 +250,10 @@
 
   // ── battle ─────────────────────────────────────────────
   // stage: a stage object (campaign / hard / infinite floor) or a campaign index
-  // music: a battle theme per chapter, a boss theme per boss (the Iron Prince has its own)
+  // music: a battle theme per chapter, a boss theme per boss (the Dreadlurker has its own)
   const BATTLE_BGM = ['battle', 'battle2', 'battle3', 'battle4'];
   const battleMusic = (st) => (st.infinite ? 'battle4' : BATTLE_BGM[st.chapter % BATTLE_BGM.length]);
-  const bossMusic = (st) => (st.boss && st.boss.e === 'IronPrince_N' ? 'ironprince' : st.infinite ? 'boss3' : ['boss', 'boss2', 'boss3'][st.chapter % 3]);
+  const bossMusic = (st) => (st.boss && st.boss.e === 'Dreadlurker_BOSS_IW_N' ? 'finalboss' : st.infinite ? 'boss3' : ['boss', 'boss2', 'boss3'][st.chapter % 3]);
   const OUR_BASE = 'base_orca'; // the Orca's AGS Fortress rig (tools/build_sd.py EXTRA)
   // infinite-front buffs carried by the stage object: count of one kind
   const buffN = (st, id) => (st.buffs || []).filter((b) => b === id).length;
@@ -571,6 +571,7 @@
     if (def.shield) f.shield = f.maxHp * def.shield;
     f.money = Math.round(def.money * (0.8 + 0.2 * mag) * (0.6 + 0.4 * Math.min(3, G.st.pow || 1))); // tougher stages pay more (up to the campaign's top)
     if (boss) f.boss = true;
+    if (def.ai === 'dread') dreadInit(f);
     G.enemies.push(f);
     return f;
   }
@@ -663,6 +664,229 @@
     }
   }
 
+  // ── Dreadlurker (8-10): a scripted boss in four phases ─────────────────────────
+  // The original rig carries four sets of crystal parts (purple, magenta, crimson, red); a phase shows one set. Every
+  // move plays its own clip, hits at the clip's EventHit times and marks the ground it will strike from the wind-up
+  // until the hit. An Orca cannon shot during a wind-up knocks it back and breaks the move (the counter).
+  const DL_COL = [0xb050ff, 0xff40c8, 0xff2a5a, 0xff3a10];
+  const DL_PARTS = /^parts_(head|jaw|mouse_inside|neck_armor|back_niddle|neck|hand_L|arm_L|shoulder_L|hand_R|arm_R)$/;
+  const DL_HIDE = /_Q(ua|au)d_FX$|^Twist_2round_aura_mesh$/; // the skills' full-screen backdrops (not part of the beast)
+  // clip: rig clip; sp: playback speed; hits: EventHit times (clip seconds); end: clip time the move is over;
+  // k: damage per hit (x atk); reach: melee span in front; air: flyers are hit too; kb: knockback on the hit;
+  // aim: 'line' (the lane ahead), 'back' (the rearmost allies), 'snipe' (the costliest ally), 'spots' (several allies)
+  const DL_MOVES = {
+    claw: { clip: 'atk', sp: 1.3, hits: [2.33], end: 3.3, k: 1.0, reach: 3.4, air: 1, kb: 0.9, sfx: 'dlClaw', shake: 0.25 },
+    claw3: { clip: 'claw3', sp: 1.2, hits: [2.25, 3.02, 3.55], end: 4.3, k: 0.55, reach: 3.8, air: 1, kb: 0.5, sfx: 'dlClaw', shake: 0.3 },
+    swipe: { clip: 'skill', sp: 0.9, hits: [2.4, 2.45, 2.5], end: 3.5, k: 0.7, reach: 4.8, air: 1, kb: 1.6, sfx: 'dlClaw', shake: 0.5, cd: 7 },
+    beam: { clip: 'beam', sp: 1.0, hits: [2.75, 2.92, 3.08, 3.25, 3.42], end: 4.0, k: 0.15, aim: 'line', len: 7.5, air: 1, sfx: 'dlBeam', shake: 0.35, cd: 12 },
+    rain: { clip: 'rain', sp: 1.0, hits: [1.97, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75], end: 4.6, k: 0.12, aim: 'back', w: 3.4, air: 1, sfx: 'dlBeam', shake: 0.2, cd: 13 },
+    spike: { clip: 'spike', sp: 0.65, hits: [1.42], end: 3.0, k: 2.6, aim: 'snipe', w: 2.2, kb: 1.2, sfx: 'dlSpike', shake: 0.6, cd: 8 },
+    orb: { clip: 'orb', sp: 1.0, hits: [3.27, 3.5, 3.77, 4.0, 4.25], end: 4.8, k: 0.45, aim: 'spots', w: 1.4, air: 1, sfx: 'dlOrb', shake: 0.3, cd: 12 },
+    cast: { clip: 'cast', sp: 1.0, hits: [3.97], end: 5.0, k: 0, summon: 3, shake: 0.4, cd: 28 },
+  };
+  // the phase's melee first, then its specials (each on its own cooldown)
+  const DL_SET = [['claw', 'claw3'], ['claw', 'beam', 'rain'], ['claw', 'swipe', 'spike', 'beam'], ['claw3', 'spike', 'orb', 'rain', 'cast']];
+  const DL_NOTE = ['', '광선과 결정 낙하', '휩쓸기와 지면 돌출', '추적 결정과 근위 호출'];
+  const DL_LEASH = 10; // how far it comes out from the shaft (field units)
+
+  function dreadInit(f) {
+    f.ai = { phase: 0, cd: {}, move: null, rest: 0, roar: null, step: null };
+    for (const k in DL_MOVES) if (DL_MOVES[k].cd) f.ai.cd[k] = DL_MOVES[k].cd * 0.5; // no special in the first seconds
+    dreadLook(f, 0);
+    dreadRoar(f, -1); // the entrance: it rears up and roars while the camera holds on it
+  }
+  // show one phase's crystal parts (and keep the screen backdrops off)
+  function dreadLook(f, p) {
+    const c = f.sd;
+    if (!c || !c.hideNodes) return;
+    c.off = null; c.on = null;
+    c.hideNodes(SCREEN_FX); c.hideNodes(DL_HIDE);
+    if (p > 0) { c.hideNodes(DL_PARTS); c.showNodes(new RegExp('^bone_.*_phase_' + (p + 1) + '$')); }
+  }
+  function dreadRoar(f, p) {
+    dreadDrop(f);
+    f.ai.step = null;
+    f.ai.roar = { t: 0, p, done: false };
+    f.state = 'boss';
+    if (f.sd) { f.sd.play('roar', null, false); f.sd.speed = 1.2; }
+    AUDIO.play('dlWind', 0.7);
+  }
+  // a move in progress ends early: its ground marks go
+  function dreadDrop(f) {
+    const m = f.ai.move;
+    if (!m) return;
+    m.fx.forEach((o) => { G.root.remove(o); o.material.dispose(); o.geometry.dispose(); });
+    f.ai.move = null;
+  }
+  // the knockback hook: a hit that throws it back during a wind-up (the Orca cannon) breaks the move
+  function dreadBreak(f) {
+    const m = f.ai.move;
+    if (m && m.i === 0 && !f.dead) {
+      text(f.x, f.dy + f.h + 0.9, '저지!', '#7fe8ff', 1.5);
+      sheet('blue', f.x, f.dy + f.h * 0.6, 0x9fe8ff, f.h * 1.4, 0.4);
+      AUDIO.play('elec', 0.7);
+      f.ai.rest = Math.max(f.ai.rest, 1.6); // a real opening
+    }
+    dreadDrop(f);
+    f.ai.roar = null; f.ai.step = null;
+  }
+  // the ground a move will strike: [x0, x1] spans (it faces our base: lower x is in front of it)
+  function dreadSpans(f, mv) {
+    if (mv.reach) return [[f.x - mv.reach, f.x + 0.4]];
+    if (mv.aim === 'line') return [[f.x - mv.len, f.x - 0.6]];
+    const near = G.allies.filter((o) => !o.dead && (mv.air || !o.def.fly) && f.x - o.x > -0.5 && f.x - o.x < 13);
+    if (!near.length) return null;
+    if (mv.aim === 'back') { const x = Math.min(...near.map((o) => o.x)); return [[x - mv.w * 0.35, x + mv.w * 0.65]]; }
+    if (mv.aim === 'snipe') { const o = near.slice().sort((a, b) => b.def.cost - a.def.cost)[0]; return [[o.x - mv.w / 2, o.x + mv.w / 2]]; }
+    if (mv.aim === 'spots') {
+      const xs = [];
+      for (const o of near.slice().sort(() => Math.random() - 0.5)) if (xs.every((x) => Math.abs(x - o.x) > mv.w * 0.8)) xs.push(o.x);
+      while (xs.length < mv.hits.length) xs.push(f.x - 2 - Math.random() * 8); // the rest fall around the line
+      return xs.slice(0, mv.hits.length).map((x) => [x - mv.w / 2, x + mv.w / 2]);
+    }
+    return [[f.x - 3, f.x]];
+  }
+  // a strike zone on the lane: a dim band, a red fill that grows until the hit, bright edge posts
+  function dreadMark(f, m, s) {
+    const col = DL_COL[f.ai.phase], w = Math.max(0.6, s[1] - s[0]), cx = (s[0] + s[1]) / 2;
+    const band = sprite(tex.beam, col), fill = sprite(tex.beam, 0xff2a3a), a = sprite(tex.beam, 0xffe0ea), b = sprite(tex.beam, 0xffe0ea);
+    const top = sprite(tex.beam, 0xff6080), bot = sprite(tex.beam, 0xff6080);
+    band.position.set(cx, -0.05, 0); band.scale.set(w, 1.7, 1);
+    fill.position.set(cx, -0.05, 0); fill.scale.set(0.01, 1.3, 1);
+    a.position.set(s[0], -0.05, 0); b.position.set(s[1], -0.05, 0); a.rotation.z = b.rotation.z = Math.PI / 2;
+    a.scale.set(1.5, 0.22, 1); b.scale.set(1.5, 0.22, 1);
+    top.position.set(cx, 0.68, 0); bot.position.set(cx, -0.78, 0); top.scale.set(w, 0.12, 1); bot.scale.set(w, 0.12, 1);
+    [band, fill, a, b, top, bot].forEach((o) => { o.renderOrder = 60; o.material.opacity = 0; m.fx.push(o); });
+    m.marks.push({ band, fill, a, b, top, bot, w });
+  }
+  function dreadStart(f, name) {
+    const mv = DL_MOVES[name], A = f.ai;
+    const spans = mv.summon ? [] : dreadSpans(f, mv);
+    if (!spans) return false;
+    A.move = { name, mv, t: 0, i: 0, spans, fx: [], marks: [] };
+    spans.forEach((s) => dreadMark(f, A.move, s));
+    if (mv.cd) A.cd[name] = mv.cd;
+    f.state = 'boss';
+    if (f.sd) { f.sd.play(mv.clip, null, false); f.sd.speed = mv.sp; }
+    if (mv.cd) { text(f.x, f.dy + f.h + 0.7, '!', '#ff4060', 2.2); AUDIO.play('dlWind', 0.6); } // a special: a mark and a growl
+    return true;
+  }
+  function dreadHit(f, m) {
+    const mv = m.mv, per = f.atk * mv.k, col = DL_COL[f.ai.phase];
+    const tree = f.sd && f.sd.tpl.data.hits && f.sd.tpl.data.hits[mv.clip] && f.sd.tpl.data.hits[mv.clip].t;
+    const k = Math.abs(f.sd ? f.sd.root.scale.y : 1) || 1;
+    if (mv.summon) { // the guards answer: worms climb out of the shaft beside it
+      const n = Math.min(mv.summon, 9 - G.enemies.filter((e) => !e.dead).length);
+      for (let i = 0; i < n; i++) {
+        const e = spawnEnemy(i % 2 ? 'Centurion_N' : 'Fallen_N', 1.6);
+        e.x = Math.min(G.len - 0.6, f.x + 0.8 + i * 0.5);
+        sheet('smoke', e.x, 0.6, 0xc8a0ff, 2.2, 0.6, { grow: 0.5 });
+      }
+      if (n > 0) toast('드레드러커가 근위 개체를 불러냈다', true);
+    }
+    // spikes / orbs: one span per hit when there is one for each, else every span at every hit
+    const spans = m.spans.length > 1 && m.spans.length === mv.hits.length ? [m.spans[m.i]] : m.spans;
+    let baseHit = false;
+    for (const s of spans) {
+      const cx = (s[0] + s[1]) / 2;
+      let n = 0;
+      for (const o of G.allies.slice()) {
+        if (o.dead || o.x < s[0] || o.x > s[1] || (o.def.fly && !mv.air)) continue;
+        damage(o, per, f);
+        if (mv.kb && !o.dead) knockback(o, mv.kb, 0.45);
+        if (n++ < 3) {
+          if (tree && window.SDPS) SDPS.burst(f.sd, tree, [o.x, aimY(o)], G.root, k, f.dir, 1400);
+          else sheet('hit', o.x, aimY(o), col, 1.4, 0.25);
+        }
+      }
+      if (!n && per > 0 && m.i % 2 === 0) { // nobody there: the strike still lands
+        if (tree && window.SDPS) SDPS.burst(f.sd, tree, [cx, 0.6], G.root, k, f.dir, 1400);
+        sheet('smoke', cx, 0.4, 0xb8a0c8, 1.8, 0.5, { grow: 0.5 });
+      }
+      if (per > 0 && mv.reach && !baseHit && s[0] <= baseFront(f)) { // a claw that reaches our base
+        baseHit = true;
+        G.base.hp = Math.max(0, G.base.hp - per * 0.6);
+        G.base.flash = 0.12;
+      }
+      if (mv.aim === 'snipe' || mv.aim === 'spots') { ring(cx, 0.05, col, 3, 0.4); debris(cx, 0.5, 6, col); }
+    }
+    if (mv.aim === 'line' && m.i === 0) streak(f.x - 0.5, f.dy + f.h * 0.55, f.x - mv.len, 0.9, col, 0.9, 0.9);
+    if (mv.shake) shake(mv.shake, 0.3);
+    if (m.i === 0 && mv.sfx) AUDIO.play(mv.sfx, 0.9);
+  }
+  // one frame of the beast (it replaces the generic walk / attack); true when it handled the frame
+  function dreadStep(f, dt, slow) {
+    const A = f.ai;
+    for (const k in A.cd) A.cd[k] -= dt * slow;
+    // phase change at 75 / 50 / 25 % HP: it drops what it was doing, rears up and roars, and the crystals change colour
+    const want = Math.min(3, Math.floor((1 - f.hp / f.maxHp) * 4 + 1e-6));
+    if (want > A.phase && !(A.roar && A.roar.p >= want)) dreadRoar(f, want);
+    if (A.roar) {
+      const r = A.roar;
+      r.t += dt * 1.2;
+      if (f.sd) f.sd.speed = 1.2;
+      if (!r.done && r.t >= 1.82) { // the roar's shock (the clip's camera shake): our line is thrown back
+        r.done = true;
+        if (r.p >= 0) {
+          A.phase = r.p;
+          dreadLook(f, r.p);
+          toast(`드레드러커 ${r.p + 1}단계 — ${DL_NOTE[r.p]}`, true);
+          for (const k in A.cd) A.cd[k] = Math.min(A.cd[k], 2.5); // the new moves come soon
+          for (const o of G.allies) if (!o.dead && f.x - o.x < 7) knockback(o, 1.6, 0.55);
+        }
+        AUDIO.play('dlRoar', 1);
+        shake(0.5, 0.8); hitstop(0.08);
+        ring(f.x - 1, 0.2, DL_COL[Math.max(0, r.p)], 9, 0.7);
+        sheet('aura', f.x - 0.4, f.dy + f.h * 0.55, DL_COL[Math.max(0, r.p)], f.h * 0.9, 0.7);
+      }
+      if (r.t >= 3.4) { A.roar = null; A.rest = 0.6; f.state = 'walk'; }
+      return true;
+    }
+    if (A.move) {
+      const m = A.move, mv = m.mv;
+      m.t += dt * mv.sp * slow;
+      if (f.sd) f.sd.speed = mv.sp * slow;
+      const u = Math.min(1, m.t / mv.hits[0]);
+      const on = m.i < mv.hits.length ? 1 : Math.max(0, 1 - (m.t - mv.hits[mv.hits.length - 1]) * 4);
+      const blink = u > 0.75 && m.i === 0 ? 0.5 + 0.5 * Math.sin(m.t * 40) : 1;
+      for (const k of m.marks) { // the fill grows to the full span as the hit comes
+        k.band.material.opacity = 0.45 * on;
+        k.fill.scale.set(Math.max(0.01, k.w * u), 1.3, 1); k.fill.material.opacity = (0.35 + 0.5 * u * u) * on * (m.i ? 0.6 : 1);
+        k.a.material.opacity = k.b.material.opacity = on * blink;
+        k.top.material.opacity = k.bot.material.opacity = 0.8 * on * blink;
+      }
+      while (m.i < mv.hits.length && m.t >= mv.hits[m.i]) { dreadHit(f, m); m.i++; if (f.dead || !A.move) return true; }
+      if (m.t >= mv.end) { dreadDrop(f); A.rest = 0.7 + Math.random() * 0.6; f.state = 'walk'; }
+      return true;
+    }
+    if (A.step) { // its walk: a lurch forward (Fowardstep: it travels between the clip's jump-move events)
+      const s = A.step;
+      s.t += dt * slow;
+      const u = Math.max(0, Math.min(1, (s.t - 0.083) / 0.75));
+      f.x = s.from + (s.to - s.from) * u * u * (3 - 2 * u);
+      if (u >= 1 && !s.land) { s.land = true; shake(0.12, 0.2); sheet('smoke', f.x - 0.4, 0.3, 0xb0a090, 2.2, 0.5, { grow: 0.6 }); }
+      if (s.t >= 1.5) { A.step = null; A.rest = 0.15; }
+      return true;
+    }
+    if (A.rest > 0) { A.rest -= dt * slow; if (f.sd && f.sd.clipName !== 'idle') { f.sd.speed = 1; f.sd.play('idle', null, true); } return true; }
+    const set = DL_SET[A.phase], melee = DL_MOVES[set[0]];
+    const inReach = G.allies.some((o) => !o.dead && f.x - o.x > -0.5 && f.x - o.x < melee.reach - 0.4) || f.x - baseFront(f) < melee.reach - 0.4;
+    const anyNear = G.allies.some((o) => !o.dead && f.x - o.x > -0.5 && f.x - o.x < 11);
+    const ready = set.slice(1).filter((k) => A.cd[k] <= 0 && (anyNear || DL_MOVES[k].summon) && (!DL_MOVES[k].reach || inReach));
+    if (ready.length && dreadStart(f, ready[Math.floor(Math.random() * ready.length)])) return true;
+    if (inReach && dreadStart(f, set[0])) return true;
+    // no one in reach: lurch forward, never into our line and never far from the shaft it guards (the story: it does not
+    // leave the transport shaft): our line has to come to it
+    let front = Math.max(baseFront(f) + 1.2, G.len - 0.6 - DL_LEASH);
+    for (const o of G.allies) if (!o.dead && !o.def.fly && o.state !== 'kb' && o.x + 1.0 < f.x) front = Math.max(front, o.x + 1.0);
+    const to = Math.max(front, f.x - 0.9 * (G.st.enemySpd || 1)); // ~0.55 / s with its pauses, as a walker of spd 0.6
+    if (to < f.x - 0.05) {
+      A.step = { t: 0, from: f.x, to };
+      if (f.sd) { f.sd.play('move', null, false); f.sd.speed = 1; }
+    } else A.rest = 0.3;
+    return true;
+  }
+
   // skills that come down from the sky: the landing hits the ground hard (Labiata's 백화요란)
   const SLAM = { labiata: 0xffd36e };
   function slam(f, x) {
@@ -745,6 +969,7 @@
     }
     // armour shrugs splash off: grey sparks and a ping
     if (o.def.armor && src && src.ally && src.def.area && src.def.type !== 'snipe' && Math.random() < 0.4) { sheet('spark', o.x, aimY(o) + o.h * 0.1, 0xd8d8d8, 0.8, 0.2); AUDIO.play('handgun', 0.25); }
+    if (o.ai && o.ai.roar) dmg *= 0.5; // rearing up between phases: half damage
     o.hp -= dmg;
     o.flashT = 0.08;
     const kbAt = (n) => o.maxHp * (1 - n / o.def.kb);
@@ -760,6 +985,7 @@
   function knockback(o, dist, dur = 0.5) {
     dist *= 1 - (o.kbRes || 0); // 철벽 전열 II
     if (o.dead && o.state !== 'dying') return;
+    if (o.ai) dreadBreak(o);
     const lo = 0.4, hi = G.len - 0.4;
     o.act = null;
     o.state = o.dead ? 'dying' : 'kb';
@@ -777,6 +1003,7 @@
       if (G.money < wallet()) G.money = Math.min(wallet(), G.money + m); // above the cap only by the cheat: kept
       text(o.x, aimY(o) + o.h * 0.5 + 0.3, '+' + m, '#ffd35a');
       if (o.boss) {
+        if (o.ai) { dreadDrop(o); AUDIO.play('dlDie', 1); }
         AUDIO.play('expB'); AUDIO.music(battleMusic(G.st)); shake(0.35, 0.6); hitstop(0.12);
         sheet('aura', o.x, o.dy + 2, 0xffaa33, 5, 0.8); sheet('smoke', o.x, o.dy + 1.2, 0xffcc88, 4.5, 0.9, { grow: 0.6 });
       } else if (o.h > 1.8) AUDIO.play('expS', 0.5);
@@ -855,6 +1082,14 @@
     }
     if (f.state === 'fade') {
       f.deadT += dt;
+      if (f.boss && f.ai) { // the Dreadlurker collapses in its own die clip (vfx_die), then its crystals go dark
+        const u = Math.min(1, f.deadT / 3.4);
+        if (f.sd) { f.sd.setTint(1 - u * 0.6, 1 - u * 0.65, 1 - u * 0.5); f.sd.setOpacity(1 - Math.max(0, u - 0.75) / 0.25); }
+        f.shadow.material.opacity = 1 - u;
+        if (f.deadT > 1.1 && !f.sunk) { f.sunk = true; sheet('smoke', f.x - 0.5, 0.8, 0xa890c0, 5, 1.4, { grow: 0.5 }); shake(0.45, 0.6); AUDIO.play('expB', 0.8); }
+        if (f.deadT > 3.45) f.state = 'gone';
+        return;
+      }
       if (f.boss) { // a boss burns red and sinks into the ground over two seconds
         const u = Math.min(1, f.deadT / 2);
         f.hop = -u * u * 1.4;
@@ -871,6 +1106,7 @@
       return;
     }
     if (f.dead) return;
+    if (f.ai && dreadStep(f, dt, slow)) return;
     f.cool -= dt * slow;
     if (f.state === 'atk') {
       const a = f.act;
@@ -936,6 +1172,9 @@
       AUDIO.play('warning');
       AUDIO.music(bossMusic(G.st));
       // reveal: the camera goes to the boss whatever the player was looking at, time slows and the screen letterboxes
+      // a narrow (portrait) view zooms out until the whole body fits (the Dreadlurker is ~7 field units wide)
+      const t = b.sd && b.sd.tpl, need = t ? (t.box.max.x - t.box.min.x) * Math.abs(b.sd.root.scale.x) + 1.6 : 0;
+      if (need > VW) { zoom = Math.max(zMin(), zoom * VW / need); view(); }
       G.userCam = false; panTo(G.len - 1 - VW * 0.12);
       G.cine = 2.4;
       document.body.classList.add('cine');
@@ -1709,7 +1948,9 @@
       g.fillStyle = 'rgba(0,0,0,0.65)'; g.fillRect(x - 2, y - 2, w + 4, 14);
       g.fillStyle = '#ff3355'; g.fillRect(x, y, w * (G.boss.hp / G.boss.maxHp), 10);
       g.font = "700 13px Godo, sans-serif"; g.textAlign = 'center'; g.fillStyle = '#fff';
-      g.strokeStyle = '#000'; g.lineWidth = 3; g.strokeText('BOSS ' + G.boss.def.name, innerWidth / 2, y - 6); g.fillText('BOSS ' + G.boss.def.name, innerWidth / 2, y - 6);
+      const nm = 'BOSS ' + G.boss.def.name + (G.boss.ai ? `  ${G.boss.ai.phase + 1}/4단계` : '');
+      g.strokeStyle = '#000'; g.lineWidth = 3; g.strokeText(nm, innerWidth / 2, y - 6); g.fillText(nm, innerWidth / 2, y - 6);
+      if (G.boss.ai) { g.fillStyle = 'rgba(255,255,255,0.75)'; for (const q of [0.25, 0.5, 0.75]) g.fillRect(x + w * q - 1, y, 2, 10); } // the phase marks
     }
     // minimap: the whole lane, the camera window and every fighter
     const mw = Math.min(360, innerWidth * 0.5), mx = (innerWidth - mw) / 2, my = G.boss && !G.boss.dead ? 84 : 52, mh = 10;

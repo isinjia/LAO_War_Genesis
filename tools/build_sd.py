@@ -69,7 +69,8 @@ def v3_from(d, dv):
 
 ENEMIES = {k: "Model_MP_" + k for k in """NightChick_N Drone_N Legion_N Fallen_N Centurion_N Gigantes_N
 Intruder_N Phalangites_N Rampart_N Juggernaut_N BigChick_N Fortress_N Destroyer_N
-EmperorChick_N Executioner_EW IronPrince_N Nest_B07 HauntedFortress_N UnderWatcher_B05""".split()}
+EmperorChick_N Executioner_EW Nest_B07 HauntedFortress_N UnderWatcher_B05
+Dreadlurker_BOSS_IW_N""".split()}
 MONSTER_DIR = ROOT + "/AssetBundleResource/monster"
 
 CLIPS = {
@@ -80,6 +81,14 @@ CLIPS = {
     "win": [r"^victory$", r"^win$"],
     "move": [r"^move", r"walk", r"run"],
     "die": [r"^die"],
+}
+
+# rigs with a scripted fight (js/game.js BOSS_AI): extra clips by controller state name, over the defaults above
+# Dreadlurker: no walk cycle (Move is an empty stub), it lurches forward with its step; the four skill pairs and the roar
+RIG_CLIPS = {
+    "e_Dreadlurker_BOSS_IW_N": {"move": "fowardstep", "atk": "1_skill_1", "claw3": "1_skill_2", "beam": "2_skill_1",
+                                "rain": "2_skill_2", "spike": "3_skill_1", "skill": "3_skill_2", "orb": "4_skill_1",
+                                "cast": "4_skill_2", "roar": "shouting"},
 }
 
 YLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
@@ -629,11 +638,11 @@ def particles_curve(k, t):
     return k[-1][1]
 
 
-def hit_data(anim_paths, atlas):
+def hit_data(anim_paths, atlas, clips=None):
     """The hit effect each clip names in its EventHit events (data: the FX prefab, e.g. LRL's "Hit_x2"; "noHit"
     means none): played on the target at every hit that has no projectile of its own."""
     out = {}
-    for clip in ("atk", "skill"):
+    for clip in clips or ("atk", "skill"):
         p = anim_paths.get(clip)
         if not p or not os.path.exists(p):
             continue
@@ -1347,8 +1356,9 @@ MOBILE_ATLAS_SCALE = 0.35  # phones (js/sd/<id>.a35.js)
 
 
 def hires_ids():
-    """Bosses and the enemy base are drawn ~2-3x a unit's size: their textures keep the source resolution."""
-    return {"e_EmperorChick_N", "e_Executioner_EW", "e_IronPrince_N", "e_Fortress_N", "e_Gigantes_N", "e_BigChick_N"}
+    """Bosses and the enemy base are drawn ~2-3x a unit's size: their textures keep the source resolution.
+    Dreadlurker is not: its body comes in four phase sheets (4096 each, x2 parts) that would not fit one atlas."""
+    return {"e_EmperorChick_N", "e_Executioner_EW", "e_Fortress_N", "e_Gigantes_N", "e_BigChick_N"}
 
 
 def tex_image(path, hires=False):
@@ -1417,7 +1427,9 @@ def build(uid):
     if uid.startswith("e_"):
         model = ENEMIES[uid[2:]]
         prefab = MONSTER_DIR + "/" + model + ".prefab"
-        anim_paths = pick_clips(controller_anims(prefab))
+        anims = controller_anims(prefab)
+        anim_paths = pick_clips(anims)
+        anim_paths.update({k: anims[v] for k, v in RIG_CLIPS.get(uid, {}).items() if v in anims})
     else:
         model = UNITS.get(uid) or EXTRA[uid]
         char_dir, prefab = find_char(model)
@@ -1444,7 +1456,7 @@ def build(uid):
         print("  %d skinned meshes waiting for FBX dumps" % missing)
     clips = {}
     for k, p in anim_paths.items():
-        if k not in ("idle", "atk", "skill", "win", "move", "die"):
+        if k not in ("idle", "atk", "skill", "win", "move", "die") and k not in RIG_CLIPS.get(uid, {}):
             continue
         try:
             clips[k] = build_clip(p, atlas)
@@ -1453,7 +1465,7 @@ def build(uid):
     nodes = prune(nodes, clips)
     quantize_clips(clips)
     shots = shot_data(uid, atlas) if not uid.startswith("e_") else {}
-    hits = hit_data(anim_paths, atlas) if not uid.startswith("e_") else {}
+    hits = hit_data(anim_paths, atlas, list(RIG_CLIPS[uid]) if uid in RIG_CLIPS else None) if not uid.startswith("e_") or uid in RIG_CLIPS else {}
     atlas_meta, atlas_files = packed_atlas([p for _, p, _, _ in atlas.textures], uid in hires_ids())
     data = {
         "fmt": FORMAT, "id": uid, "model": model, "nodes": nodes, "clips": clips,

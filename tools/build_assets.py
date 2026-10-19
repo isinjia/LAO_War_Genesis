@@ -24,7 +24,9 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from roster import UNITS  # noqa: E402
 ENEMIES = """NightChick_N Drone_N Legion_N Fallen_N Centurion_N Gigantes_N Intruder_N Phalangites_N Rampart_N
-Juggernaut_N BigChick_N Fortress_N Destroyer_N EmperorChick_N Executioner_EW IronPrince_N""".split()
+Juggernaut_N BigChick_N Fortress_N Destroyer_N EmperorChick_N Executioner_EW Dreadlurker_BOSS_IW_N""".split()
+# icons named after the base monster (the boss rig is a variant of it)
+ICON = {"Dreadlurker_BOSS_IW_N": "Dreadlurker_N"}
 
 BG = {
     "bg_field": "BGImg/BG_7_1.png",
@@ -68,6 +70,14 @@ SFX = {
     "pickSS": "SFX/UI/pick_SS.wav",
     "rankUp": "SFX/UI/Rank_UP_SS.mp3",
     "purchase": "SFX/UI/item_purchase.wav",
+    # Dreadlurker (8-10): its own clips' sounds
+    "dlRoar": "SFX/Character/BlackWarm/Creature_Dragon_Roar_01.wav",
+    "dlWind": "SFX/Enemy/UnderWatcher/enemy_12-3_skill1_01.wav",
+    "dlClaw": "SFX/Enemy/Raider/enemy_11_morphskill2_05.wav",
+    "dlBeam": "SFX/Enemy/UnderWatcher/enemy_12-3_skill2.wav",
+    "dlSpike": "SFX/Enemy/Raider/enemy_11_morphskill1_03.wav",
+    "dlOrb": "SFX/Enemy/BlackKnight/enemy_14_skill1_01.wav",
+    "dlDie": "SFX/Enemy/Predator/enemy_07_roar.wav",
 }
 BGM = {
     "title": "BGM/01 BGM_Title.mp3",
@@ -79,7 +89,7 @@ BGM = {
     "boss": "BGM/04 BGM_Battle_Boss_01.mp3",
     "boss2": "BGM/06 BGM_Battle_Boss_02.mp3",
     "boss3": "BGM/31 BGM_Battle_Boss_03.mp3",
-    "ironprince": "BGM/28 BGM_IronPrince.mp3",
+    "finalboss": "BGM/51 BGM_Battle_Boss_10Stage.mp3",  # Dreadlurker, 8-10
     "talk": "BGM/07 BGM_Talk_01.mp3",
     "talk2": "BGM/08 BGM_Talk_02.mp3",
     "thrill": "BGM/21 BGM_Thrill_01.mp3",
@@ -266,7 +276,7 @@ def main():
     for uid, model in UNITS.items():
         images["u_" + uid] = data_uri(fit(TEX + "/FormationIcon/FormationIcon_%s.png" % model, 192), quality=85)
     for e in ENEMIES:
-        images["e_" + e] = data_uri(fit(TEX + "/TbarIcon/TbarIcon_MP_%s.png" % e, 96))
+        images["e_" + e] = data_uri(fit(TEX + "/TbarIcon/TbarIcon_MP_%s.png" % ICON.get(e, e), 96))
     fxmeta = {}
     for k, (p, size, cols, rows) in FXTEX.items():
         im = Image.open(FX_DIR + "/" + p).convert("RGBA")

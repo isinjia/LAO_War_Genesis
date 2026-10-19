@@ -152,7 +152,8 @@
     // bosses
     EmperorChick_N: { name: '엠페러 칙', hp: 16000, atk: 220, rate: 2.4, range: 3.0, spd: 0.6, kb: 3, area: 1, h: 3.0, money: 1500, boss: 1, color: 0xffaa22 },
     Executioner_EW: { name: '엑스큐셔너', armor: 1, traits: ['armor'], hp: 34000, atk: 480, rate: 2.6, range: 3.6, spd: 0.6, kb: 3, area: 1, h: 3.2, money: 2500, boss: 1, color: 0xff2244 },
-    IronPrince_N: { name: '철의 왕자', shield: 0.2, traits: ['shield'], hp: 72000, atk: 900, rate: 2.8, range: 4.2, spd: 0.55, kb: 3, area: 1, h: 3.5, money: 4000, boss: 1, color: 0xff1155 },
+    // the last boss: a scripted four-phase fight (js/game.js dreadStep); kb 1: its phases replace the HP knockbacks
+    Dreadlurker_BOSS_IW_N: { name: '드레드러커', ai: 'dread', traits: ['phase'], hp: 56000, atk: 650, rate: 3.0, range: 3.4, spd: 0.6, kb: 1, area: 1, h: 3.6, money: 5000, boss: 1, color: 0xc040ff },
   };
   // enemy traits (shown on the stage sheet): what they ask of the squad
   const TRAITS = {
@@ -161,6 +162,7 @@
     armor: { name: '장갑', tip: '범위 공격 피해 50% · 저격은 150%' },
     shield: { name: '보호막', tip: '체력 일부만큼 보호막을 먼저 깎아야 함' },
     artillery: { name: '포격', tip: '사거리 2배 거리에서 기지를 포격(피해 50%) · 빨리 처치해야 함' },
+    phase: { name: '4단계', tip: '체력 75·50·25%에서 형태와 공격이 바뀜 · 붉은 예고 범위를 피하고, 예고 중 오르카 포격을 맞히면 공격을 끊음' },
   };
   const BASE_RIG = 'Nest_B07'; // the enemy base: the Iron Worm nest (Nest_B07), standing still
 
@@ -182,8 +184,8 @@
       stages: ['불붙은 들판', '연기 속의 행군', '재의 언덕', '타오르는 숲', '저거너트 진군로', '붉은 강', '검게 탄 마을', '불새의 비행', '열기의 장벽', '불사의 군주'] },
     { title: '거인의 길', sub: '중장갑 회랑', bg: 'bg_field', pool: ['Centurion_N', 'Phalangites_N', 'Rampart_N', 'Gigantes_N', 'Destroyer_N'], boss: ['Executioner_EW', 0.8],
       stages: ['거인의 발자국', '무너진 고가도로', '포대 협곡', '강철 숲', '거인의 그림자', '파괴자의 사선', '철골 다리', '회랑 입구', '거인의 묘지', '처형인의 귀환'] },
-    { title: '철의 왕좌', sub: '철충 본거지', bg: 'bg_base', pool: ['Centurion_N', 'Fallen_N', 'Juggernaut_N', 'Destroyer_N', 'Gigantes_N'], boss: ['IronPrince_N', 1.0],
-      stages: ['왕좌의 관문', '철의 회랑', '심층 격납고', '붉은 코어', '왕의 근위대', '파멸의 포격', '마지막 보급선', '심장부', '최후의 방벽', '「철의 왕자」'] },
+    { title: '지하 수송구', sub: '중앙 중계소', bg: 'bg_base', pool: ['Centurion_N', 'Fallen_N', 'Juggernaut_N', 'Destroyer_N', 'Gigantes_N'], boss: ['Dreadlurker_BOSS_IW_N', 1.0],
+      stages: ['중계소 외곽', '겹치는 구조 요청', '돌아온 운반대', '지하 승강로', '수색대의 퇴로', '두 번의 진동', '마지막 들것', '중계선 절단', '수송구 앞', '「드레드러커」'] },
   ];
   // stage conditions, hand-placed per chapter (CHAPTER_MODS): each changes how a stage has to be played
   const MODS = {

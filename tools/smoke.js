@@ -178,6 +178,25 @@
       if (document.getElementById('story').classList.contains('show')) throw new Error('story stuck');
       return 'ok';
     });
+    await step('ending: underground stinger, continued credits and mood reset', () => {
+      const box = document.getElementById('stBox'), story = document.getElementById('story');
+      const lines = STORY.S.c8_outro.lines;
+      const cue = lines.findIndex(line => line[3]?.mood === 'ominous');
+      if (cue < 1) throw new Error('no ending transition');
+      APP.playStory('c8_outro');
+      if (story.classList.contains('st-ominous')) throw new Error('victory starts in ominous mood');
+      for (let i = 0; i < cue; i++) { box.click(); box.click(); }
+      if (!story.classList.contains('st-ominous')) throw new Error('stinger mood not applied');
+      if (document.querySelectorAll('#story .st-char.show').length) throw new Error('characters present in unseen underground');
+      for (let i = cue; i < lines.length; i++) { box.click(); box.click(); }
+      const credits = document.getElementById('credits');
+      if (!credits.classList.contains('show') || !credits.textContent.includes('TO BE CONTINUED')) throw new Error('continued credits missing');
+      credits.click();
+      APP.playStory('c1_intro');
+      if (story.classList.contains('st-ominous')) throw new Error('ending mood leaked into new scene');
+      document.getElementById('stSkip').click();
+      return 'victory → unseen underground → continued; next story restores normal mood';
+    });
     await step('gacha 10-pull', async () => {
       const p0 = APP.save.parts; APP.pull(10);
       await wait(300);

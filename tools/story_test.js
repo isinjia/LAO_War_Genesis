@@ -20,6 +20,8 @@ for (const [key, scene] of Object.entries(S)) {
     assert.ok(typeof text === 'string' && text.trim(), `${key}: empty dialogue`);
     assert.ok(side == null || side === '' || side === 'L' || side === 'R', `${key}: invalid portrait side`);
     if (staging?.fx) assert.ok(['shake', 'flash'].includes(staging.fx), `${key}: invalid effect`);
+    if (staging?.mood) assert.ok(['ominous'].includes(staging.mood), `${key}: invalid mood`);
+    if (staging?.bgm) assert.ok(['thrill'].includes(staging.bgm), `${key}: invalid music cue`);
     if (UNIT[id]) assert.ok(fs.existsSync(path.join(root, 'assets', 'full', id + '.webp')), `${key}: missing portrait ${id}`);
     lines++;
   }
