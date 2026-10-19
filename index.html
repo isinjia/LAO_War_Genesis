@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>LAO 워 제네시스</title>
-<script src="js/ui_assets.js?v=37e3ba6c"></script>
-<link rel="stylesheet" href="css/ui.css?v=a8131f37">
+<script src="js/ui_assets.js?v=f762f48d"></script>
+<link rel="stylesheet" href="css/ui.css?v=260e1bf2">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -120,6 +120,7 @@
 <!-- story -->
 <section id="story" class="story">
   <div class="st-bg" id="stBg"></div>
+  <button class="st-history" id="stHistory" aria-label="지금까지의 대화 기록">대화 기록</button>
   <img class="st-char L" id="stL" alt="">
   <img class="st-char R" id="stR" alt="">
   <button class="st-skip" id="stSkip" aria-label="스토리 건너뛰기"><span class="ts-txt"><b>SKIP</b><small>스토리 건너뛰기</small></span><span class="ts-arw"><i></i><i></i></span></button>
@@ -199,7 +200,7 @@
 
 <!-- popup -->
 <div id="modal" class="modal">
-  <div class="pwin">
+  <div class="pwin" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="pwin-title"><span id="modalTitle"></span></div>
     <div class="pwin-body" id="modalBody"></div>
     <div id="modalBtns" class="pwin-btns"></div>
@@ -208,17 +209,17 @@
 <div id="toast" class="toast"></div>
 
 <script src="js/vendor/three.min.js?v=7a7802bf"></script>
-<script src="js/assets.js?v=a6262d2d"></script>
+<script src="js/assets.js?v=30334cb0"></script>
 <script src="js/faces.js?v=788d4bb1"></script>
 <script src="js/anim_events.js?v=ced1e91b"></script>
-<script src="js/data.js?v=abd99ace"></script>
-<script src="js/story.js?v=72346317"></script>
+<script src="js/data.js?v=ee8aa2fb"></script>
+<script src="js/story.js?v=a0b4cb19"></script>
 <script src="js/particles.js?v=c8b63927"></script>
 <script src="js/sd.js?v=a603c76f"></script>
 <script src="js/fxbake.js?v=2a0167ef"></script>
 <script src="js/fx/_meta.js?v=9466c56f"></script>
 <script src="js/audio.js?v=f2275017"></script>
-<script src="js/game.js?v=b8023dab"></script>
-<script src="js/app.js?v=3c555542"></script>
+<script src="js/game.js?v=59135137"></script>
+<script src="js/app.js?v=3501268c"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@
   // ordered skills: seconds of charge and damage multiplier (over the whole reach) by rank
   const SKILL = { SS: { charge: 12, mult: 4 }, S: { charge: 18, mult: 3 } }; // long attack clips play faster, up to this
   const BASE_W = 1.1; // half width of a base: units stop at its front
+  const TOWER_X = 3; // where a defence tower plants itself (in front of our base)
   const MAX_ENEMIES = 16; // regular spawns wait while this many are on the field
   const ALLY_K = 0.21; // world units per rig unit for every ally (brownie ~1.7 tall)
   // parts of an original rig left out: Hela's summoned mechs, Andvari's cargo box (as in the defence game)
@@ -291,6 +292,8 @@
       base: { hp: 0, max: 0 }, ebase: { hp: st.baseHp, max: st.baseHp },
       spawns: st.spawns.map((s) => ({ e: s[0], next: s[1], every: s[2], left: s[3] || Infinity, mag: s[4] })),
       bossDone: !st.boss, rushDone: !st.rush, userCam: false, root: new THREE.Group(),
+      // per unit id: damage dealt to worms / to the fortress, damage taken (dodged hits count as taken), money spent
+      stat: { dealt: {}, fort: {}, taken: {}, spent: {} },
     };
     G.base.hp = G.base.max = Math.round(3000 * st.pow / 100) * 100;
     if (G.syn.has('lean')) G.worker = 1; // 소수 정예: work efficiency starts at Lv2
@@ -532,33 +535,42 @@
     if (!slot) return false;
     const def = slot.def;
     if (G.cds[i] > 0 || G.money < def.cost) { AUDIO.play('fail', 0.6); return false; }
-    if (G.allies.length >= 40) { toast('필드가 가득 찼습니다'); return false; }
+    // the field holds 40 deploys: a squad (multi) shares one slot, so cheap squads don't lock the dearer units out
+    if (G.allies.length >= 80 || G.allies.reduce((a, o) => a + (o.dead ? 0 : 1 / (o.def.multi || 1)), 0) >= 40) { toast('필드가 가득 찼습니다'); return false; }
     if (onField(def)) { toast(`${def.name}은(는) 이미 출격 중입니다 (SS는 한 명씩)`); AUDIO.play('fail', 0.6); return false; }
     G.money -= def.cost;
+    G.stat.spent[def.id] = (G.stat.spent[def.id] || 0) + def.cost;
     G.cds[i] = def.cd * Math.pow(0.88, buffN(G.st, 'cd')) * (G.syn.has('lean') ? 0.7 : 1) *
       (G.syn.has('tide') && (def.id === 'undine' || def.id === 'thetis') ? 0.75 : 1);
-    const f = makeFighter(1, def, def.id, 0.9, D.lvMul(slot.lv)); // slot.lv: battle level (levels above the card's start)
-    f.atk *= 1 + 0.12 * buffN(G.st, 'atk'); f.hp = f.maxHp = f.maxHp * (1 + 0.15 * buffN(G.st, 'hp'));
-    // squad synergies (data.js SYNERGIES)
-    const t = def.type;
-    const S = G.syn, id = def.id;
-    if (S.has('bulwark') && (t === 'wall' || t === 'melee')) f.hp = f.maxHp = f.maxHp * (S.has('bulwark2') ? 1.4 : 1.2);
-    if (S.has('bulwark2') && (t === 'wall' || t === 'melee')) f.kbRes = 0.5;
-    if (S.has('chain') && t === 'chain') f.atk *= 1.2;
-    if (S.has('volley') && t === 'single') f.atk *= S.has('volley2') ? 1.3 : 1.15;
-    if (S.has('eagle') && t === 'snipe') f.range = def.range + 0.6;
-    if (S.has('ace') && f.manual) f.skillCharge *= 0.85;
-    if (S.has('flame') && (id === 'impet' || id === 'phoenix')) f.atk *= 1.25;
-    if (S.has('tide') && (id === 'undine' || id === 'thetis')) f.slowMul = 1.5;
-    if (S.has('wings') && (id === 'raven' || id === 'hraesvelgr')) { f.range = (f.range || def.range) + 0.5; f.atk *= 1.1; }
-    if (S.has('shore') && (id === 'brownie' || id === 'leprechaun' || id === 'gnome')) { f.atk *= 1.12; f.hp = f.maxHp = f.maxHp * 1.12; }
-    if (S.has('command')) f.hp = f.maxHp = f.maxHp * 1.08;
-    if (S.has('grunt')) { f.atk *= 1.2; f.hp = f.maxHp = f.maxHp * 1.15; }
+    let f = null;
+    for (let n = 0; n < (def.multi || 1); n++) {
+      // a tower takes its post in front of our base; a squad (multi) comes out in a short file
+      const x0 = def.tower ? TOWER_X + Math.random() * 0.5 : 0.9 - n * 0.45;
+      f = makeFighter(1, def, def.id, x0, D.lvMul(slot.lv)); // slot.lv: battle level (levels above the card's start)
+      f.atk *= 1 + 0.12 * buffN(G.st, 'atk'); f.hp = f.maxHp = f.maxHp * (1 + 0.15 * buffN(G.st, 'hp'));
+      // squad synergies (data.js SYNERGIES)
+      const t = def.type;
+      const S = G.syn, id = def.id;
+      if (S.has('bulwark') && (t === 'wall' || t === 'melee')) f.hp = f.maxHp = f.maxHp * (S.has('bulwark2') ? 1.4 : 1.2);
+      if (S.has('bulwark2') && (t === 'wall' || t === 'melee')) f.kbRes = 0.5;
+      if (S.has('chain') && t === 'chain') f.atk *= 1.2;
+      if (S.has('volley') && t === 'single') f.atk *= S.has('volley2') ? 1.3 : 1.15;
+      if (S.has('eagle') && t === 'snipe') f.range = def.range + 0.6;
+      if (S.has('ace') && f.manual) f.skillCharge *= 0.85;
+      if (S.has('flame') && (id === 'impet' || id === 'phoenix')) f.atk *= 1.25;
+      if (S.has('tide') && (id === 'undine' || id === 'thetis')) f.slowMul = 1.5;
+      if (S.has('wings') && (id === 'raven' || id === 'hraesvelgr')) { f.range = (f.range || def.range) + 0.5; f.atk *= 1.1; }
+      if (S.has('shore') && (id === 'brownie' || id === 'leprechaun' || id === 'gnome')) { f.atk *= 1.12; f.hp = f.maxHp = f.maxHp * 1.12; }
+      if (S.has('command')) f.hp = f.maxHp = f.maxHp * 1.08;
+      if (S.has('grunt')) { f.atk *= 1.2; f.hp = f.maxHp = f.maxHp * 1.15; }
+      if (def.tower) f.kbRes = 1; // planted: knockbacks don't move it
+      if (def.ship) f.kbRes = Math.max(f.kbRes || 0, 0.8); // a battleship barely rocks
+      G.allies.push(f);
+    }
     G.deploys++;
-    G.allies.push(f);
     const fy = flyY(f); // a flyer's deploy flash and aura are where it hovers (the gold ring stays on the ground)
-    burst(0.9, f.dy + fy + f.h * 0.4, 0x48d8ff, 1.4, 0.35);
-    if (def.rank === 'SS') { sheet('aura', 0.9, f.dy + fy + f.h * 0.7, 0xffd200, f.h * 2.2, 0.6); ring(0.9, f.dy + 0.1, 0xffd200, 3, 0.5); shake(0.08, 0.2); }
+    burst(f.x, f.dy + fy + f.h * 0.4, 0x48d8ff, 1.4, 0.35);
+    if (def.rank === 'SS') { sheet('aura', f.x, f.dy + fy + f.h * 0.7, 0xffd200, f.h * 2.2, 0.6); ring(f.x, f.dy + 0.1, 0xffd200, 3, 0.5); shake(0.08, 0.2); }
     AUDIO.play('deploy', 0.6);
     if (window.BARK && BARK[def.id]) AUDIO.voice(BARK[def.id].deploy, 'over'); // every deploy, overlapping
     return true;
@@ -593,6 +605,7 @@
   function target(f) {
     let best = null, bd = Infinity;
     if (!f.ally && f.def.artillery && baseReach(f)) return 'base';
+    if (f.def.siege || f.def.rush) return baseReach(f) ? 'base' : null; // siege units / runners fire only on the base
     for (const o of opp(f)) {
       if (o.dead || !reach(f, o.x) || !canHit(f, o)) continue;
       // diving flyers pass over units that cannot hit them
@@ -948,7 +961,9 @@
       const b = f.ally ? G.ebase : G.base;
       const shell = f.def.artillery && !f.ally && !reach(f, baseFront(f)); // shelling from afar hits at half
       if (f.def.artillery && !f.ally) { sheet('smoke', baseFront(f) - 0.3, 1 + Math.random() * 2, 0xff8855, 2, 0.5, { grow: 0.5 }); shake(0.08, 0.15); }
-      b.hp = Math.max(0, b.hp - a.per * (shell ? 0.5 : 1));
+      const bd = a.per * (shell ? 0.5 : 1) * (f.def.siege || 1); // siege units hit the fortress hard
+      if (f.ally) G.stat.fort[f.def.id] = (G.stat.fort[f.def.id] || 0) + Math.min(bd, b.hp);
+      b.hp = Math.max(0, b.hp - bd);
       b.flash = 0.12;
       if (!psLive) hitFx(f, baseFront(f) + f.dir * 0.4, 1.4 + Math.random(), mz);
       any = true;
@@ -958,18 +973,27 @@
 
   function damage(o, dmg, src) {
     if (o.dead) return;
+    const dodge = o.def.evade && src && Math.random() < o.def.evade;
+    // statistics: what an ally held off (a dodged hit in full); what it dealt is counted below, after armour and shields
+    if (o.ally) G.stat.taken[o.def.id] = (G.stat.taken[o.def.id] || 0) + (dodge ? dmg : Math.min(dmg, o.hp));
+    if (dodge) { // a dodger lets the hit pass
+      if (Math.random() < 0.35) text(o.x, aimY(o) + o.h * 0.5, 'MISS', '#cfe8ff', 0.9);
+      return;
+    }
     // armour halves area / splash damage; snipers pierce it (x1.5)
     if (src && src.ally && o.slowT > 0 && G.syn.has('chill')) dmg *= 1.2;
     if (o.def.armor && src && src.ally) dmg *= src.def.type === 'snipe' ? 1.5 : src.def.area ? 0.5 : 1;
     // shield: soaks its share before the hull takes damage (shown as a blue ring)
     if (o.shield > 0) {
       const sh = Math.min(o.shield, dmg); o.shield -= sh; dmg -= sh;
+      if (src && src.ally) G.stat.dealt[src.def.id] = (G.stat.dealt[src.def.id] || 0) + sh;
       if (Math.random() < 0.5) sheet('hit', o.x + o.dir * 0.3, aimY(o), 0x8fb8ff, o.h * 0.9, 0.18); // the shield takes it: blue flash
       if (o.shield <= 0) { sheet('blue', o.x, aimY(o), 0x9fe8ff, o.h * 1.8, 0.4); text(o.x, aimY(o) + o.h * 0.5 + 0.4, 'SHIELD BREAK', '#b9d4ff', 1.1); AUDIO.play('elec', 0.5); }
     }
     // armour shrugs splash off: grey sparks and a ping
     if (o.def.armor && src && src.ally && src.def.area && src.def.type !== 'snipe' && Math.random() < 0.4) { sheet('spark', o.x, aimY(o) + o.h * 0.1, 0xd8d8d8, 0.8, 0.2); AUDIO.play('handgun', 0.25); }
     if (o.ai && o.ai.roar) dmg *= 0.5; // rearing up between phases: half damage
+    if (!o.ally && src && src.ally) G.stat.dealt[src.def.id] = (G.stat.dealt[src.def.id] || 0) + Math.min(dmg, Math.max(0, o.hp));
     o.hp -= dmg;
     o.flashT = 0.08;
     const kbAt = (n) => o.maxHp * (1 - n / o.def.kb);
@@ -1107,6 +1131,16 @@
     }
     if (f.dead) return;
     if (f.ai && dreadStep(f, dt, slow)) return;
+    if (f.def.heal) { // a speaker: every few seconds the worms around it mend
+      f.healT = (f.healT || 0) + dt;
+      const [share, every, reachH] = f.def.heal;
+      if (f.healT >= every) {
+        f.healT = 0;
+        let n = 0;
+        for (const o of G.enemies) if (!o.dead && Math.abs(o.x - f.x) <= reachH && o.hp < o.maxHp) { o.hp = Math.min(o.maxHp, o.hp + o.maxHp * share); n++; }
+        if (n) { ring(f.x, 0.1, 0x80ffb0, reachH * 2, 0.5); sheet('aura', f.x, f.dy + f.h * 0.6, 0x80ffb0, f.h * 1.4, 0.5); }
+      }
+    }
     f.cool -= dt * slow;
     if (f.state === 'atk') {
       const a = f.act;
@@ -1122,8 +1156,9 @@
       return;
     }
     // walk: up to the base, and never into the opposing front line (the two sides hold a clear gap)
+    if (f.def.tower) { if (f.sd && f.sd.clipName !== 'idle') { f.sd.speed = 1; f.sd.play('idle', null, true); } return; } // holds its post
     let front = baseFront(f);
-    if (!f.def.dive) {
+    if (!f.def.dive && !f.def.siege && !f.def.rush) { // divers, siege units and runners pass the line
       const GAP = 0.7;
       for (const o of opp(f)) {
         if (o.dead || o.def.fly || o.state === 'kb') continue;

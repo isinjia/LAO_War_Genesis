@@ -26,31 +26,31 @@
   const RANK_ORDER = ['B', 'A', 'S', 'SS'];
   // [id, name, rank, type, fx, color, sfx, desc, tweaks]; tweaks multiply hp / atk / spd / rate, add range, set skill / slow
   const LIST = [
-    ['brownie', '브라우니', 'B', 'single', 'bullet', 0xffe08a, 'rifle', '싸고 빠르게 뽑는 돌격소총병', { cost: 50 / 60, spd: 1.07 }],
+    ['brownie', '브라우니', 'B', 'single', 'bullet', 0xffe08a, 'rifle', '싸고 빠르게 뽑는 돌격소총병 분대', { cost: 50 / 60, spd: 1.07, multi: 3, hp: 0.5, atk: 0.5 }],
     ['leprechaun', '레프리콘', 'B', 'single', 'bullet', 0x9dff7a, 'mg', '기관총 연사로 전열의 적을 갈아내는 공격기', { rate: 0.8, hp: 1.3 }],
     ['gnome', '노움', 'B', 'wall', 'grenade', 0xffa040, 'cannon', '발포 콘크리트 탄으로 전열을 막아서는 보호기'],
     ['impet', '임펫', 'B', 'melee', 'flame', 0xff6a2a, 'spray', '화염방사로 근거리 적을 모두 태움'],
-    ['daphne', '다프네', 'B', 'slow', 'wave', 0x9dffc8, 'laser', '음파로 적을 25% 느리게', { slow: [0.25, 1.6], cost: 0.8 }],
+    ['daphne', '다프네', 'B', 'slow', 'wave', 0x9dffc8, 'laser', '음파로 적을 25% 느리게', { slow: [0.25, 1.6], cost: 0.8, multi: 2, hp: 0.6, atk: 0.6 }],
     ['banshee', '밴시', 'A', 'splash', 'wave', 0x7affd4, 'laser', '음파 폭격으로 무리를 휩쓰는 공격기'],
-    ['sylphid', '실피드', 'A', 'single', 'bullet', 0xd78bff, 'gun', '고속 비행 사격으로 몰아붙이는 공격기', { spd: 1.6, range: -0.4 }],
+    ['sylphid', '실피드', 'A', 'single', 'bullet', 0xd78bff, 'gun', '적을 지나쳐 요새만 사격하는 고속 공격기', { spd: 1.6, range: -0.4, hp: 2.5, siege: 4 }],
     ['raven', '레이븐', 'A', 'slow', 'snipe', 0xfff2b0, 'handgun', '포격으로 적의 발을 묶는 지원기', { range: 0.6 }],
-    ['nymph', '님프', 'A', 'single', 'frost', 0x6fe3ff, 'laser', '냉기탄을 연사하는 공격기'],
+    ['nymph', '님프', 'A', 'single', 'frost', 0x6fe3ff, 'laser', '정찰 편대로 냉기탄을 연사하는 공격기', { multi: 2, hp: 0.6, atk: 0.6 }],
     ['amy', '에이미 레이저', 'A', 'snipe', 'snipe', 0xd9ff8a, 'handgun', '연속 저격 탄막', { rate: 0.8, atk: 0.8 }],
-    ['andvari', '안드바리', 'A', 'stun', 'grenade', 0xffc070, 'cannon', '포격으로 적 전열을 잠시 멈추는 지원기', { range: 0.4 }],
+    ['andvari', '안드바리', 'A', 'stun', 'grenade', 0xffc070, 'cannon', '기지 앞에 자리 잡고 포격으로 적을 멈추는 지원기', { range: 7.4, hp: 2.2, tower: 1 }],
     ['phoenix', '피닉스', 'S', 'splash', 'fireball', 0xff5a1f, 'expS', '화염탄 범위 폭격'],
     ['thetis', '테티스', 'S', 'chain', 'lightning', 0x66ccff, 'elec', '전격으로 무리를 꿰뚫음'],
-    ['hraesvelgr', '흐레스벨그', 'S', 'stun', 'laser', 0x9ab8ff, 'laserBig', '레이저로 적을 마비시키는 지원기', { range: 0.6 }],
+    ['hraesvelgr', '흐레스벨그', 'S', 'stun', 'laser', 0x9ab8ff, 'laserBig', '느리게 전진하며 레이저로 적을 마비시키는 지원기', { range: 2.6, hp: 2.5, spd: 0.4, ship: 1 }],
     ['undine', '운디네', 'S', 'wall', 'frost', 0x9feaff, 'ice', '하늘에서 전열을 지키는 보호기'],
-    ['valkyrie', '발키리', 'S', 'single', 'bullet', 0x9fd0ff, 'rifle', '빠른 발로 전선에 먼저 닿는 연사형', { spd: 1.7, rate: 0.65, hp: 1.2, cost: 2.4, cd: 2 }],
+    ['valkyrie', '발키리', 'S', 'single', 'bullet', 0x9fd0ff, 'rifle', '빠른 발로 공격을 흘려 내는 연사형', { spd: 1.7, rate: 0.65, hp: 1.2, cost: 2.4, cd: 2, evade: 0.6 }],
     // SS: gacha only
-    ['zero', '쿠노이치 제로', 'SS', 'melee', 'slash', 0xff3b6b, 'slash', '질풍 같은 연속 베기', { spd: 1.6, rate: 0.8, skill: 4 }],
+    ['zero', '쿠노이치 제로', 'SS', 'melee', 'slash', 0xff3b6b, 'slash', '공격을 피하며 파고드는 연속 베기', { spd: 1.6, rate: 0.8, skill: 4, evade: 0.7 }],
     ['hela', '헬라', 'SS', 'chain', 'lightning', 0xc77dff, 'elec', 'AGS 잔해를 조종하는 버뮤다 팀의 지원기', { skill: 3 }],
     ['azazel', '아자젤', 'SS', 'wall', 'holy', 0xffe9a0, 'energy', '빛의 방벽으로 아군을 지키는 보호기', { skill: 3 }],
     ['saraqael', '사라카엘', 'SS', 'wall', 'wave', 0xb28cff, 'energy', '율법의 방패로 전열을 지키는 보호기', { skill: 3 }],
     ['leona', '철혈의 레오나', 'SS', 'stun', 'laser', 0xff9ad5, 'laserBig', '드론 사격으로 적을 묶는 지원기', { hp: 1.4, skill: 4 }],
     ['ullr', '우르', 'SS', 'laser', 'laser', 0x7fe8ff, 'laserBig', '초장거리 정밀 레이저', { range: 1.2, hp: 0.8, skill: 3 }],
-    ['harpy', '하르페이아', 'SS', 'splash', 'missile', 0xff8a3d, 'missile', '미사일 융단 폭격', { range: 1.0, skill: 3 }],
-    ['eternity', '이터니티', 'SS', 'wall', 'bullet', 0xffd98a, 'mg', '중장갑으로 전열을 지키며 기관포를 쏘는 보호기', { hp: 1.2, skill: 3 }],
+    ['harpy', '하르페이아', 'SS', 'splash', 'missile', 0xff8a3d, 'missile', '적을 넘어 요새에 미사일을 쏟는 폭격기', { range: 1.0, skill: 3, siege: 2.5 }],
+    ['eternity', '이터니티', 'SS', 'wall', 'bullet', 0xffd98a, 'mg', '기지 앞에 버티고 서서 기관포를 쏘는 보호기', { hp: 1.6, atk: 2, range: 8.5, skill: 3, tower: 1 }],
     ['lemonadealpha', '레모네이드 알파', 'SS', 'chain', 'lightning', 0xffe14d, 'elec', '전장을 가르는 전격', { range: 0.8, skill: 3 }],
     ['sleipnir', '슬레이프니르', 'SS', 'wall', 'missile', 0xffb070, 'missile', '고속으로 전열에 끼어들어 막는 보호기', { spd: 1.6, skill: 3 }],
     ['blacklilith', '블랙 리리스', 'SS', 'melee', 'slash', 0xd0405a, 'slash', '거대한 낫의 학살', { atk: 1.2, skill: 3 }],
@@ -61,21 +61,40 @@
     ['khan', '신속의 칸', 'SS', 'snipe', 'snipe', 0xffcf7a, 'rifle', '번개 같은 속사 저격', { rate: 0.6, atk: 0.75, spd: 1.8, skill: 3 }],
     ['labiata', '라비아타 프로토타입', 'SS', 'melee', 'slash', 0xffd36e, 'swing', '바이오로이드의 원점. 「백화요란」', { hp: 1.5, atk: 1.3, skill: 3 }],
     ['lrl', 'LRL', 'SS', 'slow', 'holy', 0xb46bff, 'energy', '칠흑의 마법으로 적을 느리게 하는 지원기', { range: 1.0, skill: 3 }],
-    ['constantia', '콘스탄챠 S2', 'SS', 'slow', 'laser', 0xff6af0, 'laserBig', '함포 사격으로 적을 묶는 지원기', { range: 1.0, skill: 3 }],
+    ['constantia', '콘스탄챠 S2', 'SS', 'slow', 'laser', 0xff6af0, 'laserBig', '느리게 전진하며 함포로 적을 묶는 지원기', { range: 2.5, hp: 2.5, spd: 0.35, skill: 3, ship: 1 }],
     ['titania', '티타니아 프로스트', 'SS', 'splash', 'frost', 0xaef4ff, 'ice', '광역 빙결 폭발로 무리를 부수는 공격기', { range: 1.0, skill: 3 }],
-    ['mercury', '프랭스터 머큐리', 'SS', 'stun', 'slash', 0x7dffb0, 'slash', '초고속 연타로 적을 멈추는 지원기', { spd: 1.8, skill: 4 }],
-    ['empress', '엠프리스', 'SS', 'splash', 'missile', 0x9fe6ff, 'expM', '빙결 미사일 폭격', { range: 1.4, slow: [0.3, 1.5], skill: 3 }],
+    ['mercury', '프랭스터 머큐리', 'SS', 'stun', 'slash', 0x7dffb0, 'slash', '초고속 연타로 적을 멈추고 공격을 피하는 지원기', { spd: 1.8, skill: 4, evade: 0.6 }],
+    ['empress', '엠프리스', 'SS', 'splash', 'missile', 0x9fe6ff, 'expM', '느리게 전진하며 빙결 미사일을 퍼붓는 공격기', { range: 2.9, hp: 2.5, spd: 0.35, slow: [0.3, 1.5], skill: 3, ship: 1 }],
     ['fafnir', '파프니르', 'SS', 'chain', 'lightning', 0x5aa8ff, 'elec', '주피터로 생체 전기를 증폭하는 공작원', { hp: 1.5, range: 1.0, skill: 3 }],
     ['ramiel', '라미엘', 'SS', 'splash', 'holy', 0xfff1b8, 'energy', '천벌의 빛을 터뜨리는 공격기', { range: 1.0, atk: 1.2, skill: 3 }],
   ];
+  // balance pass (tools/balance.js): hp and attack x this, so units of a rank return about the same per money spent
+  const TUNE = {banshee: 0.84, nymph: 1.46, daphne: 0.63, impet: 1.11, leprechaun: 1.14, valkyrie: 0.69, undine: 0.87, hraesvelgr: 1.6, khan: 0.63, tiamat: 0.3, ullr: 0.41, zero: 0.97, brunhild: 0.66, titania: 0.82, ramiel: 0.93, leona: 1.07, mercury: 1.24, empress: 1.11, cyclopsprincess: 1.15, fafnir: 1.39, blacklilith: 1.37, saraqael: 1.83, azazel: 2.07, labiata: 1.61, sleipnir: 2.01, sylphid: 1.39, andvari: 0.42, eternity: 4.0, harpy: 1.0, constantia: 0.87, lrl: 1.18};
   // the starting squad, and the unit each stage hands out on its first clear (stage index -> id)
   const STARTERS = ['brownie', 'leprechaun', 'gnome'];
   const STAGE_REWARD = ['impet', 'nymph', 'valkyrie', 'raven', 'undine', 'phoenix', 'thetis', 'hraesvelgr'];
 
   const r10 = (v) => Math.max(10, Math.round(v / 10) * 10);
+  // what a unit is for (the squad screen, tools/balance.js): every role has units at more than one rank
+  const ROLES = {
+    single: '단일 공격', area: '범위 공격', tank: '체력 탱커', swarm: '물량 탱커', evade: '회피 탱커',
+    siege: '요새 공격', ship: '전투함', tower: '방어 타워', multi: '다수 배치', control: '둔화 · 기절',
+  };
+  function roleTags(u, t) {
+    const r = [u.area ? 'area' : 'single'];
+    if (t === 'wall' || u.ship || u.tower) r.push('tank');
+    if (u.multi > 1) r.push('multi', 'swarm');
+    if (u.evade) r.push('evade');
+    if (u.siege) r.push('siege');
+    if (u.ship) r.push('ship');
+    if (u.tower) r.push('tower');
+    if (u.slow) r.push('control');
+    return r;
+  }
   // 기동형 (the original's Mobility class) fly over the lane: short-range enemies (melee / walls) cannot hit them
-  const FLYERS = new Set(['impet', 'daphne', 'banshee', 'sylphid', 'raven', 'phoenix', 'thetis', 'hraesvelgr', 'undine', 'zero',
-    'azazel', 'saraqael', 'harpy', 'sleipnir', 'brunhild', 'tiamat', 'titania', 'mercury']);
+  // (the dodgers Zero and Mercury fight on the ground: their evasion is how they hold the line)
+  const FLYERS = new Set(['impet', 'daphne', 'banshee', 'sylphid', 'raven', 'phoenix', 'thetis', 'hraesvelgr', 'undine',
+    'azazel', 'saraqael', 'harpy', 'sleipnir', 'brunhild', 'tiamat', 'titania']);
   const UNITS = LIST.map(([id, name, rank, type, fx, color, sfx, desc, tw = {}]) => {
     if (FLYERS.has(id)) desc = '비행 · ' + desc;
     const t = TYPES[type], R = RANKS[rank];
@@ -83,8 +102,8 @@
       id, name, rank, type, role: t.role, fx, color, sfx, desc,
       cost: r10(t.cost * R.c * (tw.cost || 1)),
       cd: Math.min(45, Math.round(t.cd * R.cd * (tw.cd || 1) * 10) / 10),
-      hp: Math.round(t.hp * R.k * (tw.hp || 1)),
-      atk: Math.round(t.atk * R.k * (tw.atk || 1)),
+      hp: Math.round(t.hp * R.k * (tw.hp || 1) * (TUNE[id] || 1)),
+      atk: Math.round(t.atk * R.k * (tw.atk || 1) * (TUNE[id] || 1)),
       rate: Math.round(t.rate * (tw.rate || 1) * 100) / 100,
       range: Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10,
       spd: Math.round(t.spd * (tw.spd || 1) * 100) / 100,
@@ -92,9 +111,15 @@
       fly: FLYERS.has(id) ? 1 : 0,
       slow: tw.slow || t.slow || null,
       skill: tw.skill || 0, // S / SS: ordered by the player (game.js SKILL); others none
+      // roles (ROLES): siege: x damage to the fortress and walks past the worms; ship: slow battleship (shrugs knockbacks);
+      // tower: stands in front of our base and never moves; multi: copies per deploy; evade: share of hits dodged
+      siege: tw.siege || 0, ship: tw.ship || 0, tower: tw.tower || 0, multi: tw.multi || 1, evade: tw.evade || 0,
       gacha: rank === 'SS' ? 1 : 0,
       legend: rank === 'SS' ? 1 : 0,
     };
+    u.roles = roleTags(u, type);
+    const tag = [u.siege && '요새 공격', u.ship && '전투함', u.tower && '방어 타워', u.multi > 1 && `${u.multi}기 배치`, u.evade && `회피 ${Math.round(u.evade * 100)}%`].filter(Boolean);
+    if (tag.length) u.desc = tag.join(' · ') + ' · ' + u.desc;
     const st = STAGE_REWARD.indexOf(id);
     u.unlock = STARTERS.includes(id) ? 0 : st >= 0 ? st + 1 : -1; // -1: gacha only
     return u;
@@ -149,6 +174,11 @@
     BigChick_N: { name: '빅 칙', hp: 2400, atk: 90, rate: 2.0, range: 2.2, spd: 0.9, kb: 2, area: 1, h: 2.1, money: 260, color: 0xff8844 },
     Gigantes_N: { name: '기간테스', armor: 1, traits: ['armor'], hp: 6500, atk: 260, rate: 2.8, range: 2.8, spd: 0.7, kb: 2, area: 1, h: 2.5, money: 450, color: 0xff3333 },
     Destroyer_N: { name: '디스트로이어', artillery: 1, traits: ['artillery', 'armor'], armor: 1, hp: 2600, atk: 240, rate: 3.0, range: 4.8, spd: 0.7, kb: 3, area: 1, h: 2.0, money: 500, color: 0xff2266 },
+    // roles' counterparts (original monsters): a sniper that one-shots the front, a runner that slips past the line to our
+    // base, a speaker that heals the worms around it
+    Scout_N: { name: '스카우트', rush: 1, traits: ['rush'], hp: 260, atk: 30, rate: 1.0, range: 1.6, spd: 3.0, kb: 1, h: 1.2, money: 60, color: 0xffd060 },
+    Speaker_N: { name: '스피커', heal: [0.05, 3, 3.6], traits: ['heal'], hp: 700, atk: 15, rate: 1.5, range: 3.0, spd: 0.8, kb: 2, h: 1.4, money: 140, color: 0x80ffb0 },
+    Stalker_EW: { name: '스토커', traits: ['sniper'], hp: 900, atk: 220, rate: 4.0, range: 6.5, spd: 0.7, kb: 2, h: 1.7, money: 180, color: 0xff6040 },
     // bosses
     EmperorChick_N: { name: '엠페러 칙', hp: 16000, atk: 220, rate: 2.4, range: 3.0, spd: 0.6, kb: 3, area: 1, h: 3.0, money: 1500, boss: 1, color: 0xffaa22 },
     Executioner_EW: { name: '엑스큐셔너', armor: 1, traits: ['armor'], hp: 34000, atk: 480, rate: 2.6, range: 3.6, spd: 0.6, kb: 3, area: 1, h: 3.2, money: 2500, boss: 1, color: 0xff2244 },
@@ -162,6 +192,9 @@
     armor: { name: '장갑', tip: '범위 공격 피해 50% · 저격은 150%' },
     shield: { name: '보호막', tip: '체력 일부만큼 보호막을 먼저 깎아야 함' },
     artillery: { name: '포격', tip: '사거리 2배 거리에서 기지를 포격(피해 50%) · 빨리 처치해야 함' },
+    rush: { name: '돌격', tip: '빠르게 전열을 지나쳐 기지만 노림 · 방어 타워 · 후방 범위 공격이 유리' },
+    heal: { name: '회복', tip: '주변 철충의 체력을 주기적으로 회복 · 단일 화력으로 먼저 제거' },
+    sniper: { name: '저격', tip: '사거리 6.5에서 맨 앞 대원에게 큰 단발 피해 · 값싼 대원으로 탄을 받아내면 유리' },
     phase: { name: '4단계', tip: '체력 75·50·25%에서 형태와 공격이 바뀜 · 붉은 예고 범위를 피하고, 예고 중 오르카 포격을 맞히면 공격을 끊음' },
   };
   const BASE_RIG = 'Nest_B07'; // the enemy base: the Iron Worm nest (Nest_B07), standing still
@@ -172,19 +205,19 @@
   const CHAPTERS = [
     { title: '상륙 작전', sub: '오르카 해안', bg: 'bg_field', pool: ['NightChick_N', 'Legion_N', 'Drone_N'], boss: ['BigChick_N', 0.8],
       stages: ['해안 교두보', '모래톱 방어선', '등대 언덕', '갯바위 돌파', '첫 번째 그림자', '젖은 숲길', '버려진 어촌', '방파제 사수', '해안 포대 탈환', '거대 개체 「빅 칙」'] },
-    { title: '잿빛 정찰', sub: '폐허 도시', bg: 'bg_city', pool: ['NightChick_N', 'Drone_N', 'Legion_N', 'Fallen_N'], boss: ['EmperorChick_N', 0.7],
+    { title: '잿빛 정찰', sub: '폐허 도시', bg: 'bg_city', pool: ['NightChick_N', 'Drone_N', 'Legion_N', 'Fallen_N', 'Scout_N'], boss: ['EmperorChick_N', 0.7],
       stages: ['무너진 대로', '통신탑 탈환', '지하 차도', '빈 시장 거리', '상공의 감시자', '고가 철로', '붉은 신호', '폐병원', '도시 중심부', '군주 「엠페러 칙」'] },
-    { title: '전초기지 강습', sub: '철충 전진 거점', bg: 'bg_base', pool: ['Legion_N', 'Fallen_N', 'Drone_N', 'Centurion_N'], boss: ['Gigantes_N', 1.0],
+    { title: '전초기지 강습', sub: '철충 전진 거점', bg: 'bg_base', pool: ['Legion_N', 'Fallen_N', 'Drone_N', 'Centurion_N', 'Speaker_N'], boss: ['Gigantes_N', 1.0],
       stages: ['외곽 감시선', '격납고 진입', '보급 라인 절단', '경비 순찰로', '철문 앞의 백부장', '탄약고 폭파', '제어실 확보', '냉각 구역', '중앙 승강기', '수문장 「기간테스」'] },
-    { title: '처형인의 사냥터', sub: '구조 작전', bg: 'bg_base', pool: ['Fallen_N', 'Centurion_N', 'Intruder_N', 'Legion_N'], boss: ['Executioner_EW', 0.6],
+    { title: '처형인의 사냥터', sub: '구조 작전', bg: 'bg_base', pool: ['Fallen_N', 'Centurion_N', 'Intruder_N', 'Legion_N', 'Stalker_EW'], boss: ['Executioner_EW', 0.6],
       stages: ['구조 신호', '감옥 구역', '추적자들', '어둠 속의 침입자', '사냥꾼의 그물', '지하 수로', '탈출로 확보', '배신의 통로', '최후의 문', '처형인 「엑스큐셔너」'] },
-    { title: '포화의 시가지', sub: '회색 시가지', bg: 'bg_city', pool: ['Centurion_N', 'Intruder_N', 'Phalangites_N', 'Rampart_N'], boss: ['Gigantes_N', 1.4],
+    { title: '포화의 시가지', sub: '회색 시가지', bg: 'bg_city', pool: ['Centurion_N', 'Intruder_N', 'Phalangites_N', 'Rampart_N', 'Stalker_EW', 'Scout_N'], boss: ['Gigantes_N', 1.4],
       stages: ['포격 지대', '방벽 너머', '저격수의 거리', '광장 공방전', '움직이는 성벽', '폐허 아케이드', '교차로 봉쇄', '철벽 돌파', '포대 침묵', '강철 행렬'] },
-    { title: '불길 속의 날개', sub: '불타는 평원', bg: 'bg_field', pool: ['Fallen_N', 'Intruder_N', 'Juggernaut_N', 'BigChick_N', 'Phalangites_N'], boss: ['EmperorChick_N', 1.3],
+    { title: '불길 속의 날개', sub: '불타는 평원', bg: 'bg_field', pool: ['Fallen_N', 'Intruder_N', 'Juggernaut_N', 'BigChick_N', 'Phalangites_N', 'Scout_N', 'Speaker_N'], boss: ['EmperorChick_N', 1.3],
       stages: ['불붙은 들판', '연기 속의 행군', '재의 언덕', '타오르는 숲', '저거너트 진군로', '붉은 강', '검게 탄 마을', '불새의 비행', '열기의 장벽', '불사의 군주'] },
-    { title: '거인의 길', sub: '중장갑 회랑', bg: 'bg_field', pool: ['Centurion_N', 'Phalangites_N', 'Rampart_N', 'Gigantes_N', 'Destroyer_N'], boss: ['Executioner_EW', 0.8],
+    { title: '거인의 길', sub: '중장갑 회랑', bg: 'bg_field', pool: ['Centurion_N', 'Phalangites_N', 'Rampart_N', 'Gigantes_N', 'Destroyer_N', 'Stalker_EW', 'Speaker_N'], boss: ['Executioner_EW', 0.8],
       stages: ['거인의 발자국', '무너진 고가도로', '포대 협곡', '강철 숲', '거인의 그림자', '파괴자의 사선', '철골 다리', '회랑 입구', '거인의 묘지', '처형인의 귀환'] },
-    { title: '지하 수송구', sub: '중앙 중계소', bg: 'bg_base', pool: ['Centurion_N', 'Fallen_N', 'Juggernaut_N', 'Destroyer_N', 'Gigantes_N'], boss: ['Dreadlurker_BOSS_IW_N', 1.0],
+    { title: '지하 수송구', sub: '중앙 중계소', bg: 'bg_base', pool: ['Centurion_N', 'Fallen_N', 'Juggernaut_N', 'Destroyer_N', 'Gigantes_N', 'Stalker_EW', 'Scout_N', 'Speaker_N'], boss: ['Dreadlurker_BOSS_IW_N', 1.0],
       stages: ['중계소 외곽', '겹치는 구조 요청', '돌아온 운반대', '지하 승강로', '수색대의 퇴로', '두 번의 진동', '마지막 들것', '중계선 절단', '수송구 앞', '「드레드러커」'] },
   ];
   // stage conditions, hand-placed per chapter (CHAPTER_MODS): each changes how a stage has to be played
@@ -227,9 +260,12 @@
 
   // seconds between spawns for each worm (before the stage's own pacing)
   const EVERY = { NightChick_N: 5, Legion_N: 9, Drone_N: 11, Fallen_N: 8, Centurion_N: 10, Intruder_N: 14, Phalangites_N: 18,
-    Rampart_N: 26, Juggernaut_N: 26, BigChick_N: 24, Gigantes_N: 40, Destroyer_N: 45 };
+    Rampart_N: 26, Juggernaut_N: 26, BigChick_N: 24, Gigantes_N: 40, Destroyer_N: 45, Scout_N: 7, Speaker_N: 20, Stalker_EW: 22 };
   const PER_CH = 10;
   const MID = 4; // index of the elite stage in a chapter
+  // difficulty pass (tools/balance.js calibrate): worm strength and fortress HP x this per stage, so the squad the
+  // economy gives you clears each stage comfortably and one two levels under it only just
+  const DIFF = [1.5, 3.94, 3.94, 3.92, 3.9, 3.7, 3.5, 3.47, 3.45, 3.42, 9.82, 9.57, 9.31, 8.41, 7.5, 8.08, 8.66, 7.65, 6.63, 5.62, 4.2, 4.25, 4.29, 4.0, 3.72, 3.79, 3.85, 3.67, 3.48, 3.3, 2.79, 2.27, 1.75, 2.17, 2.59, 2.34, 2.09, 1.9, 1.4, 1.15, 1.8, 1.85, 2.05, 2.04, 2.02, 1.69, 1.36, 1.53, 2.0, 2.3, 1.88, 1.44, 1.0, 1.39, 1.78, 1.56, 1.33, 1.38, 1.44, 1.49, 1.63, 1.57, 1.51, 1.39, 1.26, 1.16, 1.06, 1.05, 0.95, 0.85, 2.02, 1.68, 1.33, 1.32, 1.31, 1.16, 1.15, 1.05, 0.9, 0.8];
 
   // spawns: [enemy, first spawn (s), every (s), how many (0 = endless), strength x]
   // pow: every enemy's HP / attack in this stage; rush: spawns that start once the base falls below `at` of its HP;
@@ -252,6 +288,8 @@
         rush: { at: 0.5, spawns: [[ch.pool[0], 0, 2.5, 6, 1.2], [ch.pool[Math.min(types, ch.pool.length) - 1], 0, 12, 2, 1]] },
       };
       applyMod(st, CHAPTER_MODS[c][s], ch, c, s);
+      const k = DIFF[g] || 1;
+      st.pow = Math.round(st.pow * k * 100) / 100; st.baseHp = Math.round(st.baseHp * k / 100) * 100;
       if (last) st.boss = { e: ch.boss[0], at: 0.95, mag: ch.boss[1] };
       else if (s === MID) { st.boss = { e: [...ch.pool].sort((a, b) => ENEMIES[b].hp - ENEMIES[a].hp)[0], at: 0.8, mag: 1.7 }; st.elite = true; }
       st.sub = last ? `보스: ${ENEMIES[ch.boss[0]].name}` : st.elite ? `정예: ${ENEMIES[st.boss.e].name}` : ch.pool.slice(0, types).map((e) => ENEMIES[e].name).join(' · ');
@@ -273,7 +311,8 @@
   // hard: every campaign stage again, much stronger worms (opens per chapter once its normal 10 stages are cleared)
   STAGES[STAGES.length - 1].finale = true; // the war's last battle ends with its own sequence (game.js finale)
   const HARD = STAGES.map((st) => Object.assign({}, st, {
-    hard: true, finale: false, ix: st.ix, code: 'H' + st.code, pow: Math.round((st.pow * 1.8 + 1.0) * 100) / 100,
+    // (the first two chapters' normal stages are eased for newcomers: their hard versions climb further)
+    hard: true, finale: false, ix: st.ix, code: 'H' + st.code, pow: Math.round((st.pow * (st.chapter < 2 ? 3 : 1.8) + 1.0) * 100) / 100,
     baseHp: Math.round(st.baseHp * 1.5 / 100) * 100, xp: Math.round(st.xp * 2.4), // hard levels the squad for H8 in about 3-4 weeks
     spawns: st.spawns.map((x) => (x[3] ? [x[0], x[1], x[2], x[3] + 1, x[4]] : x)),
     boss: st.boss && Object.assign({}, st.boss, { mag: st.boss.mag * 1.2 }),
@@ -421,6 +460,6 @@
     return p;
   }
 
-  window.DATA = { UNITS, UNIT, TYPES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, DECK_COST, DECK_CAP, START_LV, CARDS, cardsNeed, relLv, PULL_CARDS, WILD_SHOP, SHOP_CARDS,
+  window.DATA = { UNITS, UNIT, TYPES, ROLES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, DECK_COST, DECK_CAP, START_LV, CARDS, cardsNeed, relLv, PULL_CARDS, WILD_SHOP, SHOP_CARDS,
     ENEMIES, TRAITS, MODS, INF_BUFFS, dailyStage, SYNERGIES, synergiesOf, MISSIONS, PERIODIC, periodic, dayNo, BASE_RIG, STAGES, HARD, infiniteFloor, WORKER, CANNON, MAX_LV, lvMul, lvCost, xpNeed, reward };
 })();

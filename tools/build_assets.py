@@ -24,9 +24,9 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from roster import UNITS  # noqa: E402
 ENEMIES = """NightChick_N Drone_N Legion_N Fallen_N Centurion_N Gigantes_N Intruder_N Phalangites_N Rampart_N
-Juggernaut_N BigChick_N Fortress_N Destroyer_N EmperorChick_N Executioner_EW Dreadlurker_BOSS_IW_N""".split()
+Juggernaut_N BigChick_N Fortress_N Destroyer_N EmperorChick_N Executioner_EW Dreadlurker_BOSS_IW_N Scout_N Speaker_N Stalker_EW""".split()
 # icons named after the base monster (the boss rig is a variant of it)
-ICON = {"Dreadlurker_BOSS_IW_N": "Dreadlurker_N"}
+ICON = {"Dreadlurker_BOSS_IW_N": "Dreadlurker_N", "Stalker_EW": "Stalker_B0108"}
 
 BG = {
     "bg_field": "BGImg/BG_7_1.png",

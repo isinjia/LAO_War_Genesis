@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.83'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.84'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -537,9 +537,17 @@
   function playStory(key, done) {
     const sc = STORY.S[key];
     if (!sc) { if (done) done(); return; }
+    if ($('modal').querySelector('.story-log')) closeModal();
+    if (story && story.typing) clearInterval(story.typing);
     story = { key, sc, i: -1, done, typing: null, side: 'L', slots: { L: null, R: null } };
+    $('story').dataset.scene = key;
     AUDIO.music(sc.bgm || (key === 'c8_outro' ? 'ending' : /_boss$/.test(key) ? 'thrill' : /_outro$/.test(key) ? 'talk2' : 'talk'));
     $('stBg').style.backgroundImage = `url(${IMG[sc.bg] || IMG.bg_title})`;
+    delete $('story').dataset.storyArt;
+    for (const line of sc.lines) {
+      const src = line[3] && STORY.ART && STORY.ART[line[3].art];
+      if (src) { const preload = new Image(); preload.src = src; }
+    }
     ['stL', 'stR'].forEach((id) => { $(id).className = 'st-char ' + id.slice(2); $(id).removeAttribute('src'); });
     $('story').classList.remove('fx-shake', 'fx-flash', 'st-ominous'); // reset the previous scene's cues and ending mood
     $('story').classList.add('show');
@@ -562,7 +570,7 @@
   function faceFor(who, text, stage) {
     const f = window.FACES && FACES[who];
     if (!f || !hasFull(who)) return null;
-    if (stage && stage.face) return f.e[stage.face] ? stage.face : null;
+    if (stage && Object.prototype.hasOwnProperty.call(stage, 'face')) return stage.face && f.e[stage.face] ? stage.face : null;
     for (const [, re, list] of MOODS) if (re.test(text)) { const e = list.find((x) => f.e[x]); if (e) return e; }
     return f.e.Idle ? 'Idle' : null;
   }
@@ -592,7 +600,7 @@
   }
   function setFace(el, who, ex) {
     el.dataset.face = ex || '';
-    if (!ex) return;
+    if (!ex) { el.src = art(who); return; }
     faceArt(who, ex).then((url) => { if (url && el.dataset.face === ex && story && story.slots[el.id.slice(2)] === who) el.src = url; });
   }
 
@@ -604,16 +612,24 @@
     if (st.i >= st.sc.lines.length) return endStory();
     const [who, text, sideArg, stage] = st.sc.lines[st.i];
     if (stage) { // staging cues: screen shake / white flash / a sound
-      if (stage.bgm) AUDIO.music(stage.bgm);
+      if (Object.prototype.hasOwnProperty.call(stage, 'bgm')) AUDIO.music(stage.bgm);
       if (stage.mood === 'ominous') $('story').classList.add('st-ominous');
+      if (Object.prototype.hasOwnProperty.call(stage, 'art') && stage.art === null) {
+        $('stBg').style.backgroundImage = 'none';
+        delete $('story').dataset.storyArt;
+      }
+      if (stage.art && STORY.ART && STORY.ART[stage.art]) {
+        $('stBg').style.backgroundImage = `url(${STORY.ART[stage.art]})`;
+        $('story').dataset.storyArt = stage.art;
+      }
       if (stage.sfx) AUDIO.play(stage.sfx, 0.8);
       if (stage.fx) { const box = $('story'); box.classList.remove('fx-shake', 'fx-flash'); void box.offsetWidth; box.classList.add('fx-' + stage.fx); box.onanimationend = (ev) => { if (ev.target === box) box.classList.remove('fx-shake'); }; }
     }
     const unit = D.UNIT[who];
     const name = unit ? unit.name : STORY.NAMES[who] != null ? STORY.NAMES[who] : who;
-    $('stName').textContent = name;
+    $('stName').textContent = name + (stage && stage.channel === 'radio' ? ' · 통신' : '');
     const tx = $('stText');
-    tx.className = 'st-text' + (who === 'sys' ? ' sys' : who === 'radio' ? ' radio' : '');
+    tx.className = 'st-text' + (who === 'sys' ? ' sys' : who === 'radio' || stage && stage.channel === 'radio' ? ' radio' : '');
     if (unit) {
       let side = sideArg || (st.slots.L === who ? 'L' : st.slots.R === who ? 'R' : st.side);
       const was = side === 'L' ? 'R' : 'L';
@@ -635,7 +651,8 @@
       if (ex !== (el.dataset.face || null)) setFace(el, who, ex);
       el.classList.add('show');
       el.classList.remove('dim');
-      el.classList.remove('talk'); void el.offsetWidth; el.classList.add('talk'); // a little hop as they speak
+      el.classList.remove('talk');
+      if (!(stage && stage.motion === 'still')) { void el.offsetWidth; el.classList.add('talk'); }
       const other = $('st' + (side === 'L' ? 'R' : 'L'));
       other.classList.add('dim');
       st.side = side === 'L' ? 'R' : 'L';
@@ -658,6 +675,7 @@
   function endStory() {
     const st = story;
     if (!st) return;
+    if ($('modal').querySelector('.story-log')) closeModal();
     if (st.typing) clearInterval(st.typing);
     story = null;
     $('story').classList.remove('show');
@@ -671,8 +689,36 @@
   $('stBox').onclick = nextLine;
   $('story').addEventListener('pointerdown', (e) => { if (e.target === $('story') || e.target.classList.contains('st-bg') || e.target.classList.contains('st-char')) nextLine(); });
   $('stSkip').onclick = (e) => { e.stopPropagation(); if (story) story.skipped = true; endStory(); };
+  const closeStoryLog = () => { closeModal(); $('stHistory').focus(); };
+  $('stHistory').onclick = () => {
+    if (!story) return;
+    const log = document.createElement('div'); log.className = 'story-log';
+    log.setAttribute('role', 'log'); log.setAttribute('aria-label', '지금까지의 대화');
+    for (const [who, text, , cue] of story.sc.lines.slice(0, story.i + 1)) {
+      const p = document.createElement('p'), name = document.createElement('b');
+      name.textContent = (D.UNIT[who] ? D.UNIT[who].name : STORY.NAMES[who]) || '장면';
+      if (cue && cue.channel === 'radio') name.textContent += ' · 통신';
+      p.append(name, document.createTextNode(text)); log.appendChild(p);
+    }
+    modal('대화 기록', log.outerHTML, [['계속 읽기', closeStoryLog]]);
+    const current = $('modal').querySelector('.story-log'); current.scrollTop = current.scrollHeight;
+    $('modalBtns').firstElementChild.focus();
+  };
 
   // after a chapter's last scene: CHAPTER CLEAR over the chapter's art, with the unit who joined
+  let creditRun = 0;
+  function creditExit(el, done, duration) {
+    const run = ++creditRun;
+    let closed = false;
+    const close = () => {
+      if (closed || run !== creditRun) return;
+      closed = true; clearTimeout(timer);
+      el.classList.remove('show'); el.onclick = null;
+      if (done) done();
+    };
+    const timer = duration > 0 ? setTimeout(close, duration) : 0;
+    el.onclick = close;
+  }
   function titleCard(c, done) {
     const ch = D.CHAPTERS[c], id = D.CHAPTER_REWARD[c];
     const el = $('credits');
@@ -680,9 +726,7 @@
       <div class="tc-txt"><div class="tc-no">CHAPTER ${pad2(c + 1)}</div><div class="tc-t">${ch.title}</div><div class="tc-clear">CLEAR</div></div></div>`;
     el.classList.add('show');
     AUDIO.play('clear', 0.8);
-    const close = () => { el.classList.remove('show'); el.onclick = null; if (done) done(); };
-    el.onclick = close;
-    setTimeout(() => { if (el.classList.contains('show')) close(); }, 3200);
+    creditExit(el, done, 3200);
   }
 
   // the ending: credits over the final battlefield
@@ -691,18 +735,23 @@
     el.innerHTML = `<div class="cr-roll"><img src="${UIA.logo.u}" alt=""><h2>WAR GENESIS</h2>
       <p>해안 구출 작전 완료</p>
       <h3>원작 리소스</h3><p>라스트오리진 — SD 캐릭터 · 일러스트 · UI · 이펙트 · 사운드</p>
+      <h3>추가 제작</h3><p>워 제네시스 창작 시나리오 · 귀환과 지하 엔딩 배경</p>
       <h3>오르카 전선</h3><p>${D.UNITS.map((u) => u.name).join(' · ')}</p>
       <h3>철충</h3><p>${Object.values(D.ENEMIES).map((e) => e.name).join(' · ')}</p>
       <h3>그리고</h3><p>끝까지 지휘해 준 사령관에게</p>
       <p class="end">— TO BE CONTINUED —</p><p>하드 모드와 무한 전장이 열렸습니다.</p></div>`;
     el.classList.add('show');
     AUDIO.music('ending');
-    const close = () => { el.classList.remove('show'); el.onclick = null; if (done) done(); };
-    el.onclick = close;
-    setTimeout(() => { if (el.classList.contains('show')) close(); }, 32000);
+    creditExit(el, done, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 32000);
   }
   addEventListener('keydown', (e) => {
     if (!story) return;
+    if ($('modal').classList.contains('show')) {
+      if (e.key === 'Escape' && $('modal').querySelector('.story-log')) { e.preventDefault(); closeStoryLog(); }
+      if (e.key === 'Tab' && $('modal').querySelector('.story-log')) { e.preventDefault(); $('modalBtns').firstElementChild.focus(); }
+      return;
+    }
+    if ((e.key === ' ' || e.key === 'Enter') && e.target instanceof Element && e.target.closest('button')) return;
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); nextLine(); }
     if (e.key === 'Escape') endStory();
   });
@@ -1378,7 +1427,11 @@
     while (save.tutStep < LT.length && LT[save.tutStep].done()) { save.tutStep++; persist(); }
     const s = LT[Math.min(save.tutStep, LT.length - 1)];
     let el, text;
-    if (pane !== s.pane && !($('modal').classList.contains('show') && s.pane === 'squad')) { el = navBtn(s.pane); text = `<b>${PANE_NAME[s.pane]}</b> 탭으로 이동하세요.`; }
+    if (pane !== s.pane && !($('modal').classList.contains('show') && s.pane === 'squad')) {
+      el = navBtn(s.pane); text = `<b>${PANE_NAME[s.pane]}</b> 탭으로 이동하세요.`;
+      // phones hide the tab bar inside a chapter / the stage list: first the back button out to it
+      if (!el.offsetParent && !$('btnBack').hidden) { el = $('btnBack'); text = `<b>뒤로가기</b>를 눌러 <b>${PANE_NAME[s.pane]}</b> 탭이 있는 화면으로 나가세요.`; }
+    }
     else { el = s.el(); text = typeof s.text === 'function' ? s.text() : s.text; }
     if (!el || !el.offsetParent) { coach.classList.remove('show'); return; }
     if (!el.classList.contains('lpulse')) { document.querySelectorAll('.lpulse').forEach((e) => e.classList.remove('lpulse')); el.classList.add('lpulse'); }
@@ -1808,5 +1861,16 @@
     launch(st);
   }
   window.APP = { save, launch, openLobby, pull, playStory, pickBuff, openDaily, titleCard, fitHud, tutorial: () => !!tut };
+  // Saved-game-safe visual review: ?unlock=1&scene=c8_outro&line=11 (zero-based line).
+  if (noSave && q.get('scene') && STORY.S[q.get('scene')] && !q.get('smoke')) {
+    const key = q.get('scene');
+    playStory(key);
+    const requested = Number(q.get('line') || 0);
+    const line = Number.isFinite(requested) ? Math.max(0, Math.min(STORY.S[key].lines.length - 1, Math.floor(requested))) : 0;
+    for (let i = 0; i < line; i++) { nextLine(); nextLine(); }
+    if (story && story.typing) nextLine();
+  }
   if (q.get('smoke')) { const sc = document.createElement('script'); sc.src = 'tools/smoke.js'; document.head.appendChild(sc); }
+  if (q.get('balance')) { const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now(); document.head.appendChild(sc); } // tools/balance.js: the balance report
+  if (noSave && q.get('storyqa')) { const sc = document.createElement('script'); sc.src = 'tools/story_layout_test.js'; document.head.appendChild(sc); }
 })();

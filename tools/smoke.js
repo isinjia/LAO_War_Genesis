@@ -178,6 +178,62 @@
       if (document.getElementById('story').classList.contains('show')) throw new Error('story stuck');
       return 'ok';
     });
+    await step('story log: past lines only, keyboard does not advance behind it', () => {
+      const box = document.getElementById('stBox'), view = document.getElementById('story');
+      APP.playStory('c1_intro');
+      for (let i = 0; i < 3; i++) { box.click(); box.click(); }
+      box.click();
+      const text = document.getElementById('stText').textContent;
+      document.getElementById('stHistory').click();
+      const log = document.querySelector('#modal .story-log');
+      if (!log || log.children.length !== 4) throw new Error('history does not match visited lines');
+      if (log.textContent.includes(STORY.S.c1_intro.lines[4][1])) throw new Error('history reveals a future line');
+      if (document.activeElement !== document.querySelector('#modalBtns button')) throw new Error('history focus missing');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      if (document.getElementById('stText').textContent !== text) throw new Error('dialogue advanced behind history');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (document.getElementById('modal').classList.contains('show') || !view.classList.contains('show')) throw new Error('Escape skipped the story instead of closing history');
+      document.getElementById('stSkip').click();
+      return '4 visited lines; no future text; modal focus and Escape preserved';
+    });
+    await step('story expressions: neutral cue restores original illustration', async () => {
+      const key = '__expression_probe';
+      STORY.S[key] = { bg: 'bg_base', lines: [
+        ['brownie', '걱정하는 표정.', 'L', { face: 'Sad' }],
+        ['brownie', '다음 보고를 이어갑니다.', 'L', { face: null, motion: 'still' }],
+      ] };
+      try {
+        APP.playStory(key);
+        const image = document.getElementById('stL'), original = image.src;
+        for (let i = 0; i < 40 && image.src === original; i++) await wait(50);
+        if (image.src === original) throw new Error('original expression overlay did not load');
+        const box = document.getElementById('stBox'); box.click(); box.click();
+        if (image.src !== original || image.dataset.face || image.classList.contains('talk')) throw new Error('old expression or hop remained on neutral/still line');
+        document.getElementById('stSkip').click();
+        return 'Sad overlay → base art; still cue prevents talking hop';
+      } finally { delete STORY.S[key]; }
+    });
+    await step('chapter cards: old dismissal cannot close a new card', () => {
+      const original = window.setTimeout, callbacks = [], handles = [];
+      let first = 0, second = 0;
+      try {
+        window.setTimeout = (fn, ms, ...args) => {
+          if (ms !== 3200) return original(fn, ms, ...args);
+          callbacks.push(() => fn(...args));
+          const handle = original(() => {}, ms); handles.push(handle); return handle;
+        };
+        const credits = document.getElementById('credits');
+        APP.titleCard(0, () => first++); credits.click();
+        APP.titleCard(1, () => second++);
+        callbacks[0]();
+        if (!credits.classList.contains('show') || first !== 1 || second !== 0) throw new Error('previous card dismissed the current one');
+        callbacks[1](); callbacks[1]();
+        if (credits.classList.contains('show') || second !== 1) throw new Error('current card callback did not run exactly once');
+        return 'old timer ignored; each card completes once';
+      } finally {
+        window.setTimeout = original; handles.forEach(clearTimeout);
+      }
+    });
     await step('ending: underground stinger, continued credits and mood reset', () => {
       const box = document.getElementById('stBox'), story = document.getElementById('story');
       const lines = STORY.S.c8_outro.lines;
@@ -188,14 +244,46 @@
       for (let i = 0; i < cue; i++) { box.click(); box.click(); }
       if (!story.classList.contains('st-ominous')) throw new Error('stinger mood not applied');
       if (document.querySelectorAll('#story .st-char.show').length) throw new Error('characters present in unseen underground');
-      for (let i = cue; i < lines.length; i++) { box.click(); box.click(); }
+      const artCue = lines.findIndex(line => line[3]?.art === 'underground');
+      for (let i = cue; i < artCue; i++) { box.click(); box.click(); }
+      if (story.dataset.storyArt !== 'underground' || !document.getElementById('stBg').style.backgroundImage.includes('underground-v1.webp')) throw new Error('ending illustration missing');
+      for (let i = artCue; i < lines.length; i++) { box.click(); box.click(); }
       const credits = document.getElementById('credits');
       if (!credits.classList.contains('show') || !credits.textContent.includes('TO BE CONTINUED')) throw new Error('continued credits missing');
       credits.click();
       APP.playStory('c1_intro');
       if (story.classList.contains('st-ominous')) throw new Error('ending mood leaked into new scene');
+      if (story.dataset.storyArt) throw new Error('ending art leaked into new scene');
       document.getElementById('stSkip').click();
       return 'victory → unseen underground → continued; next story restores normal mood';
+    });
+    await step('chapter ending: unread journal entry and next-chapter recovery', async () => {
+      const save = APP.save, before = { cleared: save.cleared, seen: { ...save.seen } };
+      try {
+        save.cleared = 9;
+        delete save.seen.c1_outro;
+        delete save.seen.c2_intro;
+        const G = await battle(D.STAGES[9], ['brownie', 'leprechaun', 'gnome'], 1);
+        G.ebase.hp = 0; GAME.sim(0.1); await wait(2900);
+        if (save.seen.c1_outro) throw new Error('ending marked seen before viewing');
+        const map = [...document.querySelectorAll('#modalBtns button')].find(b => b.textContent === '작전 지도');
+        if (!map) throw new Error('no map button');
+        map.click();
+        if (![...document.querySelectorAll('#chStory button')].some(b => b.textContent.includes('결말 NEW'))) throw new Error('unread ending not available in journal');
+        APP.openLobby('campaign', 1);
+        document.querySelector('#stagePath [data-ix="10"]').click();
+        document.getElementById('btnGo').click();
+        if (document.getElementById('story').dataset.scene !== 'c1_outro') throw new Error('next chapter lost previous ending');
+        document.getElementById('stSkip').click();
+        if (!save.seen.c1_outro || document.getElementById('story').dataset.scene !== 'c2_intro') throw new Error('explicit skip did not continue to next intro');
+        // Leave this next intro via a new standalone scene, without starting its battle.
+        APP.playStory('ep_labiata');
+        document.getElementById('stSkip').click();
+        return 'result/map preserve unread state; 2-1 recovers 1-10 ending before intro';
+      } finally {
+        save.cleared = before.cleared; save.seen = before.seen;
+        GAME.stop(); APP.openLobby('campaign');
+      }
     });
     await step('gacha 10-pull', async () => {
       const p0 = APP.save.parts; APP.pull(10);
