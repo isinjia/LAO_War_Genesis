@@ -291,9 +291,10 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .st-char.L { left: 4vw; }
 .st-char.R { right: 4vw; }
 .st-char.show { opacity: 1; }
-.st-char.dim { filter: brightness(0.38); transform: translateY(8px); }
+.st-char.dim { filter: brightness(0.38); transform: translateY(8px); z-index: 0; }
+.st-char:not(.dim) { z-index: 1; } /* the speaker stands in front */
 .st-char.portrait { height: auto; width: min(300px, 40vw); bottom: 34vh; border: 3px solid var(--y); }
-.st-box { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(1100px, 96vw); height: 170px;
+.st-box { position: absolute; z-index: 2; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(1100px, 96vw); height: 170px;
   padding: 34px 36px 22px; background: linear-gradient(180deg, rgba(14, 15, 18, 0.93), rgba(6, 7, 9, 0.97)); border-top: 2px solid var(--y);
   cursor: pointer; }
 .st-box::after { content: ''; position: absolute; right: -1px; top: -2px; border-style: solid; border-width: 0 30px 30px 0; border-color: transparent #000 transparent transparent; }
@@ -469,7 +470,7 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
   .slot .c { font-size: 12px; }
   .money { font-size: 21px; }
   .stage-name span { display: none; }
-  .st-char { height: 66vh; max-width: 80vw; }
+  .st-char { height: 66vh; max-width: 104vw; } /* wide art (Leprechaun's rifle) must not shrink: the cap would sink her head */
   .st-char.L { left: -8vw; } .st-char.R { right: -8vw; }
   .st-box { padding: 30px 18px 18px; height: 176px; }
 }
