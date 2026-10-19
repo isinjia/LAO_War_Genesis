@@ -1122,3 +1122,18 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
 @media(max-width: 640px) { .pickup-options { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .pickup-options img { width: 100%; height: 112px; object-fit: contain; }
 @media(max-width: 640px) { .pickup-options img { height: 96px; } }
+/* story skip: the same angled HUD plate as the tutorial skip (replaces the original's "Skip>>" sprite) */
+.st-skip { right: 0; top: max(14px, env(safe-area-inset-top)); width: auto; height: auto; display: flex; padding: 0; border: 0; color: #fff;
+  background: none; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55)); }
+.st-skip::before { content: ''; position: absolute; inset: 0; z-index: -1; clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(38, 42, 52, 0.96), rgba(14, 16, 22, 0.96)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+.st-skip::after { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 4px; background: var(--y); transform: skewX(-15deg); }
+.st-skip .ts-txt { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding: 6px 4px 6px 22px; line-height: 1; }
+.st-skip .ts-txt b { font-family: var(--en); font-weight: 900; font-style: italic; font-size: 17px; letter-spacing: 2px; color: var(--y); }
+.st-skip .ts-txt small { margin-top: 3px; font-size: 11px; font-weight: 700; color: #c9cdd8; -webkit-font-smoothing: antialiased; }
+.st-skip .ts-arw { display: flex; align-items: center; padding: 0 14px 0 6px; }
+.st-skip .ts-arw i { width: 9px; height: 9px; margin-left: -2px; border: solid var(--y); border-width: 3px 3px 0 0; transform: rotate(45deg); animation: tsarw 1s ease-in-out infinite; }
+.st-skip .ts-arw i + i { animation-delay: 0.15s; opacity: 0.6; }
+.st-skip:hover::before { background: linear-gradient(180deg, rgba(60, 64, 76, 0.98), rgba(22, 24, 32, 0.98)); }
+.st-skip:active { transform: translateY(1px); }
+@media (max-width: 640px) { .st-skip .ts-txt b { font-size: 15px; } .st-skip .ts-txt small { font-size: 10px; } }

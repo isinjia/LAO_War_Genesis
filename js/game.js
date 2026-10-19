@@ -1176,6 +1176,20 @@
     m.position.set(x, y, 0);
     addFx(m, life, (u) => { const s = size * (0.15 + u * 0.85); m.scale.set(s, s * 0.45, 1); m.material.opacity = 1 - u; });
   }
+  // a sound-wave front: the ring texture stood upright (a tall ellipse), growing and fading as it travels
+  function arc(x, y, color, size, life, delay = 0, rot = 0) {
+    const m = sprite(tex.ring, color);
+    m.position.set(x, y, 0);
+    m.rotation.z = rot; // across the shot
+    m.visible = delay <= 0;
+    addFx(m, life + delay, (u) => {
+      const t = (u * (life + delay) - delay) / life;
+      m.visible = t >= 0;
+      if (t < 0) return;
+      const s = size * (0.35 + t * 0.65);
+      m.scale.set(s * 0.42, s, 1); m.material.opacity = 0.9 * (1 - t);
+    });
+  }
   function streak(x0, y0, x1, y1, color, width, life) {
     const m = sprite(tex.beam, color);
     const len = Math.hypot(x1 - x0, y1 - y0);
@@ -1299,7 +1313,7 @@
   }
   // fire point n (0: a contact hit) of fighter f, in field coordinates; in front of the chest when the rig has none
   function muzzle(f, n) {
-    const front = [f.x + f.dir * f.h * 0.35, f.dy + (f.hop || 0) + f.h * 0.55];
+    const front = [f.x + f.dir * f.h * 0.35, f.dy + (f.hop || 0) + flyY(f) + f.h * 0.55]; // flyers fire from up where they hover
     const all = window.ANIM_EV && ANIM_EV[f.def.id];
     const ch = n > 0 && f.ally && all && all.fire && (all.fire[n] || all.fire[1]);
     if (!ch || !f.sd || !f.sd.W) return front;
@@ -1420,7 +1434,11 @@
       case 'grenade': case 'missile': case 'fireball':
         sheet('burst', jx, jy, c, 2.0, 0.18); sheet('smoke', jx, jy + 0.2, c, 2.2, 0.5, { grow: 0.5 }); ring(tx, 0.1, c, 2.4, 0.35); break;
       case 'flame': for (let i = 0; i < 2; i++) sheet('smoke', mx + f.dir * (0.4 + Math.random() * Math.abs(tx - mx)), my + (Math.random() - 0.5) * 0.4, c, 1.1, 0.35, { grow: 0.6 }); break;
-      case 'wave': ring(tx, ty, c, 1.6, 0.35); sheet('hit', jx, jy, c, 1.2, 0.3); break;
+      case 'wave': // sonic: a soft beam from the weapon, wave fronts rolling out along it, a burst on the target
+        streak(mx, my, tx, ty, c, 0.5, 0.26);
+        const ang = Math.atan2(ty - my, tx - mx);
+        for (let k = 0; k < 3; k++) { const u = 0.2 + k * 0.3; arc(mx + (tx - mx) * u, my + (ty - my) * u, c, 0.9 + u * 0.8, 0.28, k * 0.05, ang); }
+        ring(tx, ty, c, 1.9, 0.4); sheet('hit', jx, jy, c, 1.4, 0.3); break;
       case 'frost': sheet('blue', jx, jy, 0xcff6ff, 1.6, 0.4); ring(tx, 0.1, c, 1.8, 0.45); break;
       case 'laser': streak(mx, my, tx + f.dir * 0.4, ty, c, 0.32, 0.22); sheet('burst', jx, jy, c, 1.3, 0.2); sheet('blue', jx, jy, c, 1.4, 0.3); break;
       case 'slash': sheet('slash', jx, jy, c, 1.5, 0.22, { aspect: 2, flip: f.dir < 0, rot: (Math.random() - 0.5) * 0.6 }); sheet('hit', jx, jy, 0xffffff, 1.2, 0.22); break;
