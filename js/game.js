@@ -774,7 +774,7 @@
     if (!o.ally) {
       G.kills++;
       const m = o.money || 0;
-      G.money = Math.min(wallet(), G.money + m);
+      if (G.money < wallet()) G.money = Math.min(wallet(), G.money + m); // above the cap only by the cheat: kept
       text(o.x, aimY(o) + o.h * 0.5 + 0.3, '+' + m, '#ffd35a');
       if (o.boss) {
         AUDIO.play('expB'); AUDIO.music(battleMusic(G.st)); shake(0.35, 0.6); hitstop(0.12);
@@ -811,7 +811,7 @@
       return;
     }
     // economy
-    G.money = Math.min(wallet(), G.money + D.WORKER.rate[G.worker] * (G.st.incomeK || 1) * (1 + 0.15 * buffN(G.st, 'income')) * dt);
+    if (G.money < wallet()) G.money = Math.min(wallet(), G.money + D.WORKER.rate[G.worker] * (G.st.incomeK || 1) * (1 + 0.15 * buffN(G.st, 'income')) * dt);
     G.cds = G.cds.map((c) => Math.max(0, c - dt));
     if (G.cannon < D.CANNON.charge) G.cannon = Math.min(D.CANNON.charge, G.cannon + dt * (G.st.cannonK || 1) / (1 - 0.2 * Math.min(3, buffN(G.st, 'cannon'))));
     updateCannon(dt);
