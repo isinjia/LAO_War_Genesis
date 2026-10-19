@@ -49,14 +49,14 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 #title .title-cast img { position: absolute; bottom: 0; height: 92vh; max-width: none; filter: drop-shadow(0 0 24px rgba(0, 0, 0, 0.6)); animation: tcin 0.9s ease-out both; }
 #title .title-cast .tc-leprechaun { left: 4vw; height: 84vh; animation-delay: 0.15s; }
 #title .title-cast .tc-brownie { left: 50%; transform: translateX(-30%); height: 96vh; } /* her rifle reaches right: centre the body, not the picture */
-#title .title-cast .tc-gnome { right: 3vw; height: 82vh; animation-delay: 0.3s; }
+#title .title-cast .tc-gnome { right: 6vw; height: 82vh; animation-delay: 0.3s; }
 @keyframes tcin { from { opacity: 0; translate: 0 4vh; } }
 /* portrait: sized by the screen width so all three stay in view, standing above the logo (Brownie in front) */
 @media (max-aspect-ratio: 1/1) {
   #title .title-cast img { bottom: 33vh; }
   #title .title-cast .tc-brownie { height: min(118vw, 60vh); z-index: 2; }
   #title .title-cast .tc-leprechaun { left: -6vw; height: min(100vw, 52vh); bottom: 36vh; z-index: 1; }
-  #title .title-cast .tc-gnome { right: -8vw; height: min(98vw, 51vh); bottom: 36vh; z-index: 1; }
+  #title .title-cast .tc-gnome { right: -1vw; height: min(98vw, 51vh); bottom: 36vh; z-index: 1; }
   #title .title-cast::after { z-index: 3; background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.55) 68%, rgba(0, 0, 0, 0.92)); }
 }
 #title .title-cast::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.85)); }
