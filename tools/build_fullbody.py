@@ -124,7 +124,10 @@ if __name__=='__main__':
     sys.path.insert(0,str(Path(__file__).parent/'ui_ref'));import ngui
     sd._guid_index=ngui.guid_index()
     ids=sys.argv[1:] or [uid for uid,model in list(UNITS.items())[16:] if not (ROOT/'AssetBundleResourceSub/Texture/FullbodyImg'/f'FullbodyIMG_{model}.png').exists()]
-    for uid in ids:compose(UNITS[uid],OUT/'assets/full'/f'{uid}.webp')
+    # animated illustrations (assets/full/<id>.webm): the still is the video's first frame, not a recomposition
+    for uid in ids:
+        if (OUT/'assets/full'/f'{uid}.webm').exists():print(uid,'has an animated illustration: still kept (first video frame)');continue
+        compose(UNITS[uid],OUT/'assets/full'/f'{uid}.webp')
     manifest=OUT/'js/assets.js';text=manifest.read_text(encoding='utf-8')
     match=re.search(r'window.FULL = (\{[\s\S]*?\});',text)
     full=json.loads(match.group(1))

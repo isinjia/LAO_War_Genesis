@@ -1,5 +1,7 @@
 # 스토리 캐릭터 말투 비교 (원작 기준)
 
+> 아래 표와 V0.76 결과는 개정 전 기록이다. 현재 캠페인의 사건·역할 수정과 근거·검증 한계는 [스토리 개정 기록](story_revision.md)을 기준으로 본다. 특히 이전의 게임 내 역할을 원작 설정으로 간주하거나 말버릇의 반복만으로 원작 재현을 판정하지 않는다.
+
 기준 자료
 - 라켓몬스터 말투 가이드: `E:\LAO_MINI_GAME\6_LAO_Laket_Monster\docs\speech_guide.md` (원작 로비 대사 기반 호칭·1인칭·어미·말버릇 표)
 - 원작 로비 대사: `E:\LAO_MINI_GAME\7_LAO_3Kingdom\js\lines_data.js`, 합류 대사: `7_LAO_3Kingdom\tools\lao_data.json`

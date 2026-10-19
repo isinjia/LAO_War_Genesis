@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.76'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.77'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -964,6 +964,9 @@
         persist(); closeModal(); renderSquad();
       }, inDeck ? 'd' : 'b']);
     }
+    // the unit's own short episode (js/story.js ep_<id>), once the unit is owned
+    const ep = 'ep_' + u.id;
+    if (have && STORY.S[ep]) btns.push([save.seen[ep] ? '에피소드' : '에피소드 NEW', () => { closeModal(); playStory(ep, () => openDetail(u)); }, 'b']);
     btns.push(['닫기', closeModal, 'd']);
     modal('', body, btns, true);
     if (have && lv < D.MAX_LV) $('modalBtns').firstElementChild.dataset.action = 'upgrade';
@@ -1594,6 +1597,21 @@
   // HUD buttons never keep focus (Space / Enter belong to the battle keys)
   document.querySelectorAll('#hud button').forEach((b) => b.addEventListener('focus', () => b.blur()));
   addEventListener('keydown', (e) => { if (!story && (e.key === 'p' || e.key === 'P' || e.key === 'Escape') && GAME.state && !GAME.state.over) pause(!GAME.state.paused); });
+  // cheat (PC): type 치트활성화온 on the title screen — read as physical keys of the 2-set Korean layout
+  // (c l x m g h k f t j d g h k d h s), so it works in Korean or English input mode. Afterwards Y clears the
+  // battle in progress (this session only).
+  const CHEAT = 'clxmghkftjdghkdhs';
+  let cheatKeys = '', cheatOn = false;
+  addEventListener('keydown', (e) => {
+    const k = /^Key([A-Z])$/.exec(e.code);
+    if (!k || e.ctrlKey || e.altKey || e.metaKey) return;
+    if ($('title').classList.contains('show')) {
+      cheatKeys = (cheatKeys + k[1].toLowerCase()).slice(-CHEAT.length);
+      if (cheatKeys === CHEAT && !cheatOn) { cheatOn = true; AUDIO.play('levelup'); GAME.toast('치트 활성화 · 전투 중 Y: 스테이지 강제 클리어'); }
+      return;
+    }
+    if (cheatOn && k[1] === 'Y' && !story && GAME.state && !GAME.state.over) { GAME.state.ebase.hp = 0; GAME.toast('치트: 스테이지 강제 클리어'); }
+  });
   addEventListener('visibilitychange', () => { if (document.hidden && GAME.state && !GAME.state.over && !GAME.state.paused) pause(true); });
 
   function pause(on) {

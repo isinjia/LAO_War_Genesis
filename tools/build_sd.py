@@ -434,7 +434,106 @@ def fx_tree(path, atlas, life):
 
     for r in [k for k, d in tr.items() if int(d["m_Father"]["fileID"]) == 0]:
         walk(r, -1)
+    if out:
+        an = fx_animation(docs, out)
+        if an:
+            out[0]["an"] = an
     return out if any(n.get("ps") or n.get("tr") for n in out) else []
+
+
+def _hermite(keys, t, comp=None):
+    """Unity curve keys (time, value, inSlope, outSlope; vectors per component) at time t."""
+    val = (lambda k, f: num(k[f][comp])) if comp else (lambda k, f: num(k[f]))
+    if not keys:
+        return 0.0
+    if t <= num(keys[0]["time"]):
+        return val(keys[0], "value")
+    for a, b in zip(keys, keys[1:]):
+        ta, tb = num(a["time"]), num(b["time"])
+        if ta <= t <= tb:
+            dt = tb - ta
+            m0, m1 = val(a, "outSlope"), val(b, "inSlope")
+            if dt <= 0 or abs(m0) > 1e8 or abs(m1) > 1e8:
+                return val(a, "value") if dt > 0 and t < tb else val(b, "value")
+            u = (t - ta) / dt
+            u2, u3 = u * u, u * u * u
+            return ((2 * u3 - 3 * u2 + 1) * val(a, "value") + (u3 - 2 * u2 + u) * m0 * dt
+                    + (-2 * u3 + 3 * u2) * val(b, "value") + (u3 - u2) * m1 * dt)
+    return val(keys[-1], "value")
+
+
+def fx_animation(docs, nodes, fps=30):
+    """The effect's own Animator (its controller's default clip): position / scale / rotation / active curves of
+    its nodes, sampled at `fps` (Hraesvelgr's laser: the root's scale opens and closes the beam)."""
+    ctrl, owner = None, None
+    for _, (c, d) in docs.items():
+        if c == 95 and int(num(d.get("m_Enabled", 1))) and d.get("m_Controller"):
+            ctrl = guid_index().get(d["m_Controller"].get("guid", ""), "")
+            g = docs.get(str((d.get("m_GameObject") or {}).get("fileID", 0)), (0, {}))[1]
+            owner = g.get("m_Name")
+            break
+    if not ctrl or not os.path.exists(ctrl):
+        return None
+    ct = open(ctrl, encoding="utf-8", errors="ignore").read()
+    m = re.search(r"m_Motion: \{fileID: \d+, guid: ([0-9a-f]+)", ct)
+    ap = guid_index().get(m.group(1), "") if m else ""
+    if not ap.endswith(".anim"):
+        return None
+    clip = next((d for _, (c, d) in load_docs(ap).items() if c == 74), None)
+    if not clip:
+        return None
+    st = clip.get("m_AnimationClipSettings") or {}
+    dur = max(1.0 / fps, num(st.get("m_StopTime", 1)))
+    n = int(round(dur * fps)) + 1
+    # node paths as the clip names them: child names down from the Animator's own object ("" = that object)
+    base = next((i for i, nd in enumerate(nodes) if nd["n"] == owner), 0)
+    paths = {base: ""}
+    for i, nd in enumerate(nodes):
+        if i != base and nd["p"] in paths:
+            paths[i] = (paths[nd["p"]] + "/" if paths[nd["p"]] else "") + nd["n"]
+    by_path = {v: k for k, v in paths.items()}
+    tracks = {}
+    def track(path):
+        i = by_path.get(path or "")
+        return None if i is None else tracks.setdefault(str(i), {})
+    for key, short in (("m_PositionCurves", "t"), ("m_ScaleCurves", "s")):
+        for cv in clip.get(key) or []:
+            tr = track(cv.get("path"))
+            ks = (cv.get("curve") or {}).get("m_Curve") or []
+            if tr is None or not ks:
+                continue
+            tr[short] = [[round(_hermite(ks, f / fps, c), 4) for c in "xyz"] for f in range(n)]
+    for cv in clip.get("m_EulerCurves") or []:
+        tr = track(cv.get("path"))
+        ks = (cv.get("curve") or {}).get("m_Curve") or []
+        if tr is None or not ks:
+            continue
+        qs = []
+        for f in range(n):
+            ex, ey, ez = (math.radians(_hermite(ks, f / fps, c)) for c in "xyz")
+            # Unity applies Z, then X, then Y: q = qy * qx * qz
+            cx, sx, cy, sy, cz, sz = math.cos(ex / 2), math.sin(ex / 2), math.cos(ey / 2), math.sin(ey / 2), math.cos(ez / 2), math.sin(ez / 2)
+            qs.append([round(v, 5) for v in (cy * sx * cz + sy * cx * sz, sy * cx * cz - cy * sx * sz, cy * cx * sz - sy * sx * cz, cy * cx * cz + sy * sx * sz)])
+        tr["q"] = qs
+    for cv in clip.get("m_FloatCurves") or []:
+        if cv.get("attribute") != "m_IsActive":
+            continue
+        tr = track(cv.get("path"))
+        ks = (cv.get("curve") or {}).get("m_Curve") or []
+        if tr is None or not ks:
+            continue
+        tr["a"] = [1 if _step(ks, f / fps) > 0.5 else 0 for f in range(n)]
+    if not tracks:
+        return None
+    return {"fps": fps, "n": n, "loop": int(num(st.get("m_LoopTime", 0))), "tr": tracks}
+
+
+def _step(keys, t):
+    v = num(keys[0]["value"])
+    for k in keys:
+        if num(k["time"]) <= t + 1e-6:
+            v = num(k["value"])
+    return v
 
 
 def _anim_color(docs, name):
@@ -940,7 +1039,13 @@ def mat_additive(guid):
             # Unity built-in particle shaders: 200 Additive, 201 Additive (Soft), 10720 Mobile/Particles/Additive
             # (203 / 10721 are Alpha Blended)
             builtin_add = sh and sh.group(2).startswith("0000") and sh.group(1) in ("200", "201", "10720")
-            add = 1 if (m and float(m.group(1)) == 1) or (re.search(r"add", shname, re.I) and not re.search(r"cloak", shname, re.I)) or builtin_add else 0
+            # LastOne custom shaders (LO_Alpha_Clipping_ColorChange ...) blend with [_Src][_Dst]: _Dst 1 (One) adds,
+            # 10 (OneMinusSrcAlpha) is premultiplied alpha
+            d2 = re.search(r"- _Dst: ([\d.]+)", t)
+            if d2:
+                add = 1 if float(d2.group(1)) == 1 else 0
+            else:
+                add = 1 if (m and float(m.group(1)) == 1) or (re.search(r"add", shname, re.I) and not re.search(r"cloak", shname, re.I)) or builtin_add else 0
         _mat_add[guid] = add
     return _mat_add[guid]
 

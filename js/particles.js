@@ -23,6 +23,17 @@
   // Vertex alpha is not clamped here: Unity's particle shaders multiply 2 x tint x vertex alpha by the texture's alpha
   // and only the blend clamps the result, so a strong tint keeps soft texture edges bright.
 
+  // released layers by size (quads) and blend, and one shared quad index per size
+  const POOL = {}, QIDX = {};
+  function quadIndex(M) {
+    if (!QIDX[M]) {
+      const idx = new Uint16Array(M * 6);
+      for (let i = 0; i < M; i++) { idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 2, i * 4 + 1, i * 4 + 3], i * 6); }
+      QIDX[M] = new THREE.BufferAttribute(idx, 1);
+    }
+    return QIDX[M];
+  }
+
   // ── curves ─────────────────────────────────────────────
   function curve(k, t) {
     if (!k || !k.length) return 1;
@@ -313,14 +324,23 @@
       // quads: the particle budget plus room for real meshes (one quad per mesh polygon and particle)
       const M = this.M = MAX_PER_RIG + this.sys.reduce((a, c) => a + (c.def.r.geo ? (c.def.r.geo.p.length / 12) * (c.def.r.gn || 1) : 0), 0);
       this.mk = (add) => {
+        // a layer from the pool when one of this size was released (projectiles and hit bursts come and go every
+        // shot: new buffers each time cost GPU uploads and garbage)
+        const key = M + '|' + (add ? 1 : 0), pooled = POOL[key] && POOL[key].pop();
+        if (pooled) {
+          pooled.mesh.material.map = this.src.tex;
+          pooled.mesh.geometry.setDrawRange(0, 0);
+          pooled.mesh.renderOrder = this.src.order() + 2;
+          pooled.mesh.visible = false;
+          this.src.parent.add(pooled.mesh);
+          return pooled;
+        }
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(M * 4 * 3), uv = new Float32Array(M * 4 * 2), col = new Float32Array(M * 4 * 4);
-        const idx = new Uint16Array(M * 6);
-        for (let i = 0; i < M; i++) { idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 2, i * 4 + 1, i * 4 + 3], i * 6); }
         geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
         geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2).setUsage(THREE.DynamicDrawUsage));
         geo.setAttribute('color', new THREE.BufferAttribute(col, 4).setUsage(THREE.DynamicDrawUsage));
-        geo.setIndex(new THREE.BufferAttribute(idx, 1));
+        geo.setIndex(quadIndex(M));
         geo.setDrawRange(0, 0);
         const mat = new THREE.MeshBasicMaterial({ map: this.src.tex, vertexColors: true, transparent: true, depthTest: false, depthWrite: false,
           side: THREE.DoubleSide, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending });
@@ -329,7 +349,7 @@
         mesh.frustumCulled = false;
         mesh.renderOrder = this.src.order() + 2;
         this.src.parent.add(mesh);
-        return { mesh, pos, uv, col };
+        return { mesh, pos, uv, col, key };
       };
       this.layers = [this.mk(false), this.mk(true)];
       // TrailRenderers: the ribbon a moving node leaves (projectile tails)
@@ -340,6 +360,7 @@
     recent(sec) { return this.sys.some((s) => (s.on || s.n) && this.clock - (s.at || -1e9) <= sec); }
     update(dt) {
       this.clock = (this.clock || 0) + dt;
+      if (this.src.anim) this.src.anim(this.clock);
       const EA = this.src.EA, W = this.src.W;
       for (const s of this.sys) s.update(dt, !!EA[s.node], W);
       for (const tr of this.trails) {
@@ -521,12 +542,21 @@
       this.layers.forEach((L, k) => {
         const g = L.mesh.geometry;
         g.setDrawRange(0, cnt[k] * 6);
-        if (cnt[k]) { g.attributes.position.needsUpdate = true; g.attributes.uv.needsUpdate = true; g.attributes.color.needsUpdate = true; }
+        if (cnt[k]) { // upload only the quads drawn this frame, not the whole buffer
+          const v = cnt[k] * 4;
+          for (const [a, n] of [['position', 3], ['uv', 2], ['color', 4]]) { const at = g.attributes[a]; at.updateRange.offset = 0; at.updateRange.count = v * n; at.needsUpdate = true; }
+        }
         L.mesh.visible = cnt[k] > 0;
       });
     }
     reset() { for (const s of this.sys) { s.n = 0; s.on = false; s.wasOn = false; } for (const tr of this.trails) { tr.pts.length = 0; tr.head = null; } this.total = 0; this.draw(); }
-    dispose() { for (const L of this.layers) { L.mesh.parent && L.mesh.parent.remove(L.mesh); L.mesh.geometry.dispose(); L.mesh.material.dispose(); } }
+    dispose() {
+      for (const L of this.layers) {
+        L.mesh.parent && L.mesh.parent.remove(L.mesh);
+        const list = POOL[L.key] || (POOL[L.key] = []);
+        if (L.key && list.length < 24) list.push(L); else { L.mesh.geometry.dispose(); L.mesh.material.dispose(); }
+      }
+    }
   }
 
   // ── effects outside a rig: the original projectiles and their hit effects ──
@@ -551,12 +581,26 @@
   }
   class Loose {
     constructor(nodes, tex, rects, parent, order) {
+      // the effect's own Animator curves (exported by build_sd.fx_animation) move its nodes: those get own copies
+      this.an = nodes[0] && nodes[0].an;
+      if (this.an) nodes = nodes.map((n) => Object.assign({}, n));
       this.nodes = nodes; this.W = new Float32Array(nodes.length * 12); this.EA = new Uint8Array(nodes.length);
       nodes.forEach((n, i) => { this.EA[i] = n.a == null || n.a ? 1 : 0; });
       for (let i = 0; i < nodes.length; i++) if (nodes[i].p >= 0 && !this.EA[nodes[i].p]) this.EA[i] = 0;
       this.root = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]);
       trs(nodes, this.W, this.root);
-      this.set = new Set(null, { nodes, W: this.W, EA: this.EA, tex, rects, parent, order: () => order });
+      this.set = new Set(null, { nodes, W: this.W, EA: this.EA, tex, rects, parent, order: () => order, anim: this.an ? (t) => this.anim(t) : null });
+    }
+    anim(t) {
+      const an = this.an, f = an.loop ? Math.floor(t * an.fps) % an.n : Math.min(an.n - 1, Math.floor(t * an.fps));
+      for (const i in an.tr) {
+        const tr = an.tr[i], n = this.nodes[i];
+        if (tr.t) n.t = tr.t[f];
+        if (tr.s) n.s = tr.s[f];
+        if (tr.q) n.q = tr.q[f];
+        if (tr.a) this.EA[i] = tr.a[f];
+      }
+      trs(this.nodes, this.W, this.root);
     }
     place(x, y, ang) { const c = Math.cos(ang), s = Math.sin(ang); this.root.set([c, s, 0, -s, c, 0, 0, 0, 1, x, y, 0]); trs(this.nodes, this.W, this.root); }
     alive() { return this.set.sys.some((s) => s.n || s.on); }

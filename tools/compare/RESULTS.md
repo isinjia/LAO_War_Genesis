@@ -112,3 +112,55 @@ FXB.create / SDPS.shot 호출을 세어 확인했다: 테티스 스킬 미사일
 평균 밝기 차이는 3%로 체계적인 차이가 없다. 크기·색·시트 프레임을 원작 값으로 고정하면 폭(1.17/1.87/2.22/2.34)과 프레임이
 굽기(1.15/1.85/2.20/2.31)와 같다. 같은 순간 점수의 남은 감점은 원작 시드가 뽑은 크기 순서(6~7프레임 작게, 11~14프레임 크게)뿐이다.
 
+
+## V0.77: 굽기가 없던 이펙트 34개 추가 (파티클 엔진이 게임에서 직접 그리는 것)
+
+다프네·안드바리·흐레스벨그·이터니티·블랙 리리스·브륀힐드·칸의 투사체와, 리그가 쓰는 피격 이펙트 중 원작 굽기가 없던 34개를
+Defence의 Unity 굽기 도구(RefFx.Run, Unity 6000.0.58f2 일괄 실행)로 새로 구웠다. 이 이펙트들은 게임에서 우리 파티클 엔진이 그리므로
+점수가 곧 게임 화면의 재현도다. 같은 순간 점수: 평균 94.5 · 90점 이상 27 / 34 (기존 54개: 97.5 · 53 / 54).
+
+이 세트로 찾아 고친 엔진 차이:
+- 이펙트 Animator 커브(위치·크기·회전·켜짐)를 30fps로 샘플링해 재생한다. 흐레스벨그 레이저는 애니메이터가 빔을 키웠다 줄이는데
+  이를 빠뜨려 가는 선이었다 (62 → 96).
+- LastOne 커스텀 셰이더(LO_Alpha_Clipping_ColorChange 등)는 `_Src`/`_Dst`로 혼합한다: `_Dst` 1이면 가산, 10이면 일반(사전곱 알파).
+  `_DstBlend`만 보던 탓에 가산 재질 513개를 일반 투명으로 그리고 있었다 (브륀힐드 피격 65 → 71 등).
+
+| 이펙트 | 15 / 40 / 65 / 90% | 평균 |
+|---|---|---|
+| Andvari_skill1_Hit | 79 / 100 / 100 / 100 | 95 |
+| Andvari_skill1_bullet | 100 / 100 / 98 / 98 | 99 |
+| BlackLilith_hit | 100 / 100 / 100 / 100 | 100 |
+| Brunhild_N_Skill1_Hit | 92 / 55 / 36 / 100 | 71 |
+| Brunhild_N_Skill1_bullet | 97 / 92 / 87 / 71 | 87 |
+| CyclopsePrincess_N_Skill2_Hit | 69 / 82 / 89 / 90 | 83 |
+| Empress_skill1_ice_Hit | 93 / 92 / 80 / 100 | 91 |
+| Empress_skill2_ice_first_Hit | 86 / 100 / 100 / 100 | 97 |
+| Eternity_skill1_Hit | 91 / 84 / 82 / 100 | 89 |
+| Eternity_skill1_bullet | 98 / 98 / 98 / 98 | 98 |
+| FX_blackLilith_bullet | 100 / 100 / 100 / 100 | 100 |
+| Fortress_skill1_hit | 100 / 100 / 100 / 100 | 100 |
+| Harpy_skill2_Last_Lazer_HIt | 91 / 100 / 100 / 100 | 98 |
+| Hit_x2 | 91 / 100 / 100 / 100 | 98 |
+| Hraesvelgr_skill1_Lazer_Hit | 57 / 100 / 100 / 100 | 89 |
+| Hraesvelgr_skill1_Lazer_bullet | 100 / 100 / 86 / 99 | 96 |
+| Khan_NS2_skill1_Bullet_hit | 70 / 100 / 100 / 100 | 93 |
+| Khan_NS2_skill1_bullet | 100 / 100 / 100 / 100 | 100 |
+| Khan_skill1_hit | 98 / 100 / 100 / 100 | 100 |
+| Kunoichi_skill2_Hit_FX_F | 63 / 100 / 100 / 100 | 91 |
+| Labiata_skill1_bag_hit | 97 / 100 / 100 / 100 | 99 |
+| Labiata_skill2_hit | 66 / 100 / 100 / 100 | 92 |
+| Lemonade_skill1_Hit | 87 / 100 / 100 / 100 | 97 |
+| Sleipnir_skill2_attack | 88 / 100 / 100 / 100 | 97 |
+| Thetis_Skill1_Hit | 0 / 100 / 100 / 100 | 75 |
+| Tiamat_skill1_Hit_01 | 95 / 100 / 100 / 100 | 99 |
+| Tiamat_skill2_Dager_Hit_01 | 100 / 100 / 100 / 100 | 100 |
+| blindprincess_skill1_hit | 100 / 100 / 100 / 100 | 100 |
+| daphne_bullet | 100 / 100 / 100 / 100 | 100 |
+| daphne_hit_ver2 | 95 / 100 / 100 / 100 | 99 |
+| fafnir_skill1_elec_hit | 100 / 100 / 100 / 100 | 100 |
+| getleling_hit | 96 / 100 / 100 / 100 | 99 |
+| hela_beam_hit_main | 34 / 100 / 100 / 100 | 84 |
+| skill_2_nanobot_ | 88 / 100 / 100 / 100 | 97 |
+
+남은 차이: 90점 미만 7개 중 테티스 스킬1·헬라·흐레스벨그 피격은 첫 순간(15%)에서만 깎인다(한쪽만 이미 터진 시점 차이).
+브륀힐드 피격·탄, 사이클롭스 프린세스·이터니티 피격은 연기·폭발 입자의 밝기 차이가 남아 있다. 다음 보정 대상이다.
