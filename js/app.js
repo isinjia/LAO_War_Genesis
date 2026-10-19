@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.78'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.79'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -1601,13 +1601,29 @@
   // (c l x m g h k f t j d g h k d h s), so it works in Korean or English input mode. Afterwards (this session only):
   // Y clears the battle in progress, I adds 1000 power in battle, T outside battle grants every unit.
   const CHEAT = 'clxmghkftjdghkdhs';
+  // everything at once (typed "all" on the title with the cheat on): every normal and hard stage cleared with 3
+  // stars, every mode open, every unit owned, +10000 of every currency, every story scene seen, tutorial done
+  function cheatAll() {
+    save.cleared = D.STAGES.length; save.hardCleared = D.HARD.length;
+    D.STAGES.forEach((st, i) => { save.stars[i] = 3; });
+    D.HARD.forEach((st, i) => { save.hstars[i] = 3; });
+    Object.keys(STORY.S).forEach((k) => { save.seen[k] = 1; });
+    D.UNITS.forEach((u) => grant(u.id, true));
+    save.parts += 10000; save.tuna += 10000; save.xp += 10000;
+    D.RANK_ORDER.forEach((r) => { save.wild[r] = (save.wild[r] || 0) + 10000; });
+    save.tutPulled = 1; save.tutBattle = 1;
+    finishTutorial();
+    persist(); refresh(); AUDIO.play('pickSS');
+    GAME.toast('치트: 전 스테이지 클리어 · 모든 콘텐츠 해방 · 대원 전원 · 재화 +10000 · 스토리 전체 개방', false, 3600);
+  }
   let cheatKeys = '', cheatOn = false;
   addEventListener('keydown', (e) => {
     const k = /^Key([A-Z])$/.exec(e.code);
     if (!k || e.ctrlKey || e.altKey || e.metaKey) return;
     if ($('title').classList.contains('show')) {
       cheatKeys = (cheatKeys + k[1].toLowerCase()).slice(-CHEAT.length);
-      if (cheatKeys === CHEAT && !cheatOn) { cheatOn = true; AUDIO.play('levelup'); GAME.toast('치트 활성화 · Y 강제 클리어 · I 전력 +1000 · T 전원 획득', false, 3200); }
+      if (cheatKeys === CHEAT && !cheatOn) { cheatOn = true; cheatKeys = ''; AUDIO.play('levelup'); GAME.toast('치트 활성화 · Y 강제 클리어 · I 전력 +1000 · T 전원 획득 · 타이틀에서 all 전부 해방', false, 3200); }
+      else if (cheatOn && cheatKeys.endsWith('all')) { cheatKeys = ''; cheatAll(); }
       return;
     }
     if (!cheatOn || story) return;
