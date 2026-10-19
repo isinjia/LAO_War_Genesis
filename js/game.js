@@ -580,8 +580,9 @@
   // flyers (either side) are out of reach for short-range units (walls / melee)
   const ANTI_AIR = 2.4;
   // flyers keep a clear band above the ground fight (their shadow stays on the lane)
-  const FLY_H = 3.2;
-  const aimY = (o) => o.dy + (o.def.fly ? FLY_H : 0) + o.h * 0.5; // the middle of the body as drawn
+  const FLY_H = 2.2; // above the ground fighters' heads, low enough that a flyer stays inside short (landscape) views
+  const flyY = (o) => (o.def.fly ? FLY_H + (o.cy || 0) : 0); // + its rank in a stacked group of flyers
+  const aimY = (o) => o.dy + flyY(o) + o.h * 0.5; // the middle of the body as drawn
   const canHit = (f, o) => !(o.def.fly && f.def.range < ANTI_AIR);
   function target(f) {
     let best = null, bd = Infinity;
@@ -1496,20 +1497,23 @@
 
   // the fighter's drawn position (also used before solving a muzzle, so a shot leaves from where the unit is now)
   function placeHolder(f) {
-    const lift = f.def.fly ? FLY_H + Math.sin(G.t * 3 + f.dy * 9) * 0.08 : 0; // flyers hover above the lane
+    const lift = f.def.fly ? flyY(f) + Math.sin(G.t * 3 + f.dy * 9) * 0.08 : 0; // flyers hover above the lane
     f.holder.position.set(f.x + (f.cx || 0), f.dy + (f.hop || 0) + lift, 0);
     return lift;
   }
   // drawing only (the simulation keeps its x): units piled on one spot are shown in ranks stepping back from the front,
   // so a dense group reads as a formation instead of one blob
   function crowd(list) {
-    const g = list.filter((f) => !f.dead && !f.def.fly).sort((a, b) => (b.x - a.x) * b.dir);
-    for (let i = 0; i < g.length; i++) {
-      const f = g[i];
-      let k = 0;
-      for (let j = i - 1; j >= 0 && Math.abs(g[j].x - f.x) < 0.35; j--) k++;
-      const want = -f.dir * Math.min(k, 8) * 0.17;
-      f.cx = (f.cx || 0) + (want - (f.cx || 0)) * 0.12;
+    for (const air of [false, true]) { // the ground fight and the flyers above it are laid out separately
+      const g = list.filter((f) => !f.dead && !!f.def.fly === air).sort((a, b) => (b.x - a.x) * b.dir);
+      for (let i = 0; i < g.length; i++) {
+        const f = g[i];
+        let k = 0;
+        for (let j = i - 1; j >= 0 && Math.abs(g[j].x - f.x) < 0.35; j--) k++;
+        const want = -f.dir * Math.min(k, 8) * (air ? 0.3 : 0.17);
+        f.cx = (f.cx || 0) + (want - (f.cx || 0)) * 0.12;
+        if (air) f.cy = (f.cy || 0) + ((k % 2) * 0.5 - (f.cy || 0)) * 0.12; // stacked flyers alternate in height
+      }
     }
   }
   // phones in crowded fights: each rig is evaluated every other frame (its time still advances in full)
@@ -1582,7 +1586,7 @@
     // HP slivers over hurt fighters
     for (const list of [G.allies, G.enemies]) for (const f of list) {
       if (f.dead || f.hp >= f.maxHp || f.boss) continue;
-      const [sx, sy] = toScreen(f.x, f.dy + f.h * UNIT_SCALE + (f.def.fly ? FLY_H + 0.1 : 0.1));
+      const [sx, sy] = toScreen(f.x, f.dy + f.h * UNIT_SCALE + (f.def.fly ? flyY(f) + 0.1 : 0.1));
       if (sx < -20 || sx > innerWidth + 20) continue;
       const w = 26;
       g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(sx - w / 2 - 1, sy - 1, w + 2, 5);
