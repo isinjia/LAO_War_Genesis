@@ -20,10 +20,20 @@ NAMES = ["Azazel_skill1_Hit_m", "Constantia_hit", "Phoenix_skill1_hit", "Raven_s
          "Thetis_skill2_Hit", "Undine_skill2_Hit", "valkyrie_Hit_skill2"]
 
 
+def all_names():
+    """Every effect the Unity pass baked that also has its prefab (projectiles and hit effects)."""
+    import json as _j
+    ref = r"E:/LAO_MINI_GAME/5_LAO_Defence/tools/unity_ref"
+    baked = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, "proj", "fx"))}
+    js = {f.split(".")[0] for f in os.listdir(os.path.join(HERE, "..", "js", "fx"))}
+    return sorted(n for n in baked & js if B.fx_prefab(n) and not n.lower().startswith("nohit"))
+
+
 def main():
+    names = all_names() if "--all" in sys.argv else NAMES
     atlas = B.Atlas()
     trees = {}
-    for n in NAMES:
+    for n in names:
         p = B.fx_prefab(n)
         t = B.fx_tree(p, atlas, 2.0) if p else []
         if t:

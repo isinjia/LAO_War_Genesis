@@ -112,6 +112,89 @@ def mat_props(path):
     return (m.group(1) if m else None), tint, (sh.group(2) if sh else "")
 
 
+_mesh_ext = {}
+
+
+def _file_scale(b):
+    """Unity's file scale for an FBX (useFileScale): UnitScaleFactor (cm per file unit) / 100."""
+    import struct
+    m = re.search(rb"UnitScaleFactorS\x06\x00\x00\x00doubleS\x06\x00\x00\x00NumberS\x00\x00\x00\x00D(.{8})", b, re.S)
+    return struct.unpack("<d", m.group(1))[0] / 100 if m else 0.01
+
+
+def mesh_extent(path):
+    """[width, height] of an FBX mesh's vertices in Unity units (binary FBX, times the file scale)."""
+    if path in _mesh_ext:
+        return _mesh_ext[path]
+    import struct
+    import zlib
+    ext = None
+    try:
+        b = open(path, "rb").read()
+        i = b.find(b"Vertices")
+        while i >= 0 and ext is None:
+            j = i + 8
+            if b[j:j + 1] == b"d":
+                n, enc, cl = struct.unpack("<III", b[j + 1:j + 13])
+                raw = b[j + 13:j + 13 + cl]
+                if enc:
+                    raw = zlib.decompress(raw)
+                v = struct.unpack("<%dd" % n, raw)
+                k = _file_scale(b)
+                ext = [round((max(v[0::3]) - min(v[0::3])) * k, 4), round((max(v[1::3]) - min(v[1::3])) * k, 4)]
+            i = b.find(b"Vertices", i + 1)
+    except (OSError, struct.error, zlib.error):
+        ext = None
+    _mesh_ext[path] = ext
+    return ext
+
+
+def _fbx_arrays(b, names):
+    import struct
+    import zlib
+    out = {}
+    for name in names:
+        nb = name.encode()
+        i = b.find(nb)
+        while i >= 0:
+            j = i + len(nb)
+            if b[i - 1] == len(nb) and b[j:j + 1] in (b"d", b"i"):
+                n, enc, cl = struct.unpack("<III", b[j + 1:j + 13])
+                raw = b[j + 13:j + 13 + cl]
+                if enc:
+                    raw = zlib.decompress(raw)
+                out[name] = struct.unpack("<%d%s" % (n, b[j:j + 1].decode()), raw)
+                break
+            i = b.find(nb, i + 1)
+    return out
+
+
+def mesh_geom(path):
+    """An FBX mesh as quads (triangles repeat their last corner): {"p": [x, y, z per corner], "uv": [u, v per corner]}
+    in Unity units (file scale, x flipped as Unity imports it). None when the mesh is not a simple single-UV binary FBX."""
+    try:
+        raw = open(path, "rb").read()
+        a = _fbx_arrays(raw, ["Vertices", "PolygonVertexIndex", "UV", "UVIndex"])
+        fs = _file_scale(raw)
+    except (OSError, ValueError):
+        return None
+    V, PI, UV, UI = (a.get(k) for k in ("Vertices", "PolygonVertexIndex", "UV", "UVIndex"))
+    if not V or not PI or not UV or not UI or len(UI) != len(PI):
+        return None
+    P, T, poly = [], [], []
+    for k, ix in enumerate(PI):
+        poly.append((~ix if ix < 0 else ix, UI[k]))
+        if ix < 0:
+            if 3 <= len(poly) <= 4:
+                if len(poly) == 3:
+                    poly.append(poly[2])
+                for vi, ui in poly:
+                    P += [round(-V[vi * 3] * fs, 4), round(V[vi * 3 + 1] * fs, 4), round(V[vi * 3 + 2] * fs, 4)]
+                    T += [round(UV[ui * 2], 4), round(UV[ui * 2 + 1], 4)]
+            poly = []
+    return {"p": P, "uv": T} if P else None
+
+
 def export(ps, rend, atlas, guid_index, mat_additive):
     """One ParticleSystem (+ its renderer) -> dict, or None when it never draws."""
     if not ps or not rend or not int(num(rend.get("m_Enabled"), 1)):
@@ -189,8 +272,35 @@ def export(ps, rend, atlas, guid_index, mat_additive):
         "align": int(num(rend.get("m_RenderAlignment"), 0)), "piv": v3(rend.get("m_Pivot")),
         "flip": v3(rend.get("m_Flip")),
     }
+    mesh = rend.get("m_Mesh") or {}
+    if o["r"]["mode"] == 4 and mesh.get("guid"):
+        mp = guid_index.get(mesh["guid"], "")
+        ext = mesh_extent(mp) if mp.lower().endswith(".fbx") else None
+        if ext:
+            o["r"]["mx"] = ext  # Mesh render mode: drawn as a quad the size of the mesh
     sub = ps.get("SubModule") or {}
     if int(num(sub.get("enabled"), 0)):
         o["subs"] = [[str((s.get("emitter") or {}).get("fileID", 0)), int(num(s.get("type"), 0))]
                      for s in sub.get("subEmitters") or []]
     return o
+
+
+def export_trail(tr, atlas, guid_index, mat_additive):
+    """A TrailRenderer: the ribbon a moving node leaves (projectile tails, Banshee's Trail_FX)."""
+    if not tr or not int(num(tr.get("m_Enabled"), 1)):
+        return None
+    mats = tr.get("m_Materials") or []
+    mguid = mats[0].get("guid") if mats else None
+    tex_guid, tint, _ = mat_props(guid_index.get(mguid or "", ""))
+    t = atlas.texture(tex_guid) if tex_guid else None
+    if t is None:
+        return None
+    par = tr.get("m_Parameters") or {}
+    return {
+        "time": _f(tr.get("m_Time", 0.5)), "minv": _f(tr.get("m_MinVertexDistance", 0.1)),
+        "w": _f(par.get("widthMultiplier", 1)), "wc": keys(par.get("widthCurve")),
+        "grad": grad(par.get("colorGradient")), "tm": int(num(par.get("textureMode"), 0)),
+        "emit": int(num(tr.get("m_Emitting"), 1)),
+        "r": {"t": t, "add": mat_additive(mguid), "tint": tint},
+    }
+

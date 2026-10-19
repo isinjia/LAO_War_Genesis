@@ -1,6 +1,6 @@
 // Offline / repeat-visit cache. Heavy data (rigs, baked effects, sounds, illustrations) is cache-first: it only changes
 // when the build tools run, and then CACHE is bumped. Code and pages are network-first so edits show up at once.
-const CACHE = 'lao-war-genesis-d1b54589a8';
+const CACHE = 'lao-war-genesis-221e1de37b';
 const HEAVY = /\/(js\/sd|js\/fx|assets)\//;
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -11,6 +11,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  if (req.headers.has('range')) return; // video streams (animated illustrations) ask for byte ranges: the cache holds whole files
   if (HEAVY.test(req.url)) {
     e.respondWith(caches.open(CACHE).then(async (c) => {
       const hit = await c.match(req);

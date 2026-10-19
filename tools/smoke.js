@@ -96,9 +96,9 @@
       return 'menu opens preview; detail button spends XP and cards once';
     });
     await step('selected pickup: all SS and counter preserved on switch', () => {
-      const old = { pickup: APP.save.pickup, pity: APP.save.pity };
+      const old = { pickup: APP.save.pickup, pity: APP.save.pity, ssTier: APP.save.ssTier };
       try {
-        APP.save.pity = 17; APP.openLobby('gacha');
+        APP.save.pity = 17; APP.save.ssTier = 2; APP.openLobby('gacha'); // the 40 step (10 / 20 steps are not shown)
         document.getElementById('btnPickup').click();
         const options = [...document.querySelectorAll('[data-pickup]')];
         if (options.length !== D.UNITS.filter(u => u.rank === 'SS').length) throw new Error('SS excluded from selection');

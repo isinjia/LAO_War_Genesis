@@ -90,14 +90,31 @@
   const rk = (r) => `<i class="rk-i ${r}"></i>`;
   const hasFull = (id) => !!(window.FULL && FULL[id]);
   const art = (id) => (hasFull(id) ? FULL[id] : IMG['u_' + id]);
-  // an <img> showing the illustration, or the portrait framed as a card when the unit has none
-  const setArt = (img, id) => { img.src = art(id); img.classList.toggle('portrait', !hasFull(id)); };
+  // animated illustrations (transparent looping video) shown instead of the still outside the story (the story draws
+  // expressions onto the still)
+  const ANIM = { blacklilith: 'assets/full/blacklilith.webm' };
+  const fullTag = (id, attrs = '') => (ANIM[id]
+    ? `<video ${attrs} src="${ANIM[id]}" poster="${FULL[id]}" autoplay loop muted playsinline disablepictureinpicture></video>`
+    : `<img ${attrs} src="${art(id)}" alt="">`);
+  // an <img> (or the <video> of an animated one) showing the illustration, or the portrait framed as a card when the
+  // unit has none; the element is swapped in place when the kind changes (callers look it up by id each time)
+  const setArt = (el, id) => {
+    const tag = ANIM[id] ? 'VIDEO' : 'IMG';
+    if (el.tagName !== tag) {
+      const n = document.createElement(tag.toLowerCase());
+      n.id = el.id; n.className = el.className;
+      if (tag === 'VIDEO') { n.muted = true; n.loop = true; n.autoplay = true; n.playsInline = true; n.disablePictureInPicture = true; } else n.alt = '';
+      el.replaceWith(n); el = n;
+    }
+    if (ANIM[id]) { if (!el.src.endsWith(ANIM[id])) { el.poster = FULL[id]; el.src = ANIM[id]; } el.play().catch(() => {}); } else el.src = art(id);
+    el.classList.toggle('portrait', !hasFull(id));
+  };
   const pad2 = (n) => String(n).padStart(2, '0');
   const fmt = (n) => Math.round(n).toLocaleString();
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V0.69'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.70'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   $('lobbyBg').style.backgroundImage = `url(${IMG.bg_title})`;
@@ -290,7 +307,7 @@
       const unlockText = isHard() && save.cleared < ch.first + D.PER_CH ? '해당 노말 챕터 클리어 후 개방' : '이전 챕터 클리어 후 개방';
       b.dataset.ch = c;
       b.innerHTML = `<div class="img" style="background-image:url(${IMG[ch.bg]})"></div>
-        ${hasFull(face) ? `<img class="face" src="${FULL[face]}" alt="">` : ''}<i class="bar-top"></i>
+        ${hasFull(face) ? fullTag(face, 'class="face"') : ''}<i class="bar-top"></i>
         <span class="pc">${n}/${D.PER_CH}</span>
         <div class="txt"><div class="no">${isHard() ? 'HARD ' : ''}CHAPTER ${pad2(c + 1)}</div><div class="nm">${ch.title}</div><div class="sb">${ch.sub}</div>
         <div class="prog"><i style="width:${(n / D.PER_CH) * 100}%"></i></div></div>
@@ -625,7 +642,7 @@
   function titleCard(c, done) {
     const ch = D.CHAPTERS[c], id = D.CHAPTER_REWARD[c];
     const el = $('credits');
-    el.innerHTML = `<div class="tcard" style="background-image:url(${IMG[ch.bg]})">${hasFull(id) ? `<img src="${FULL[id]}" alt="">` : ''}
+    el.innerHTML = `<div class="tcard" style="background-image:url(${IMG[ch.bg]})">${hasFull(id) ? fullTag(id) : ''}
       <div class="tc-txt"><div class="tc-no">CHAPTER ${pad2(c + 1)}</div><div class="tc-t">${ch.title}</div><div class="tc-clear">CLEAR</div></div></div>`;
     el.classList.add('show');
     AUDIO.play('clear', 0.8);
@@ -914,7 +931,7 @@
     const nextM = have && lv < D.MAX_LV ? D.lvMul(D.relLv(u.rank, lv + 1)) : m;
     const stat = (value) => `<b>${fmt(value * m)}</b>` + (nextM > m ? `<span class="stat-next">→ ${fmt(value * nextM)} <small>+${fmt(value * nextM - value * m)}</small></span>` : '');
     const fx = u.slow ? (u.slow[0] >= 1 ? ` · 맞은 적 ${u.slow[1]}초 기절` : ` · 맞은 적 ${Math.round(u.slow[0] * 100)}% 둔화`) : '';
-    const body = `<div class="detail"><img class="art${hasFull(u.id) ? '' : ' portrait'}" src="${art(u.id)}" alt="" style="${have ? '' : 'filter:brightness(0.12) grayscale(1)'}">
+    const body = `<div class="detail">${fullTag(u.id, `class="art${hasFull(u.id) ? '' : ' portrait'}" style="${have ? '' : 'filter:brightness(0.12) grayscale(1)'}"`)}
       <div class="stats"><div class="nm">${rk(u.rank)}${u.name} ${have ? `<small>LV.${lv}</small>` : ''}</div>
       <div class="role">${u.role}${u.area ? ' · 범위' : ' · 단일'}${fx} · 편성 코스트 ${D.DECK_COST[u.rank]}</div>
       <div class="utr">${u.range < 2.4 ? '<span class="no">대공 불가</span>' : '<span>대공 가능</span>'}${u.type === 'snipe' ? '<span>장갑 관통 x1.5</span>' : u.area ? '<span class="no">장갑에 50%</span>' : ''}</div>
@@ -972,8 +989,15 @@
     if (save.tutPulled && save.pity === save.pulls) save.pity = Math.max(0, save.pity - 10);
     save.pickup = featured().id; save.pickupV = 1; persist();
   }
+  // SS guarantee: the first SS within 10 pulls after the tutorial, the next within 20, then every 40 (counted since the
+  // last SS of any kind; an SS is the selected pickup half the time). Only the 40 step is shown.
+  if (!save.pityV) {
+    save.ssTier = save.pulls > (save.tutPulled ? 10 : 0) ? 2 : 0; // players who already pulled keep the 40 step
+    save.pityV = 1; persist();
+  }
+  const pityCap = () => [10, 20][save.ssTier || 0] || G_.pity;
   function selectPickup() {
-    modal('SS 픽업 선택', `<div class="pickup-options">${SS.map((u) => `<button data-pickup="${u.id}" class="${u.id === featured().id ? 'selected' : ''}" aria-pressed="${u.id === featured().id}"><img src="${FULL[u.id]}" alt=""><b>${u.name}</b><small>${u.id === featured().id ? '선택 중' : '선택'}</small></button>`).join('')}</div><p class="pickup-note">무료로 변경할 수 있으며, 확정까지 누적한 횟수는 유지됩니다.</p>`, [['닫기', closeModal, 'd']], true);
+    modal('SS 픽업 선택', `<div class="pickup-options">${SS.map((u) => `<button data-pickup="${u.id}" class="${u.id === featured().id ? 'selected' : ''}" aria-pressed="${u.id === featured().id}">${fullTag(u.id)}<b>${u.name}</b><small>${u.id === featured().id ? '선택 중' : '선택'}</small></button>`).join('')}</div><p class="pickup-note">무료로 변경할 수 있으며, 확정까지 누적한 횟수는 유지됩니다.</p>`, [['닫기', closeModal, 'd']], true);
     document.querySelectorAll('[data-pickup]').forEach((button) => { button.onclick = () => {
       save.pickup = button.dataset.pickup; persist(); AUDIO.play('click'); closeModal(); renderGacha();
     }; });
@@ -992,7 +1016,9 @@
     $('pickName').innerHTML = `${rk('SS')} ${f.name}`;
     $('pickDesc').textContent = `${f.role} · ${f.desc} — 일반 SS 등장 시 ${Math.round(G_.featuredShare * 100)}%는 선택한 대원`;
     $('rates').innerHTML = D.RANK_ORDER.map((r) => `<span>${rk(r)}${(G_.rates[r] * 100).toFixed(0)}%</span>`).join('') + `<span>· 중복은 그 대원의 카드 (업그레이드 재료)</span>`;
-    $('pity').innerHTML = `${f.name} 확정까지 <b>${Math.max(1, G_.pity - save.pity)}</b>회 · 일반 제조 픽업 ${(G_.rates.SS * G_.featuredShare * 100).toFixed(1)}%<div class="pity-bar"><i style="width:${Math.min(100, (save.pity / G_.pity) * 100)}%"></i></div><small>선택한 대원 획득 시 초기화 · 다른 SS 획득 / 픽업 변경 시 유지 · 튜토리얼 10회 제외</small>`;
+    $('pity').innerHTML = (save.ssTier || 0) >= 2
+      ? `SS 확정까지 <b>${Math.max(1, G_.pity - save.pity)}</b>회 · 확정 SS의 ${Math.round(G_.featuredShare * 100)}%는 ${f.name}<div class="pity-bar"><i style="width:${Math.min(100, (save.pity / G_.pity) * 100)}%"></i></div><small>SS 획득 시 초기화 · 픽업 변경 시 유지</small>`
+      : `일반 제조 픽업 ${(G_.rates.SS * G_.featuredShare * 100).toFixed(1)}%`;
     $('pull1').disabled = save.parts < G_.cost1;
     $('pull10').disabled = save.parts < G_.cost10;
     const box = $('ssList');
@@ -1046,7 +1072,7 @@
     save.pity++;
     save.pulls++;
     let rank;
-    if (save.pity >= G_.pity) rank = 'SS';
+    if (save.pity >= pityCap()) rank = 'SS';
     else {
       let r = Math.random(), acc = 0;
       rank = 'B';
@@ -1064,15 +1090,14 @@
     const out = [];
     for (let i = 0; i < n; i++) {
       const last = n === 10 && i === 9 && !out.some((o) => o.u.rank === 'S' || o.u.rank === 'SS');
-      const guaranteed = save.pity + 1 >= G_.pity;
       const rank = rollRank(last);
       const pool = D.UNITS.filter((u) => u.rank === rank);
       let u = pool[Math.floor(Math.random() * pool.length)];
       if (rank === 'SS') {
         const pick = featured();
         const others = pool.filter((unit) => unit.id !== pick.id);
-        u = guaranteed || !others.length || Math.random() < G_.featuredShare ? pick : others[Math.floor(Math.random() * others.length)];
-        if (u.id === pick.id) save.pity = 0;
+        u = !others.length || Math.random() < G_.featuredShare ? pick : others[Math.floor(Math.random() * others.length)];
+        save.pity = 0; save.ssTier = Math.min(2, (save.ssTier || 0) + 1);
       }
       out.push(Object.assign({ u }, obtain(u)));
     }

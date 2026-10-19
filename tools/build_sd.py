@@ -379,7 +379,7 @@ def fx_tree(path, atlas, life):
     tr = {k: d for k, (c, d) in docs.items() if c in (4, 224) and "m_GameObject" in d}
     byg = {}
     for k, (c, d) in docs.items():
-        if "m_GameObject" in d and c in (198, 199, 212):
+        if "m_GameObject" in d and c in (198, 199, 212, 96):
             byg.setdefault(str(d["m_GameObject"]["fileID"]), {})[c] = d
     out = []
 
@@ -394,6 +394,10 @@ def fx_tree(path, atlas, life):
              "s": [round(num(sc["x"]), 5), round(num(sc["y"]), 5), round(num(sc["z"]), 5)],
              "a": int(g.get("m_IsActive", 1))}
         cs = byg.get(gid, {})
+        if 96 in cs:
+            tx = particles.export_trail(cs[96], atlas, guid_index(), mat_additive)
+            if tx:
+                n["tr"] = tx
         if 198 in cs:
             ex = particles.export(cs[198], cs.get(199), atlas, guid_index(), mat_additive)
             if ex:
@@ -423,10 +427,107 @@ def fx_tree(path, atlas, life):
             cid = str(ch["fileID"])
             if cid in tr:
                 walk(cid, ix)
+            elif cid in docs and "m_PrefabInstance" in docs[cid][1]:
+                m = mesh_instance(docs, docs[cid][1], ix, atlas)
+                if m:
+                    out.append(m)
 
     for r in [k for k, d in tr.items() if int(d["m_Father"]["fileID"]) == 0]:
         walk(r, -1)
-    return out if any(n.get("ps") for n in out) else []
+    return out if any(n.get("ps") or n.get("tr") for n in out) else []
+
+
+def _anim_color(docs, name):
+    """material._Color curves an effect's own Animator plays on a child renderer (Titania's ice aura fades in and out
+    every 2 s): [clip length, loop, {r,g,b,a: keys}] or None."""
+    for _, (c, d) in docs.items():
+        if c != 95 or not d.get("m_Controller"):
+            continue
+        cp = guid_index().get(d["m_Controller"].get("guid", ""), "")
+        if not cp or not os.path.exists(cp):
+            return None
+        for mg in re.findall(r"m_Motion: \{fileID: \d+, guid: ([0-9a-f]+)", open(cp, encoding="utf-8", errors="ignore").read()):
+            ap = guid_index().get(mg, "")
+            if not ap.endswith(".anim"):
+                continue
+            for _, (ac, clip) in load_docs(ap).items():
+                if ac != 74:
+                    continue
+                ch = {}
+                for fc in clip.get("m_FloatCurves") or []:
+                    at = fc.get("attribute", "")
+                    if fc.get("path") == name and re.match(r"material\._(Tint)?Color\.[rgba]$", at):
+                        ch[at[-1]] = particles.keys(fc.get("curve"))
+                if ch:
+                    st = clip.get("m_AnimationClipSettings") or {}
+                    return [max(0.05, num(st.get("m_StopTime", 1))), int(num(st.get("m_LoopTime", 0))), ch]
+    return None
+
+
+def mesh_instance(docs, stub, par, atlas):
+    """A model (FBX) placed inside an effect prefab (a PrefabInstance): its mesh drawn as one quad the mesh's size in
+    its node's plane, with the material's texture and the Animator's colour curves (if any)."""
+    pi = docs.get(str(stub["m_PrefabInstance"]["fileID"]), (0, {}))[1]
+    src = guid_index().get((pi.get("m_SourcePrefab") or {}).get("guid", ""), "")
+    if not src.lower().endswith(".fbx"):
+        return None
+    mods, mat = {}, None
+    for m in (pi.get("m_Modification") or {}).get("m_Modifications") or []:
+        fid, pp = int((m.get("target") or {}).get("fileID", 0)), m.get("propertyPath", "")
+        if pp == "m_Materials.Array.data[0]":
+            mat = (m.get("objectReference") or {}).get("guid")
+        elif fid in (100000, 400000) or pp == "m_Name":
+            mods[pp] = m.get("value")
+    if mods.get("m_IsActive") in (0, "0"):
+        return None
+    ext = particles.mesh_extent(src)
+    tex_guid, tint, _ = particles.mat_props(guid_index().get(mat or "", ""))
+    t = atlas.texture(tex_guid) if tex_guid else None
+    if not ext or t is None:
+        return None
+    g = lambda k, dv: round(num(mods.get(k, dv)), 6)
+    name = mods.get("m_Name") or os.path.splitext(os.path.basename(src))[0]
+    dur, loop, col = 1.0, 0, None
+    an = _anim_color(docs, name)
+    if an:
+        dur, loop, ch = an
+        ts = [i / 10 for i in range(11)]
+        cv = lambda k, u, dv: particles_curve(ch[k], u * dur) if k in ch else dv
+        base = [v * 2 for v in tint] if tint else [1, 1, 1, 1]
+        col = {"m": 1, "g0": {"c": [[u] + [round(cv(k, u, base[i]), 3) for i, k in enumerate("rgb")] for u in ts],
+                              "a": [[u, round(cv("a", u, base[3]), 3)] for u in ts], "f": 0}}
+        tint = [0.5, 0.5, 0.5, 0.5]  # the animated colour replaces the material's
+    ps = {"dur": dur, "loop": loop, "awake": 1, "delay": {"m": 0, "s": 0}, "space": 0, "sim": 1, "scl": 0,
+          "life": {"m": 0, "s": dur}, "speed": {"m": 0, "s": 0}, "size": {"m": 0, "s": 1}, "rot": {"m": 0, "s": 0},
+          "color": {"m": 0, "c0": [1, 1, 1, 1]}, "grav": {"m": 0, "s": 0}, "max": 1,
+          "emit": {"rate": {"m": 0, "s": 0}, "b": [{"t": 0, "n": {"m": 0, "s": 1}, "cyc": 1, "iv": 0.01, "p": 1}]},
+          "r": {"t": t, "add": mat_additive(mat), "tint": tint, "mode": 4, "ls": 2, "vs": 0, "so": 0, "maxs": 100,
+                "align": 2, "piv": [0, 0, 0], "flip": [0, 0, 0], "mx": ext}}
+    geo = particles.mesh_geom(src)
+    if geo and len(geo["p"]) // 12 <= 500:
+        ps["r"]["geo"] = geo  # the real mesh (a ring the texture wraps around), not its bounding quad
+    if col:
+        ps["col"] = col
+    return {"n": name, "p": par, "t": [g("m_LocalPosition.x", 0), g("m_LocalPosition.y", 0), g("m_LocalPosition.z", 0)],
+            "q": [g("m_LocalRotation.x", 0), g("m_LocalRotation.y", 0), g("m_LocalRotation.z", 0), g("m_LocalRotation.w", 1)],
+            "s": [g("m_LocalScale.x", 1), g("m_LocalScale.y", 1), g("m_LocalScale.z", 1)], "a": 1, "ps": ps}
+
+
+def particles_curve(k, t):
+    """Hermite evaluation of exported keys [[time, value, inSlope, outSlope]...] (as js/particles.js curve())."""
+    if not k:
+        return 1.0
+    if t <= k[0][0]:
+        return k[0][1]
+    for a, b in zip(k, k[1:]):
+        if a[0] <= t <= b[0]:
+            dt = b[0] - a[0]
+            if dt <= 0 or abs(a[3]) > 1e8 or abs(b[2]) > 1e8:
+                return a[1] if dt > 0 else b[1]
+            u = (t - a[0]) / dt
+            u2, u3 = u * u, u * u * u
+            return (2 * u3 - 3 * u2 + 1) * a[1] + (u3 - 2 * u2 + u) * a[3] * dt + (-2 * u3 + 3 * u2) * b[1] + (u3 - u2) * b[2] * dt
+    return k[-1][1]
 
 
 def hit_data(anim_paths, atlas):
@@ -485,12 +586,14 @@ def build_prefab(path, atlas):
         if c in (212, 137, 95) or (c == 114 and (d.get("m_Script") or {}).get("guid") in PUPPET_SCRIPTS + (BONE_SCRIPT,)):
             comps.setdefault(str(d["m_GameObject"]["fileID"]), []).append((c, d))
     # particle systems (198) and their renderers (199): the attack effects nested in the model
-    psys, prend = {}, {}
+    psys, prend, trails = {}, {}, {}
     for k, (c, d) in docs.items():
         if c == 198 and "m_GameObject" in d:
             psys[str(d["m_GameObject"]["fileID"])] = (k, d)
         elif c == 199 and "m_GameObject" in d:
             prend[str(d["m_GameObject"]["fileID"])] = d
+        elif c == 96 and "m_GameObject" in d:
+            trails[str(d["m_GameObject"]["fileID"])] = d
     ps_node = {}  # ParticleSystem component id -> node index (sub-emitter links)
     # PlayMaker FSMs that CreateObject an FX prefab when their object is switched on (ground hits, smoke...)
     spawns = {}
@@ -583,6 +686,10 @@ def build_prefab(path, atlas):
             ex = particles.export(pd, prend.get(gid), atlas, guid_index(), mat_additive)
             if ex:
                 n["ps"] = ex
+        if gid in trails:
+            tx = particles.export_trail(trails[gid], atlas, guid_index(), mat_additive)
+            if tx:
+                n["tr"] = tx
         ix = len(nodes)
         if gid in psys:
             ps_node[str(psys[gid][0])] = ix
@@ -923,7 +1030,7 @@ def prune(nodes, clips):
                 keep.update(b for b in m.get("bones", []) if b >= 0)
             if isinstance(n.get("skin"), dict):
                 keep.update(b for b in n["skin"]["bones"] if b >= 0)
-        if n.get("ik") or n.get("pc") or n.get("gc") or n.get("ps"):
+        if n.get("ik") or n.get("pc") or n.get("gc") or n.get("ps") or n.get("tr"):
             keep.add(i)
         if n.get("ik"):
             keep.update(n["ik"][k] for k in ("t", "m", "b", "end", "start") if n["ik"][k] >= 0)

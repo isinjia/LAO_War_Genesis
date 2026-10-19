@@ -6,6 +6,7 @@
 // Particles are drawn in the rig's model space as children of the body mesh, so they follow its flip and pin offset.
 (function () {
   'use strict';
+  let MESH_K = 1; // mesh sizes are exported in Unity units (FBX file scale applied)
   const MAX_PER_RIG = 600; // per character: crowds of units stay cheap
 
   // ── curves ─────────────────────────────────────────────
@@ -307,6 +308,9 @@
         return { mesh, pos, uv, col };
       };
       this.layers = [this.mk(false), this.mk(true)];
+      // TrailRenderers: the ribbon a moving node leaves (projectile tails)
+      this.trails = [];
+      nodes.forEach((n, i) => { if (n.tr) this.trails.push({ node: i, d: n.tr, pts: [] }); });
     }
     // systems that started within the last `sec` seconds and are still showing
     recent(sec) { return this.sys.some((s) => (s.on || s.n) && this.clock - (s.at || -1e9) <= sec); }
@@ -314,7 +318,43 @@
       this.clock = (this.clock || 0) + dt;
       const EA = this.src.EA, W = this.src.W;
       for (const s of this.sys) s.update(dt, !!EA[s.node], W);
+      for (const tr of this.trails) {
+        const o = tr.node * 12, x = W[o + 9], y = W[o + 10];
+        if (!EA[tr.node]) { tr.pts.length = 0; tr.head = null; continue; } // a disabled / destroyed object loses its trail
+        const last = tr.pts[tr.pts.length - 1];
+        if (!last || Math.hypot(x - last[0], y - last[1]) >= (tr.d.minv || 0.1)) tr.pts.push([x, y, this.clock]);
+        tr.head = [x, y, this.clock];
+        while (tr.pts.length && this.clock - tr.pts[0][2] > tr.d.time) tr.pts.shift();
+      }
       this.draw();
+    }
+    // a model placed in the effect (FBX instance): its real quads through the node's 3D transform, z dropped
+    drawGeo(s, L, rc, cnt, tint, Wd, o, li) {
+      const g = s.def.r.geo, Pp = g.p, T = g.uv, d = s.def;
+      for (let i = 0; i < s.n; i++) {
+        const b = i * 16, t = s.P[b + 6] / s.P[b + 7], k = s.P[b + 8] * MESH_K;
+        const c = d.col ? mg(d.col, t, s.P[b + 14], _c1) : null;
+        let cr = s.C[i * 4] * tint[0], cg = s.C[i * 4 + 1] * tint[1], cb = s.C[i * 4 + 2] * tint[2], ca = s.C[i * 4 + 3] * tint[3];
+        if (c) { cr *= c[0]; cg *= c[1]; cb *= c[2]; ca *= c[3]; }
+        if (ca <= 0.003) continue;
+        for (let qd = 0; qd * 12 < Pp.length; qd++) {
+          const q = cnt[li];
+          if (q >= MAX_PER_RIG) return;
+          // atlas rects cannot wrap: shift the quad's uvs by whole tiles into 0..1
+          const u0 = Math.floor(Math.min(T[qd * 8], T[qd * 8 + 2], T[qd * 8 + 4], T[qd * 8 + 6]) + 1e-4);
+          const v0 = Math.floor(Math.min(T[qd * 8 + 1], T[qd * 8 + 3], T[qd * 8 + 5], T[qd * 8 + 7]) + 1e-4);
+          for (let cc = 0; cc < 4; cc++) {
+            const slot = cc === 2 ? 3 : cc === 3 ? 2 : cc; // polygon order 0 1 2 3 -> quad slots 0 1 3 2
+            const pi = qd * 12 + cc * 3, x = Pp[pi] * k, y = Pp[pi + 1] * k, z = Pp[pi + 2] * k;
+            const pp = (q * 4 + slot) * 3, uu = (q * 4 + slot) * 2, ci = (q * 4 + slot) * 4;
+            L.pos[pp] = Wd[o] * x + Wd[o + 3] * y + Wd[o + 6] * z + Wd[o + 9];
+            L.pos[pp + 1] = Wd[o + 1] * x + Wd[o + 4] * y + Wd[o + 7] * z + Wd[o + 10]; L.pos[pp + 2] = 0;
+            L.uv[uu] = rc[0] + Math.min(1, T[qd * 8 + cc * 2] - u0) * rc[2]; L.uv[uu + 1] = rc[1] + Math.min(1, T[qd * 8 + cc * 2 + 1] - v0) * rc[3];
+            L.col[ci] = cr; L.col[ci + 1] = cg; L.col[ci + 2] = cb; L.col[ci + 3] = Math.min(1, ca);
+          }
+          cnt[li] = q + 1;
+        }
+      }
     }
     draw() {
       const W = this.W, rects = this.src.rects;
@@ -336,6 +376,7 @@
         const tint = r.tint ? [r.tint[0] * 2, r.tint[1] * 2, r.tint[2] * 2, r.tint[3] * 2] : [1, 1, 1, 1];
         const uvm = d.uv, tx = uvm ? uvm.tx : 1, ty = uvm ? uvm.ty : 1, frames = tx * ty;
         const P = s.P, C = s.C;
+        if (r.geo) { this.drawGeo(s, L, rc, cnt, tint, Wd, o, r.add ? 1 : 0); continue; }
         for (let i = 0; i < s.n; i++) {
           const q = cnt[r.add ? 1 : 0];
           if (q >= MAX_PER_RIG) break;
@@ -350,7 +391,8 @@
           let sx = P[b + 8], sy = P[b + 9];
           if (d.sz) { const k = mm(d.sz.c, t, P[b + 13]); sx *= k; sy *= d.sz.sep ? mm(d.sz.y, t, P[b + 13]) : k; }
           if (r.mode !== 5) { sx *= kx; sy *= ky; }
-          if (vh > 0 && r.maxs > 0) { const lim = r.maxs * vh; if (sx > lim) sx = lim; if (sy > lim) sy = lim; } // Max Particle Size
+          if (r.mode === 4 && r.mx) { sx *= r.mx[0] * MESH_K; sy *= r.mx[1] * MESH_K; } // Mesh mode: a quad the mesh's size
+          else if (vh > 0 && r.maxs > 0) { const lim = r.maxs * vh; if (sx > lim) sx = lim; if (sy > lim) sy = lim; } // Max Particle Size
           const rot = -(P[b + 10] + P[b + 11]);
           // colour: start x over lifetime x material tint
           const c = d.col ? mg(d.col, t, P[b + 14], _c1) : null;
@@ -380,6 +422,8 @@
             const cs = Math.cos(rot), sn2 = Math.sin(rot), hy = r.mode === 2 ? sy * 0.35 : sy;
             ax = cs * sx * 0.5; ay = sn2 * sx * 0.5; bx = -sn2 * hy * 0.5; by = cs * hy * 0.5;
           }
+          // renderer pivot (in particle sizes, along the quad's own axes): Thetis' missile flame sits behind the missile
+          if (r.piv && r.mode !== 5 && (r.piv[0] || r.piv[1])) { x += 2 * (r.piv[0] * ax + r.piv[1] * bx); y += 2 * (r.piv[0] * ay + r.piv[1] * by); }
           // texture sheet frame
           let fx = 0, fy = 0;
           if (uvm && frames > 1) {
@@ -400,6 +444,35 @@
           cnt[r.add ? 1 : 0] = q + 1;
         }
       }
+      // trails: quads between consecutive points, head (newest) to tail; width curve and colour gradient along it
+      for (const tr of this.trails) {
+        if (!tr.head || !tr.pts.length) continue;
+        const d = tr.d, r = d.r, L = this.layers[r.add ? 1 : 0], rc = rects[r.t];
+        if (!rc) continue;
+        const P = [tr.head].concat(tr.pts.slice().reverse()); // head first
+        let total = 0; const acc = [0];
+        for (let i = 1; i < P.length; i++) { total += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]); acc.push(total); }
+        if (total < 1e-4) continue;
+        const tint = r.tint ? [r.tint[0] * 2, r.tint[1] * 2, r.tint[2] * 2, r.tint[3] * 2] : [1, 1, 1, 1];
+        const at = (i) => { const u = acc[i] / total; const w = (d.wc && d.wc.length ? curve(d.wc, u) : 1) * d.w; const c = gradAt(d.grad, u, [1, 1, 1, 1]); return { u, w, c }; };
+        for (let i = 0; i < P.length - 1; i++) {
+          const q = cnt[r.add ? 1 : 0];
+          if (q >= MAX_PER_RIG) break;
+          const a = P[i], b = P[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], ln = Math.hypot(dx, dy) || 1e-6;
+          const nx = -dy / ln, ny = dx / ln, A = at(i), B = at(i + 1);
+          const pp = q * 12, uu = q * 8, cc = q * 16, pos = L.pos, uv = L.uv, col = L.col;
+          pos[pp] = a[0] - nx * A.w * 0.5; pos[pp + 1] = a[1] - ny * A.w * 0.5; pos[pp + 2] = 0;
+          pos[pp + 3] = b[0] - nx * B.w * 0.5; pos[pp + 4] = b[1] - ny * B.w * 0.5; pos[pp + 5] = 0;
+          pos[pp + 6] = a[0] + nx * A.w * 0.5; pos[pp + 7] = a[1] + ny * A.w * 0.5; pos[pp + 8] = 0;
+          pos[pp + 9] = b[0] + nx * B.w * 0.5; pos[pp + 10] = b[1] + ny * B.w * 0.5; pos[pp + 11] = 0;
+          const ua = rc[0] + A.u * rc[2], ub = rc[0] + B.u * rc[2]; // texture stretched along the trail
+          uv[uu] = ua; uv[uu + 1] = rc[1]; uv[uu + 2] = ub; uv[uu + 3] = rc[1]; uv[uu + 4] = ua; uv[uu + 5] = rc[1] + rc[3]; uv[uu + 6] = ub; uv[uu + 7] = rc[1] + rc[3];
+          for (const [k, C] of [[0, A], [1, B], [2, A], [3, B]]) {
+            col[cc + k * 4] = C.c[0] * tint[0]; col[cc + k * 4 + 1] = C.c[1] * tint[1]; col[cc + k * 4 + 2] = C.c[2] * tint[2]; col[cc + k * 4 + 3] = Math.min(1, C.c[3] * tint[3]);
+          }
+          cnt[r.add ? 1 : 0] = q + 1;
+        }
+      }
       this.layers.forEach((L, k) => {
         const g = L.mesh.geometry;
         g.setDrawRange(0, cnt[k] * 6);
@@ -407,7 +480,7 @@
         L.mesh.visible = cnt[k] > 0;
       });
     }
-    reset() { for (const s of this.sys) { s.n = 0; s.on = false; s.wasOn = false; } this.total = 0; this.draw(); }
+    reset() { for (const s of this.sys) { s.n = 0; s.on = false; s.wasOn = false; } for (const tr of this.trails) { tr.pts.length = 0; tr.head = null; } this.total = 0; this.draw(); }
     dispose() { for (const L of this.layers) { L.mesh.parent && L.mesh.parent.remove(L.mesh); L.mesh.geometry.dispose(); L.mesh.material.dispose(); } }
   }
 
@@ -504,7 +577,8 @@
   function clearAll() { for (const e of live) { e.b.dispose(); if (e.hit) e.hit.dispose(); e.g.parent && e.g.parent.remove(e.g); } live.length = 0; }
 
   window.SDPS = {
-    has: (tpl) => tpl.data.nodes.some((n) => n.ps),
+    meshK: (k) => { if (k != null) MESH_K = k; return MESH_K; },
+    has: (tpl) => tpl.data.nodes.some((n) => n.ps || n.tr),
     create: (sd) => new Set(sd),
     shot, burst, tick, clear: clearAll,
     // tools: a node tree played on its own (tools/build_compare.py side-by-side check against the Unity bake)

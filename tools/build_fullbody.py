@@ -32,6 +32,8 @@ def compose(model, dest):
     for ni,n in enumerate(nodes):
         # The spring-only secondary strand is outside the lobby's static pose.
         if model == 'BR_Khan_N' and n['n'] == 'kh_parts_hair_4':continue
+        # Black Lilith's floating shields stay out of her portrait (requested).
+        if model == '3P_BlackLilith_N' and n['n'] in ('BL_parts_shield_r','BL_parts_shield_l'):continue
         world=worlds[ni]
         sr=n.get('sr')
         sk=n.get('skin')
