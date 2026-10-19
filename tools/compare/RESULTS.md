@@ -1,4 +1,4 @@
-# 원작 Unity 렌더링 대비 비교 (V0.72)
+# 원작 Unity 렌더링 대비 비교 (V0.73)
 
 `python tools/build_compare.py --all`로 원작 Unity 패스가 프레임 단위로 구워 둔 이펙트 54개(투사체·피격, Defence 프로젝트
 `tools/unity_ref/Fx.cs`로 구운 `js/fx/*.js`) 전부를 리그와 같은 방식으로 내보내고(`cmp.js`, 생성물), 같은 시점에 나란히 그려
@@ -70,6 +70,20 @@
 | vfx_Tiamet_NS3_skill1_bullet_Hit | 100 | 100 | 100 | 100 | 100 |
 | violet_bullet | 100 | 100 | 100 | 100 | 100 |
 | violet_skill2_bullet | 100 | 100 | 100 | 100 | 100 |
+
+## 게임에서 실제로 그리는 경로 (90점 미만 3개)
+
+위 점수는 우리 파티클 엔진(리그 내보내기)의 재현도다. 게임은 원작 굽기 투사체·이펙트가 있으면 그것을 먼저 재생한다
+(`js/game.js` hit(): `own && !(orig && orig.bullet)`, origShot / spawnStatic). 전투에서 FXB.create / SDPS.shot 호출을 세어 확인했다.
+
+| 이펙트 | 파티클 엔진 점수 | 게임에서 그리는 것 | 확인 |
+|---|---|---|---|
+| Thetis_skill2_Small_Missile | 86 | 원작 굽기 재생 (FXB) | 테티스 스킬 전투: FXB 2회, 파티클 투사체 0회 |
+| Thetis_skill2_big_Missile | 89 | 원작 굽기 재생 (FXB) | 같은 스킬의 다른 탄 (FX_META.uses) |
+| FX_hit_bori | 75 | 원작 굽기 재생 (FXB) | 콘스탄티아 스킬 3회: 보리 3회 (V0.73에서 탄환과 함께 나오게 고침) |
+
+V0.73: 콘스탄티아 스킬은 원작에서 탄환(EventThrowProjectile)과 보리 돌격(EventThrowEffect)이 함께 나오는데, 게임은 탄환이 있으면
+던지는 이펙트를 건너뛰어 보리가 한 번도 나오지 않았다. 이제 스킬 첫 타격 때 목표 지점 바닥에서 보리가 달려와 들이받는다.
 
 ※ FX_hit_bori: 콘스탄티아 스킬의 강아지 돌격(스킨드 메시 캐릭터 + 뼈대 애니메이션)이라 파티클 엔진 대상이 아니다. 게임에서는
 EventThrowEffect로 이 Unity 굽기 데이터 자체를 재생하므로(`js/fxbake.js`, FX_META.uses) 화면은 원작 출력과 같다.

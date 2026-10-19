@@ -681,6 +681,12 @@
     let any = false;
     const orig = f.ally && origFor(f.def.id, a.skill ? 'skill' : 'atk');
     const mz = muzzle(f, a.fn && a.fn[a.i] != null ? a.fn[a.i] : 1); // where this shot leaves the weapon
+    // a skill that fires its bullet and also throws an effect (Constantia: Bori charges in and rams the target):
+    // the thrown effect plays once, on the ground at the target, as the original's EventThrowEffect
+    if (orig && orig.bullet && orig.statics.length && a.skill && a.i === 0) {
+      const t = target(f), tx = t && t !== 'base' ? t.x : f.x + f.dir * 3;
+      spawnStatic(orig.statics[0], tx, t && t !== 'base' ? t.dy || 0 : 0, ALLY_K);
+    }
     const psLive = !!(f.ally && clipHasPs(f, a.skill ? 'skill' : 'atk')); // the original's own effects belong to this clip
     let shots = 0;
     const hitOne = (o) => {
