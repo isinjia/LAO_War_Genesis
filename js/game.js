@@ -163,6 +163,7 @@
     const w = innerWidth, h = innerHeight, aspect = w / h;
     VH = Math.max(8.5, Math.min(10.5, 11 / aspect)) / zoom; // portrait phones: a bit more height, units stay readable
     VW = VH * aspect;
+    if (window.SDPS) SDPS.viewH = VH; // particles' Max Particle Size is a fraction of the view height
     // the lane sits just above the deploy bar (its measured height when known)
     camBottom = -VH * (hudFrac >= 0 ? Math.max(0.24, Math.min(0.44, hudFrac + 0.06)) : aspect < 1 ? 0.38 : 0.37);
     clampCam();

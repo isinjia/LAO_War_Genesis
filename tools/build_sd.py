@@ -830,7 +830,9 @@ def mat_additive(guid):
             m = re.search(r"_DstBlend: ([\d.]+)", t)
             sh = re.search(r"m_Shader: \{fileID: (\d+), guid: ([0-9a-f]+)", t)
             shname = os.path.basename(guid_index().get(sh.group(2), "")) if sh else ""
-            builtin_add = sh and sh.group(2).startswith("0000") and sh.group(1) in ("200", "201")  # Particles/Additive
+            # Unity built-in particle shaders: 200 Additive, 201 Additive (Soft), 10720 Mobile/Particles/Additive
+            # (203 / 10721 are Alpha Blended)
+            builtin_add = sh and sh.group(2).startswith("0000") and sh.group(1) in ("200", "201", "10720")
             add = 1 if (m and float(m.group(1)) == 1) or (re.search(r"add", shname, re.I) and not re.search(r"cloak", shname, re.I)) or builtin_add else 0
         _mat_add[guid] = add
     return _mat_add[guid]

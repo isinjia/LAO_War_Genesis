@@ -265,8 +265,10 @@
   class Set {
     constructor(sd, src) {
       this.sd = sd; this.total = 0;
+      // viewH: the view's height in this set's units, for Unity's Max Particle Size (a fraction of the view height)
       this.src = src || { nodes: sd.tpl.data.nodes, W: sd.W, EA: sd.EA, tex: sd.tpl.atlas.tex, rects: sd.tpl.atlas.rects,
-        parent: sd.mesh, order: () => sd.mesh.renderOrder || 0 };
+        parent: sd.mesh, order: () => sd.mesh.renderOrder || 0,
+        viewH: () => (window.SDPS && SDPS.viewH ? SDPS.viewH / (Math.abs(sd.root.scale.y) || 1) : 0) };
       const nodes = this.src.nodes;
       this.sys = [];
       const byNode = {};
@@ -317,6 +319,7 @@
     draw() {
       const W = this.W, rects = this.src.rects;
       const cnt = [0, 0];
+      const vh = this.src.viewH ? this.src.viewH() : 0;
       const ord = this.src.order();
       for (const L of this.layers) L.mesh.renderOrder = ord + 2;
       for (const s of this.sys) {
@@ -347,6 +350,7 @@
           let sx = P[b + 8], sy = P[b + 9];
           if (d.sz) { const k = mm(d.sz.c, t, P[b + 13]); sx *= k; sy *= d.sz.sep ? mm(d.sz.y, t, P[b + 13]) : k; }
           if (r.mode !== 5) { sx *= kx; sy *= ky; }
+          if (vh > 0 && r.maxs > 0) { const lim = r.maxs * vh; if (sx > lim) sx = lim; if (sy > lim) sy = lim; } // Max Particle Size
           const rot = -(P[b + 10] + P[b + 11]);
           // colour: start x over lifetime x material tint
           const c = d.col ? mg(d.col, t, P[b + 14], _c1) : null;
@@ -364,6 +368,14 @@
             const len = sx * r.ls + sp * r.vs;
             ax = ux * len * 0.5; ay = uy * len * 0.5; bx = -uy * sx * 0.5; by = ux * sx * 0.5;
             x += ax * 0.0; y += ay * 0.0;
+          } else if (r.align === 2) {
+            // Render Alignment = Local: the quad lies in its node's plane (a flat ring on the ground is seen edge-on);
+            // the node's axes as unit vectors in 3D, projected (z dropped)
+            const l0 = Math.hypot(Wd[o], Wd[o + 1], Wd[o + 2]) || 1, l1 = Math.hypot(Wd[o + 3], Wd[o + 4], Wd[o + 5]) || 1;
+            const ux = Wd[o] / l0, uy = Wd[o + 1] / l0, vx2 = Wd[o + 3] / l1, vy2 = Wd[o + 4] / l1;
+            const cs = Math.cos(rot), sn2 = Math.sin(rot);
+            ax = (cs * ux + sn2 * vx2) * sx * 0.5; ay = (cs * uy + sn2 * vy2) * sx * 0.5;
+            bx = (-sn2 * ux + cs * vx2) * sy * 0.5; by = (-sn2 * uy + cs * vy2) * sy * 0.5;
           } else {
             const cs = Math.cos(rot), sn2 = Math.sin(rot), hy = r.mode === 2 ? sy * 0.35 : sy;
             ax = cs * sx * 0.5; ay = sn2 * sx * 0.5; bx = -sn2 * hy * 0.5; by = cs * hy * 0.5;
@@ -495,5 +507,8 @@
     has: (tpl) => tpl.data.nodes.some((n) => n.ps),
     create: (sd) => new Set(sd),
     shot, burst, tick, clear: clearAll,
+    // tools: a node tree played on its own (tools/build_compare.py side-by-side check against the Unity bake)
+    loose: (tree, tex, rects, parent, order, viewH) => { const l = new Loose(tree, tex, rects, parent, order || 0); if (viewH) l.set.src.viewH = () => viewH; return l; },
+    viewH: 0, // the game's view height in field units (js/game.js view())
   };
 })();
