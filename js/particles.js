@@ -239,8 +239,9 @@
             }
           });
           bursts(prev);
-          if (this.t >= d.dur) {
-            // a loop wraps: the new cycle's bursts that are already due fire in this same step, as in Unity
+          if (this.t > d.dur + 1e-6) {
+            // a loop wraps once its time is past the duration (Unity: 30 fps steps of a 0.1 s loop wrap every 3rd
+            // step after the 4th), and the new cycle's bursts that are already due fire in this same step
             if (d.loop) { this.t %= Math.max(0.01, d.dur); this.burst.fill(0); bursts(0); } else this.on = false;
           }
         }
