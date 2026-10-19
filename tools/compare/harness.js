@@ -61,7 +61,11 @@
       const scene = new THREE.Scene(); scene.background = new THREE.Color(0x2a3a2a);
       let obj, step;
       if (side === 'unity') { const inst = FXB.create(name); scene.add(inst.root); obj = inst; step = (dt) => inst.update(dt); }
-      else {
+      else if ((CMP.gameBake || []).includes(name)) {
+        // what the game draws for it: its own FXB playback (spawnStatic), with the game's hand tints
+        const raw = FXB.raw; FXB.raw = false; const inst = FXB.create(name); FXB.raw = raw;
+        scene.add(inst.root); obj = inst; step = (dt) => inst.update(dt);
+      } else {
         const g = new THREE.Group(); scene.add(g); const L = SDPS.loose(CMP.trees[name], tex, CMP.rects, g, 0, VH); L.place(0, 0, 0); obj = L;
         // a projectile bake flew `dist` along +x in `T` (then the projectile is destroyed): fly ours the same way
         const proj = c.d.mode === 'proj' && c.d.T > 0, Tf = c.d.T, D = c.d.dist || 0;
@@ -102,6 +106,31 @@
     return { s: acc.map((v) => Math.round(v / reps)), u: mid(last[0]), o: mid(last[1]) };
   }
   let WIN = 0; // measured: merging neighbour frames changed nothing material, so single frames stay the default
+  // Distribution score for random effects: Unity's bake is one seeded outcome (Fx.cs randomSeed 12345; the game
+  // itself plays a new random outcome every time). Each feature of the bake frame is compared with the nearest value
+  // inside the 10-90% band of `reps` plays of ours: an outcome our engine would also produce scores 100, a
+  // systematic difference (too big, too dim, misplaced) still loses points as in run().
+  function runDist(name, VH = 0.55, reps = 16) {
+    const ts = timesFor(name), ours = ts.map(() => []);
+    let U;
+    for (let k = 0; k < reps; k++) { const [u, o] = render(name, ts, VH); U = u; o.forEach((cv, i) => ours[i].push(feat(cv))); }
+    const band = (vals) => { const v = vals.slice().sort((a, b) => a - b), q = (p) => v[Math.min(v.length - 1, Math.max(0, Math.round(p * (v.length - 1))))]; return [q(0.1), q(0.9)]; };
+    const near = (x, [lo, hi]) => Math.min(hi, Math.max(lo, x));
+    const s = ts.map((_, i) => {
+      const A = feat(U[i]), fs = ours[i], lit = fs.filter((f) => f.E > 0);
+      const Eb = band(fs.map((f) => f.E));
+      if (!A.E || !lit.length) return scoreF(A, { E: near(A.E || 0, Eb), c: [0, 0, 0], mx: 0, my: 0, sx: 0, sy: 0 });
+      const pick = (g) => near(g(A), band(lit.map(g)));
+      return scoreF(A, { E: near(A.E, Eb), c: [0, 1, 2].map((j) => pick((f) => f.c[j])), mx: pick((f) => f.mx), my: pick((f) => f.my), sx: pick((f) => f.sx), sy: pick((f) => f.sy) });
+    });
+    return { s: s.map(Math.round) };
+  }
+  function runAllDist(VH = 0.55, names = Object.keys(CMP.trees), reps = 16) {
+    const res = {};
+    for (const n of names) { const s = runDist(n, VH, reps).s; res[n] = { s, avg: Math.round(s.reduce((a, b) => a + b, 0) / s.length) }; }
+    const avgs = Object.values(res).map((r) => r.avg);
+    return { res, avg: avgs.reduce((a, b) => a + b, 0) / avgs.length, below: Object.entries(res).filter(([, r]) => r.avg < 90).map(([n, r]) => n + ':' + r.avg) };
+  }
   function runAll(VH = 0.55, names = Object.keys(CMP.trees), reps = 4) {
     const res = {};
     for (const n of names) { const s = run(n, VH, reps).s; res[n] = { s, avg: Math.round(s.reduce((a, b) => a + b, 0) / s.length) }; }
@@ -121,5 +150,5 @@
     }
   }
   function size(w, h) { W = w; H = h; rnd.setSize(W, H); }
-  window.CMPH = { win: (w) => { WIN = w; }, size, init, run, runAll, show, feat, render };
+  window.CMPH = { runDist, runAllDist, win: (w) => { WIN = w; }, size, init, run, runAll, show, feat, render };
 })();

@@ -32,16 +32,21 @@ def all_names():
 def main():
     names = all_names() if "--all" in sys.argv else NAMES
     atlas = B.Atlas()
-    trees = {}
+    trees, game_bake = {}, []
     for n in names:
         p = B.fx_prefab(n)
         t = B.fx_tree(p, atlas, 2.0) if p else []
         if t:
             trees[n] = t
+            # an animated skinned character (Constantia's Bori) is outside the particle engine: the game plays the
+            # Unity bake itself (js/game.js origShot / spawnStatic), so that is what gets measured for it
+            if "--- !u!137 " in open(p, encoding="utf-8", errors="ignore").read():
+                game_bake.append(n)
     meta, files = B.packed_atlas([p for _, p, _, _ in atlas.textures])
     out = os.path.join(HERE, "compare")
     os.makedirs(out, exist_ok=True)
-    js = "window.CMP=%s;" % json.dumps({"trees": trees, "rects": meta["rects"], "img": files["a50"]}, separators=(",", ":"))
+    js = "window.CMP=%s;" % json.dumps({"trees": trees, "rects": meta["rects"], "img": files["a50"], "gameBake": game_bake},
+                                     separators=(",", ":"))
     open(os.path.join(out, "cmp.js"), "w", encoding="utf-8").write(js)
     print("compare set:", len(trees), "effects,", len(meta["rects"]), "textures")
 
