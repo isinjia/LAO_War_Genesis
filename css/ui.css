@@ -42,6 +42,8 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .rk-i { display: inline-block; width: 28px; height: 28px; background: center / contain no-repeat; flex: none; vertical-align: middle; }
 .rk-i.B { background-image: var(--s-rank_B); } .rk-i.A { background-image: var(--s-rank_A); }
 .rk-i.S { background-image: var(--s-rank_S); } .rk-i.SS { background-image: var(--s-rank_SS); width: 34px; }
+.rk-i.B.def { background-image: var(--s-rank_B_def); } .rk-i.A.def { background-image: var(--s-rank_A_def); } .rk-i.S.def { background-image: var(--s-rank_S_def); } .rk-i.SS.def { background-image: var(--s-rank_SS_def); }
+.rk-i.B.sup { background-image: var(--s-rank_B_sup); } .rk-i.A.sup { background-image: var(--s-rank_A_sup); } .rk-i.S.sup { background-image: var(--s-rank_S_sup); } .rk-i.SS.sup { background-image: var(--s-rank_SS_sup); }
 
 /* ── title ── */
 #title .title-bg, .lobby-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }

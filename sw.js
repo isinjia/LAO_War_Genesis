@@ -1,6 +1,6 @@
 // Offline / repeat-visit cache. Heavy data (rigs, baked effects, sounds, illustrations) is cache-first: it only changes
 // when the build tools run, and then CACHE is bumped. Code and pages are network-first so edits show up at once.
-const CACHE = 'lao-war-genesis-4c8c232b2c';
+const CACHE = 'lao-war-genesis-6da223cc04';
 const HEAVY = /\/(js\/sd|js\/fx|assets)\//;
 
 self.addEventListener('install', () => self.skipWaiting());

@@ -125,7 +125,15 @@ SPRITES = {
     "rank_B": ("BattleAtlas", "UI_Icon_CHA_SwordB_Big"),
     "rank_A": ("BattleAtlas", "UI_Icon_CHA_SwordA_Big"),
     "rank_S": ("BattleAtlas", "UI_Icon_CHA_SwordS_Big"),
-    "rank_SS": ("BattleAtlas", "UI_Icon_CHA_SwordSS_Big"),
+    "rank_SS": ("BattleAtlas", "UI_Icon_CHA_SwordSS_Big"),  # sword: attacker; shield: defender; gear: supporter (the original class)
+    "rank_B_def": ("BattleAtlas", "UI_Icon_CHA_ShieldB_Big"),
+    "rank_A_def": ("BattleAtlas", "UI_Icon_CHA_ShieldA_Big"),
+    "rank_S_def": ("BattleAtlas", "UI_Icon_CHA_ShieldS_Big"),
+    "rank_SS_def": ("BattleAtlas", "UI_Icon_CHA_ShieldSS_Big"),
+    "rank_B_sup": ("BattleAtlas", "UI_Icon_CHA_GearB_Big"),
+    "rank_A_sup": ("BattleAtlas", "UI_Icon_CHA_GearA_Big"),
+    "rank_S_sup": ("BattleAtlas", "UI_Icon_CHA_GearS_Big"),
+    "rank_SS_sup": ("BattleAtlas", "UI_Icon_CHA_GearSS_Big"),
 }
 
 # tinted variants (NGUI multiplies white sprites by the widget colour): key: (base, "#rrggbb", alpha)

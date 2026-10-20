@@ -87,7 +87,9 @@
   function show(id) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('show', s.id === id));
   }
-  const rk = (r) => `<i class="rk-i ${r}"></i>`;
+  // rank badge; with a unit, its original class picks the mark (sword attacker, shield defender, gear supporter)
+  const rkRole = (u) => (u && u.cls ? (u.cls.endsWith('보호기') ? ' def' : u.cls.endsWith('지원기') ? ' sup' : '') : '');
+  const rk = (r, u) => `<i class="rk-i ${r}${rkRole(u)}"></i>`;
   const hasFull = (id) => !!(window.FULL && FULL[id]);
   const art = (id) => (hasFull(id) ? FULL[id] : IMG['u_' + id]);
   // animated illustrations (transparent looping video) shown instead of the still outside the story (the story draws
@@ -114,7 +116,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.23'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.24'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -373,7 +375,7 @@
       ${st.mod ? `<div class="si-mod"><b>${D.MODS[st.mod].name}</b> ${D.MODS[st.mod].tip}</div>` : ''}
       <div class="si-enemies">${enemyIds.concat(st.boss ? [st.boss.e] : []).map((e) => enemyChip(e, st.boss && e === st.boss.e)).join('')}</div>
       <div class="si-label">고정 편성 (LV ${st.squadLv})</div>
-      <div class="dsq">${st.squad.map((id) => `<span class="dsq-u r-${D.UNIT[id].rank}"><img src="${IMG['u_' + id]}" alt="">${rk(D.UNIT[id].rank)}</span>`).join('')}</div>
+      <div class="dsq">${st.squad.map((id) => `<span class="dsq-u r-${D.UNIT[id].rank}"><img src="${IMG['u_' + id]}" alt="">${rk(D.UNIT[id].rank, D.UNIT[id])}</span>`).join('')}</div>
       <div class="si-rewards">${rwHtml(D.reward(st, done ? 'win' : 'first'))}</div>
       <div style="font-size:12px">${done ? '오늘 보상은 받았습니다 · 연습으로 다시 할 수 있습니다' : '하루 한 번 보상'}</div></div>`,
     [['출격', () => { closeModal(); launch(st); }], ['닫기', closeModal, 'd']]);
@@ -512,9 +514,9 @@
       ${traitNote([boss, ...enemyIds])}
       <div class="si-label">${first ? '첫 클리어 보상' : '반복 보상'}</div>
       <div class="si-rewards">${rwHtml(D.reward(s, first ? 'first' : 'win'))}
-        ${unit && first && !owned(unit.id) ? `<span class="rw unit"><img src="${IMG['u_' + unit.id]}" alt="">${rk(unit.rank)} ${unit.name} 합류</span>` : ''}</div>
+        ${unit && first && !owned(unit.id) ? `<span class="rw unit"><img src="${IMG['u_' + unit.id]}" alt="">${rk(unit.rank, unit)} ${unit.name} 합류</span>` : ''}</div>
       <div class="si-label si-decklbl">내 덱 <small>${save.deck.length}/${DECK_MAX}</small></div>
-      <div class="dsq si-deck">${save.deck.map((id) => `<span class="dsq-u r-${D.UNIT[id].rank}"><img src="${IMG['u_' + id]}" alt="">${rk(D.UNIT[id].rank)}<b class="lv">${lvOf(id)}</b></span>`).join('')}</div>
+      <div class="dsq si-deck">${save.deck.map((id) => `<span class="dsq-u r-${D.UNIT[id].rank}"><img src="${IMG['u_' + id]}" alt="">${rk(D.UNIT[id].rank, D.UNIT[id])}<b class="lv">${lvOf(id)}</b></span>`).join('')}</div>
       <div class="si-go">${lobbyTut() ? '' : '<button class="btn lg d si-edit" id="btnDeck">덱 편집</button>'}<button class="btn lg${s.hard ? ' o' : ''}" id="btnGo">출격</button></div>
       <button class="si-close" id="siClose" aria-label="닫기"></button>`;
     $('siClose').onclick = () => { AUDIO.play('click', 0.4, 0.8); sheetOpen = false; renderStages(); };
@@ -785,7 +787,7 @@
     const b = document.createElement('button');
     b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (ready ? ' up' : '') + (have && need && n >= need ? ' full' : '');
     b.dataset.id = u.id;
-    b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt="" draggable="false"><i class="crc-cost">${u.cost}</i>${rk(u.rank)}` +
+    b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt="" draggable="false"><i class="crc-cost">${u.cost}</i>${rk(u.rank, u)}` +
       `</div>` +
       `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
       (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-xp crc-name">${u.name}</div>`);
@@ -1016,7 +1018,7 @@
     const b = document.createElement('button');
     b.className = `ucard r-${u.rank}` + (have ? '' : ' none') + (inDeck && !price ? ' in' : '');
     b.dataset.id = u.id;
-    b.innerHTML = `<img src="${IMG['u_' + u.id]}" alt="">${rk(u.rank)}${have ? `<span class="lv">LV.${lvOf(u.id)}</span>` : ''}` +
+    b.innerHTML = `<img src="${IMG['u_' + u.id]}" alt="">${rk(u.rank, u)}${have ? `<span class="lv">LV.${lvOf(u.id)}</span>` : ''}` +
       (inDeck && !price ? '<span class="tag">편성</span>' : '') +
       `<div class="nm">${u.name}</div>` + (price ? `<div class="price"><i class="tuna-i"></i>${fmt(price)}</div>` : '');
     b.onclick = onClick;
@@ -1038,8 +1040,8 @@
     const stat = (value) => `<b>${fmt(value * m)}</b>` + (nextM > m ? `<span class="stat-next">→ ${fmt(value * nextM)} <small>+${fmt(value * nextM - value * m)}</small></span>` : '');
     const fx = u.slow ? (u.slow[0] >= 1 ? ` · 맞은 적 ${u.slow[1]}초 기절` : ` · 맞은 적 ${Math.round(u.slow[0] * 100)}% 둔화`) : '';
     const body = `<div class="detail">${fullTag(u.id, `class="art${hasFull(u.id) ? '' : ' portrait'}" style="${have ? '' : 'filter:brightness(0.12) grayscale(1)'}"`)}
-      <div class="stats"><div class="nm">${rk(u.rank)}${u.name} ${have ? `<small>LV.${lv}</small>` : ''}</div>
-      <div class="role">${u.role}${u.area ? ' · 범위' : ' · 단일'}${fx} · 편성 코스트 ${D.DECK_COST[u.rank]}</div>
+      <div class="stats"><div class="nm">${rk(u.rank, u)}${u.name} ${have ? `<small>LV.${lv}</small>` : ''}</div>
+      <div class="role">${u.cls ? `<b class="ucls">${u.cls}</b> · ` : ''}${u.role}${u.area ? ' · 범위' : ' · 단일'}${fx} · 편성 코스트 ${D.DECK_COST[u.rank]}</div>
       <div class="utr">${u.range < 2.4 ? '<span class="no">대공 불가</span>' : '<span>대공 가능</span>'}${u.type === 'snipe' ? '<span>장갑 관통 x1.5</span>' : u.area ? '<span class="no">장갑에 50%</span>' : ''}</div>
       <div>${have ? u.desc : howToGet(u)}</div>
       ${have ? `<div class="card-row"><span>카드</span><div class="crc-xp"><i style="width:${need ? Math.min(100, (n / need) * 100) : 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>${short && save.wild[u.rank] ? `<small>${u.rank} 와일드카드 ${fmt(save.wild[u.rank])}장 보유</small>` : ''}</div>` : ''}
@@ -1123,7 +1125,7 @@
     const f = featured();
     setArt($('bannerArt'), f.id);
     $('pickName').innerHTML = `${rk('SS')} ${f.name}`;
-    $('pickDesc').textContent = `${f.role} · ${f.desc} — 일반 SS 등장 시 ${Math.round(G_.featuredShare * 100)}%는 선택한 대원`;
+    $('pickDesc').textContent = `${f.cls ? f.cls + ' · ' : ''}${f.role} · ${f.desc} — 일반 SS 등장 시 ${Math.round(G_.featuredShare * 100)}%는 선택한 대원`;
     $('rates').innerHTML = D.RANK_ORDER.map((r) => `<span>${rk(r)}${(G_.rates[r] * 100).toFixed(0)}%</span>`).join('') + `<span>· 중복은 그 대원의 카드 (업그레이드 재료)</span>`;
     $('pity').innerHTML = (save.ssTier || 0) >= 2
       ? `SS 확정까지 <b>${Math.max(1, G_.pity - save.pity)}</b>회 · 확정 SS의 ${Math.round(G_.featuredShare * 100)}%는 ${f.name}<div class="pity-bar"><i style="width:${Math.min(100, (save.pity / G_.pity) * 100)}%"></i></div><small>SS 획득 시 초기화 · 픽업 변경 시 유지</small>`
@@ -1159,7 +1161,7 @@
       const price = u.rank === 'SS' && !owned(u.id) ? D.SHOP_NEW_SS : D.SHOP_PRICE[u.rank];
       const n = D.SHOP_CARDS[u.rank];
       const c = unitCard(u, () => {
-        modal('확정 영입', `<div class="buy"><img src="${IMG['u_' + u.id]}" alt=""><div>${rk(u.rank)} <b>${u.name}</b><br>${owned(u.id) ? `보유 중 — 카드 +${n} (${fmt(cardsOf(u.id))} → ${fmt(cardsOf(u.id) + n)})` : '새로 합류합니다'}
+        modal('확정 영입', `<div class="buy"><img src="${IMG['u_' + u.id]}" alt=""><div>${rk(u.rank, u)} <b>${u.name}</b><br>${owned(u.id) ? `보유 중 — 카드 +${n} (${fmt(cardsOf(u.id))} → ${fmt(cardsOf(u.id) + n)})` : '새로 합류합니다'}
           <br><i class="tuna-i"></i> <b>${fmt(price)}</b> (보유 ${fmt(save.tuna)})</div></div>`, [
           ['영입', () => {
             if (save.tuna < price) return GAME.toast('참치가 부족합니다');
@@ -1225,7 +1227,7 @@
     const cards = out.map(({ u, isNew, cards: n }) => {
       const c = document.createElement('div');
       c.className = `gcard r-${u.rank}`;
-      c.innerHTML = `<img src="${IMG['u_' + u.id]}" alt="">${rk(u.rank)}${isNew ? '<span class="new">NEW</span>' : `<span class="dup">카드 +${n}</span>`}<div class="nm">${u.name}</div>`;
+      c.innerHTML = `<img src="${IMG['u_' + u.id]}" alt="">${rk(u.rank, u)}${isNew ? '<span class="new">NEW</span>' : `<span class="dup">카드 +${n}</span>`}<div class="nm">${u.name}</div>`;
       grid.appendChild(c);
       return c;
     });
@@ -1262,6 +1264,7 @@
     AUDIO.play('pickSS');
     setArt($('soloArt'), o.u.id);
     $('soloName').textContent = o.u.name;
+    document.querySelector('#gresSolo .rk-i').className = 'rk-i ' + o.u.rank + rkRole(o.u);
     $('soloNew').textContent = o.isNew ? 'NEW!' : `카드 +${o.cards}`;
     const solo = $('gresSolo');
     setTimeout(() => {
@@ -1318,6 +1321,7 @@
     const el = $('cutin');
     setArt($('cutinArt'), def.id);
     $('cutinName').textContent = def.name;
+    document.querySelector('#cutin .rk-i').className = 'rk-i ' + def.rank + rkRole(def);
     el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
     if (window.BARK && BARK[def.id]) AUDIO.voice(BARK[def.id].skill);
     AUDIO.play('pickSS', 0.6);
@@ -1400,9 +1404,9 @@
       b.className = 'slot' + (s ? ` r-${s.def.rank}` : ' empty');
       b.dataset.page = i < 5 ? 0 : 1; // phones show one row of five at a time (the swap button flips)
       if (s) {
-        b.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt="">${rk(s.def.rank)}<div class="cd"></div><div class="c">${s.def.cost}</div><div class="snm">${s.def.name.replace(/ .*/, '')}</div>` +
+        b.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt="">${rk(s.def.rank, s.def)}<div class="cd"></div><div class="c">${s.def.cost}</div><div class="snm">${s.def.name.replace(/ .*/, '')}</div>` +
           (s.def.rank === 'SS' || s.def.rank === 'S' ? '<span class="sk" title="스킬 충전 (차면 자동 발동)"><i></i></span>' : '');
-        b.title = `${s.def.name} (${s.def.rank} ${s.def.role})  [${'QWERTASDFG'[i]}]`;
+        b.title = `${s.def.name} (${s.def.rank} ${s.def.cls || s.def.role})  [${'QWERTASDFG'[i]}]`;
         b.insertAdjacentHTML('beforeend', `<span class="hk">${'QWERTASDFG'[i]}</span>`);
         b.onpointerdown = (e) => { e.preventDefault(); GAME.deploy(i); };
       }
@@ -1874,7 +1878,7 @@
         <div>${st.code} ${st.name} · ${Math.floor(t / 60)}분 ${pad2(Math.floor(t % 60))}초 · 기지 체력 ${Math.round(left * 100)}%</div>
         ${rwRes(r)}
         ${!st.hard && !st.infinite && st.last ? (([id, line]) => `<div class="quote"><img src="${IMG['u_' + id]}" alt=""><span>${line}</span></div>`)(STORY.BATTLE[st.chapter].win) : ''}
-        ${joined ? `<div class="join"><img src="${IMG['u_' + joined.id]}" alt=""><div>${rk(joined.rank)} <b>${joined.name}</b> 합류!</div></div>` : ''}</div>`;
+        ${joined ? `<div class="join"><img src="${IMG['u_' + joined.id]}" alt=""><div>${rk(joined.rank, joined)} <b>${joined.name}</b> 합류!</div></div>` : ''}</div>`;
       const btns = [];
       if (st.daily) { /* one daily stage */ } else if (st.infinite) btns.push(['다음 층', () => { closeModal(); GAME.stop(); pickBuff(st.floor + 1); }]);
       else {
