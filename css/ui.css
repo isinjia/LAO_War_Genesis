@@ -294,6 +294,7 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .st-char.R:not(.portrait) { scale: -1 1; } /* the right-hand speaker is mirrored to face the left one */
 .st-char.dim { filter: brightness(0.38); transform: translateY(8px); z-index: 0; }
 .st-char:not(.dim) { z-index: 1; } /* the speaker stands in front */
+@media (max-aspect-ratio: 3/4) { .st-char.dim { opacity: 0; } } /* portrait phones: too narrow for two full-height portraits, only the speaker shows */
 .st-char.portrait { height: auto; width: min(300px, 40vw); bottom: 34vh; border: 3px solid var(--y); }
 .st-box { position: absolute; z-index: 2; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(1100px, 96vw); height: 170px;
   padding: 34px 36px 22px; background: linear-gradient(180deg, rgba(14, 15, 18, 0.93), rgba(6, 7, 9, 0.97)); border-top: 2px solid var(--y);
