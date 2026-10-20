@@ -28,7 +28,11 @@
     return L;
   }
   // starters, chapter rewards so far and what the opening 10-pull and later making typically bring
-  function expectedDeck(c) {
+  // (the tutorial battle, 1-1, is the three starters alone; the rest of chapter 1 adds the tutorial pull's Valkyrie, the
+  // one card the tutorial puts in the squad)
+  function expectedDeck(c, ix) {
+    if (ix === 0) return D.STARTERS.slice();
+    if (c === 0) return D.STARTERS.concat('valkyrie');
     const ids = ['brownie', 'leprechaun', 'gnome', 'banshee', 'amy'].concat(D.STAGE_REWARD.slice(0, c));
     if (c >= 1) ids.push('daphne');
     if (c >= 3) ids.push('andvari');
@@ -84,7 +88,7 @@
   async function level(log) {
     const rows = [];
     for (let c = 0; c < 8; c++) for (const s of SAMPLE) {
-      const st = D.STAGES[c * 10 + s], ids = expectedDeck(c);
+      const st = D.STAGES[c * 10 + s], ids = expectedDeck(c, st.ix);
       const a = await battle(st, squad(ids, D.relLv('B', 10))), b = await battle(st, squad(ids, D.relLv('B', D.MAX_LV)));
       // levels matter: level 12 wins where 10 lost, keeps clearly more of its base, or clears clearly faster
       const ok = a.win && a.base >= 0.3, felt = (b.win && !a.win) || (b.win && (b.base - a.base >= 0.15 || a.t >= b.t * 1.2));
@@ -257,7 +261,7 @@
   async function calibrate(log, chapters = [0, 1, 2, 3, 4, 5, 6, 7], stages = SAMPLE) {
     const out = [];
     for (const c of chapters) for (const s of stages) {
-      const base = D.STAGES[c * 10 + s], ids = expectedDeck(c);
+      const base = D.STAGES[c * 10 + s], ids = expectedDeck(c, base.ix);
       let lo = 0, hi = 0, k = 1;
       for (let it = 0; it < 6; it++) {
         const st = Object.assign({}, base, { pow: base.pow * k, baseHp: Math.round(base.baseHp * k), finale: false });
