@@ -116,7 +116,7 @@
   // ── title ──────────────────────────────────────────────
   // TEST: every chapter opens and every story scene is listed for review (set false to close it again)
   const STORY_ALL_OPEN = true;
-  const VERSION = 'V1.03'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.04'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
