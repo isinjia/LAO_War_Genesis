@@ -1,6 +1,8 @@
 {
   "name": "lao-war-genesis",
   "compatibility_date": "2026-10-19",
+  "workers_dev": true,
+  "preview_urls": true,
   "assets": {
     "directory": "."
   }
