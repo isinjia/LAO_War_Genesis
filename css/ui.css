@@ -291,6 +291,7 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .st-char.L { left: 4vw; }
 .st-char.R { right: 4vw; }
 .st-char.show { opacity: 1; }
+.st-char.R:not(.portrait) { scale: -1 1; } /* the right-hand speaker is mirrored to face the left one */
 .st-char.dim { filter: brightness(0.38); transform: translateY(8px); z-index: 0; }
 .st-char:not(.dim) { z-index: 1; } /* the speaker stands in front */
 .st-char.portrait { height: auto; width: min(300px, 40vw); bottom: 34vh; border: 3px solid var(--y); }
