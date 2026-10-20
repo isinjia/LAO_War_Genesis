@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.19'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.20'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -838,7 +838,11 @@
     const m = $('cardMenu'); m.classList.remove('show'); m.innerHTML = '';
     document.querySelectorAll('.crc.sel').forEach((e) => e.classList.remove('sel'));
   }
+  // PC (mouse): a card opens its detail popup at once (upgrade / 편성 are in it); touch screens and the tutorial keep
+  // the small menu under the card
+  const mousePC = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
   function cardMenu(u, el) {
+    if (mousePC() && !lobbyTut()) { closeCardMenu(); AUDIO.play('click', 0.45, 1.2); return openDetail(u); }
     const m = $('cardMenu');
     if (m.classList.contains('show') && m.dataset.id === u.id) return closeCardMenu();
     closeCardMenu();

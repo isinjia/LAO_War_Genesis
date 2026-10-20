@@ -17,6 +17,9 @@
   const TOWER_X = 3; // where a defence tower plants itself (in front of our base)
   const MAX_ENEMIES = 16; // regular spawns wait while this many are on the field
   const ALLY_K = 0.21; // world units per rig unit for every ally (brownie ~1.7 tall)
+  // attack effects drawn smaller than the original for units whose effects cover the field (original effects and the sonic wave)
+  const FX_SIZE = { banshee: 0.5, labiata: 0.55 };
+  const fxSize = (f) => FX_SIZE[f.def.id] || 1;
   // parts of an original rig left out: Hela's summoned mechs, Andvari's cargo box (as in the defence game)
   const RIG_HIDE = { hela: /^(Meca_\d+|Summons)$/, andvari: /^(Bone_Cargo_Box|Bone_InBox|bone_shadow_box)$/ };
   // rig parts never seen in the original: full-screen dimmers (Thetis' BG_Black_Quad_FX) and sprite masks, which only
@@ -913,11 +916,11 @@
   const SLAM = { labiata: 0xffd36e };
   function slam(f, x) {
     const c = SLAM[f.def.id];
-    sheet('aura', x, 1.6, c, 6, 0.6); sheet('burst', x, 0.8, 0xffffff, 4.2, 0.25);
-    sheet('smoke', x - 1, 0.5, 0xd8c8a8, 3.4, 0.9, { grow: 0.6 }); sheet('smoke', x + 1, 0.5, 0xd8c8a8, 3.4, 0.9, { grow: 0.6 });
-    ring(x, 0.05, c, 7, 0.55); ring(x, 0.05, 0xffffff, 4, 0.35);
-    debris(x, 0.4, 14, c);
-    shake(0.6, 0.6); hitstop(0.12);
+    sheet('aura', x, 1.0, c, 3.2, 0.5); sheet('burst', x, 0.6, 0xffffff, 2.2, 0.22);
+    sheet('smoke', x - 0.6, 0.4, 0xd8c8a8, 1.9, 0.7, { grow: 0.4 }); sheet('smoke', x + 0.6, 0.4, 0xd8c8a8, 1.9, 0.7, { grow: 0.4 });
+    ring(x, 0.05, c, 3.6, 0.45); ring(x, 0.05, 0xffffff, 2.2, 0.3);
+    debris(x, 0.4, 8, c);
+    shake(0.35, 0.4); hitstop(0.08);
     AUDIO.play('expB', 0.9);
   }
   function hit(f) {
@@ -931,7 +934,7 @@
     // the thrown effect plays once, on the ground at the target, as the original's EventThrowEffect
     if (orig && orig.bullet && orig.statics.length && a.skill && a.i === 0) {
       const t = target(f), tx = t && t !== 'base' ? t.x : f.x + f.dir * 3;
-      spawnStatic(orig.statics[0], tx, t && t !== 'base' ? t.dy || 0 : 0, ALLY_K);
+      spawnStatic(orig.statics[0], tx, t && t !== 'base' ? t.dy || 0 : 0, ALLY_K * fxSize(f));
     }
     const psLive = !!(f.ally && clipHasPs(f, a.skill ? 'skill' : 'atk')); // the original's own effects belong to this clip
     let shots = 0;
@@ -1678,7 +1681,7 @@
 
   // fire the unit's original projectile at (tx, ty) (its hit effect plays on arrival), or play its thrown effect there
   function origShot(f, o, tx, ty, mz) {
-    const k = ALLY_K;
+    const k = ALLY_K * fxSize(f);
     if (o.bullet && FXB.ready(o.bullet) && fxRoom()) {
       const meta = FX_META.meta[o.bullet];
       const inst = FXB.create(o.bullet);
@@ -1781,10 +1784,12 @@
       }
       case 'flame': for (let i = 0; i < 2; i++) sheet('smoke', mx + f.dir * (0.4 + Math.random() * Math.abs(tx - mx)), my + (Math.random() - 0.5) * 0.4, c, 1.1, 0.35, { grow: 0.6 }); break;
       case 'wave': // sonic: a soft beam from the weapon, wave fronts rolling out along it, a burst on the target
-        streak(mx, my, tx, ty, c, 0.5, 0.26);
-        const ang = Math.atan2(ty - my, tx - mx);
-        for (let k = 0; k < 3; k++) { const u = 0.2 + k * 0.3; arc(mx + (tx - mx) * u, my + (ty - my) * u, c, 0.9 + u * 0.8, 0.28, k * 0.05, ang); }
-        ring(tx, ty, c, 1.9, 0.4); sheet('hit', jx, jy, c, 1.4, 0.3); break;
+        { const w = fxSize(f);
+          streak(mx, my, tx, ty, c, 0.24 * w, 0.22);
+          const ang = Math.atan2(ty - my, tx - mx);
+          for (let k = 0; k < 3; k++) { const u = 0.2 + k * 0.3; arc(mx + (tx - mx) * u, my + (ty - my) * u, c, (0.6 + u * 0.5) * w, 0.24, k * 0.05, ang); }
+          ring(tx, ty, c, 1.1 * w, 0.32); sheet('hit', jx, jy, c, 0.9 * w, 0.25); }
+        break;
       case 'frost': // an icy streak from the weapon, then the frost burst
         sheet('flash', mx, my, 0xcff6ff, 0.7, 0.1); streak(mx, my, jx, jy, c, 0.18, 0.2);
         shot(mx, my, jx, jy, 0xcff6ff, 0.2, 0, 0.45, () => { sheet('blue', jx, jy, 0xcff6ff, 1.6, 0.4); ring(tx, 0.1, c, 1.8, 0.45); });

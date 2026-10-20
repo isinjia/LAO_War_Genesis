@@ -83,7 +83,8 @@
         save.cards[id] = need + 7; save.xp = cost + 1234;
         APP.openLobby('squad');
         document.querySelector(`.crc[data-id="${id}"]`).click();
-        document.querySelector('#cardMenu .cm-up').click();
+        const menuUp = document.querySelector('#cardMenu.show .cm-up'); // touch: the menu under the card; PC: the popup opens at once
+        if (menuUp) menuUp.click();
         if (!document.getElementById('modal').classList.contains('show')) throw new Error('upgrade skipped details');
         if (save.lv[id] !== D.START_LV[u.rank] || save.cards[id] !== need + 7 || save.xp !== cost + 1234) throw new Error('menu spent resources');
         if (document.querySelectorAll('.detail .stat-next').length !== 2) throw new Error('stat preview missing');

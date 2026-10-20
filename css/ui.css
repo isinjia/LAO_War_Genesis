@@ -653,14 +653,14 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .slot.skready { box-shadow: inset 0 0 0 2px #ffd200, inset 0 0 14px rgba(255, 210, 0, 0.6) !important; }
 @keyframes skready { to { transform: scale(1.15); box-shadow: 0 0 16px #ffd200; } }
 /* SS skill cut-in */
-.cutin { position: absolute; left: 0; right: 0; top: 24%; height: 34%; pointer-events: none; display: none; overflow: hidden; z-index: 6;
+.cutin { position: absolute; left: auto; right: 0; width: min(62%, 560px); top: 12%; height: 18%; /* a slim band at the upper right: the battlefield stays visible */ pointer-events: none; display: none; overflow: hidden; z-index: 6;
   background: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(30, 20, 0, 0.85) 20%, rgba(30, 20, 0, 0.85) 80%, rgba(0, 0, 0, 0)); border-top: 2px solid var(--y); border-bottom: 2px solid var(--y); }
 .cutin.show { display: block; animation: cutbox 1.1s ease-out forwards; }
 .cutin img, .cutin video { position: absolute; right: 6%; top: -20%; height: 150%; object-fit: contain; filter: drop-shadow(0 0 18px rgba(255, 200, 60, 0.7)); animation: cutart 1.1s ease-out forwards; }
 .cutin img.portrait { height: 90%; top: 5%; aspect-ratio: 1; border: 3px solid var(--y); }
 .cutin-cap { position: absolute; left: 6%; bottom: 14%; display: flex; align-items: center; gap: 8px; animation: cutcap 1.1s ease-out forwards; }
-.cutin-cap b { font-size: clamp(20px, 4vw, 32px); text-shadow: 0 2px 6px #000; }
-.cutin-cap span { font-family: var(--en); font-weight: 900; font-style: italic; color: var(--y); font-size: clamp(22px, 4.5vw, 38px); text-shadow: 0 0 14px rgba(255, 204, 0, 0.7); }
+.cutin-cap b { font-size: clamp(15px, 2.6vw, 22px); text-shadow: 0 2px 6px #000; }
+.cutin-cap span { font-family: var(--en); font-weight: 900; font-style: italic; color: var(--y); font-size: clamp(16px, 3vw, 26px); text-shadow: 0 0 14px rgba(255, 204, 0, 0.7); }
 @keyframes cutbox { 0% { opacity: 0; transform: scaleY(0.2); } 12% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes cutart { from { transform: translateX(40%); } 30% { transform: none; } to { transform: translateX(-6%); } }
 @keyframes cutcap { from { transform: translateX(-60%); opacity: 0; } 30% { transform: none; opacity: 1; } }
@@ -1197,3 +1197,4 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
 .st-skip:hover::before { background: linear-gradient(180deg, rgba(60, 64, 76, 0.98), rgba(22, 24, 32, 0.98)); }
 .st-skip:active { transform: translateY(1px); }
 @media (max-width: 640px) { .st-skip .ts-txt b { font-size: 15px; } .st-skip .ts-txt small { font-size: 10px; } }
+.cutin-cap .rk-i { width: 22px; height: 22px; }
