@@ -471,7 +471,8 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
   .slot .c { font-size: 12px; }
   .money { font-size: 21px; }
   .stage-name span { display: none; }
-  .st-char { height: 66vh; max-width: 104vw; } /* wide art (Leprechaun's rifle) must not shrink: the cap would sink her head */
+  .st-char { height: 66vh; max-width: none; } /* wide art (Leprechaun's rifle) keeps its size: a width cap would sink her head */
+  .st-char:not(.portrait) { -webkit-mask-image: linear-gradient(to right, #000 calc(56vw - 48px), transparent 56vw); mask-image: linear-gradient(to right, #000 calc(56vw - 48px), transparent 56vw); } /* each side keeps its half: the art's far end (a rifle) is cut, never laid over the other speaker */
   .st-char.L { left: -8vw; } .st-char.R { right: -8vw; }
   .st-box { padding: 30px 18px 18px; height: 176px; }
 }
