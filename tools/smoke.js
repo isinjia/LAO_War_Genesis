@@ -174,7 +174,7 @@
     await step('story scene plays to the end', async () => {
       APP.openLobby('campaign');
       APP.playStory('c1_intro');
-      for (let i = 0; i < 40; i++) document.getElementById('stBox').click();
+      for (let i = 0; i < 400 && document.getElementById('story').classList.contains('show'); i++) document.getElementById('stBox').click();
       if (document.getElementById('story').classList.contains('show')) throw new Error('story stuck');
       return 'ok';
     });

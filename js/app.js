@@ -114,9 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  // TEST: every chapter opens and every story scene is listed for review (set false to close it again)
-  const STORY_ALL_OPEN = true;
-  const VERSION = 'V1.10'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.11'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -330,8 +328,7 @@
       const face = D.CHAPTER_REWARD[c];
       const b = document.createElement('button');
       b.className = 'chap' + (locked ? ' locked' : '') + (n >= D.PER_CH ? ' done' : '') + (isHard() ? ' hard' : '');
-      const peek = STORY_ALL_OPEN && !isHard(); // TEST: a locked normal chapter still opens (stories only)
-      b.disabled = locked && !peek;
+      b.disabled = locked;
       const unlockText = isHard() && save.cleared < ch.first + D.PER_CH ? '해당 노말 챕터 클리어 후 개방' : '이전 챕터 클리어 후 개방';
       b.dataset.ch = c;
       b.innerHTML = `<div class="img" style="background-image:url(${IMG[ch.bg]})"></div>
@@ -340,7 +337,7 @@
         <div class="txt"><div class="no">${isHard() ? 'HARD ' : ''}CHAPTER ${pad2(c + 1)}</div><div class="nm">${ch.title}</div><div class="sb">${ch.sub}</div>
         <div class="prog"><i style="width:${(n / D.PER_CH) * 100}%"></i></div></div>
         ${locked ? `<div class="lock"><i></i><span>${unlockText}</span></div>` : ''}`;
-      if (!locked || peek) b.onclick = () => { AUDIO.play('click'); chapterOpen = c; selStage = -1; sheetOpen = false; refresh(); };
+      if (!locked) b.onclick = () => { AUDIO.play('click'); chapterOpen = c; selStage = -1; sheetOpen = false; refresh(); };
       box.appendChild(b);
     });
   }
@@ -440,7 +437,7 @@
       const key = `c${c + 1}_${k}`;
       const clearedChapter = save.cleared >= ch.first + D.PER_CH;
       const available = k === 'outro' ? clearedChapter : k === 'after' ? save.seen[`c${c + 1}_outro`] : save.seen[key];
-      if (!STORY.S[key] || !(available || STORY_ALL_OPEN)) return;
+      if (!STORY.S[key] || !available) return;
       const b = document.createElement('button');
       b.textContent = '▶ ' + label + (!save.seen[key] ? ' NEW' : '');
       b.onclick = () => playStory(key, () => renderStages());
@@ -1695,46 +1692,6 @@
   // HUD buttons never keep focus (Space / Enter belong to the battle keys)
   document.querySelectorAll('#hud button').forEach((b) => b.addEventListener('focus', () => b.blur()));
   addEventListener('keydown', (e) => { if (!story && (e.key === 'p' || e.key === 'P' || e.key === 'Escape') && GAME.state && !GAME.state.over) pause(!GAME.state.paused); });
-  // cheat (PC): type 치트활성화온 on the title screen — read as physical keys of the 2-set Korean layout
-  // (c l x m g h k f t j d g h k d h s), so it works in Korean or English input mode. Afterwards (this session only):
-  // Y clears the battle in progress, I adds 1000 power in battle, T outside battle grants every unit.
-  const CHEAT = 'clxmghkftjdghkdhs';
-  // everything at once (typed "all" on the title with the cheat on): every normal and hard stage cleared with 3
-  // stars, every mode open, every unit owned, +10000 of every currency, every story scene seen, tutorial done
-  function cheatAll() {
-    save.cleared = D.STAGES.length; save.hardCleared = D.HARD.length;
-    D.STAGES.forEach((st, i) => { save.stars[i] = 3; });
-    D.HARD.forEach((st, i) => { save.hstars[i] = 3; });
-    Object.keys(STORY.S).forEach((k) => { save.seen[k] = 1; });
-    D.UNITS.forEach((u) => grant(u.id, true));
-    save.parts += 10000; save.tuna += 10000; save.xp += 10000;
-    D.RANK_ORDER.forEach((r) => { save.wild[r] = (save.wild[r] || 0) + 10000; });
-    save.tutPulled = 1; save.tutBattle = 1;
-    finishTutorial();
-    persist(); refresh(); AUDIO.play('pickSS');
-    GAME.toast('치트: 전 스테이지 클리어 · 모든 콘텐츠 해방 · 대원 전원 · 재화 +10000 · 스토리 전체 개방', false, 3600);
-  }
-  let cheatKeys = '', cheatOn = false;
-  addEventListener('keydown', (e) => {
-    const k = /^Key([A-Z])$/.exec(e.code);
-    if (!k || e.ctrlKey || e.altKey || e.metaKey) return;
-    if ($('title').classList.contains('show')) {
-      cheatKeys = (cheatKeys + k[1].toLowerCase()).slice(-CHEAT.length);
-      if (cheatKeys === CHEAT && !cheatOn) { cheatOn = true; cheatKeys = ''; AUDIO.play('levelup'); GAME.toast('치트 활성화 · Y 강제 클리어 · I 전력 +1000 · T 전원 획득 · 타이틀에서 all 전부 해방', false, 3200); }
-      else if (cheatOn && cheatKeys.endsWith('all')) { cheatKeys = ''; cheatAll(); }
-      return;
-    }
-    if (!cheatOn || story) return;
-    const inBattle = GAME.state && !GAME.state.over;
-    if (k[1] === 'Y' && inBattle) { GAME.state.ebase.hp = 0; GAME.toast('치트: 스테이지 강제 클리어'); }
-    if (k[1] === 'I' && inBattle) { GAME.state.money += 1000; GAME.toast('치트: 전력 +1000'); }
-    if (k[1] === 'T' && !inBattle) { // every unit joins (the squad is left as it is)
-      let n = 0;
-      D.UNITS.forEach((u) => { if (grant(u.id, true)) n++; });
-      persist(); refresh(); AUDIO.play('pickSS');
-      GAME.toast(n ? `치트: 대원 ${n}명 획득 (전원 보유)` : '치트: 이미 전원 보유 중');
-    }
-  });
   addEventListener('visibilitychange', () => { if (document.hidden && GAME.state && !GAME.state.over && !GAME.state.paused) pause(true); });
 
   function pause(on) {
@@ -1857,8 +1814,10 @@
 
   GAME.init();
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
-  // test hooks: ?unlock=1 opens everything (never saved), ?stage=3-5 / H3-5 / ∞4 jumps into a battle
-  const q = new URLSearchParams(location.search);
+  // test hooks, only on a local dev server (never on the published site): ?unlock=1 opens everything (never saved),
+  // ?stage=3-5 / H3-5 / ∞4 jumps into a battle, ?scene= / ?smoke= / ?balance= / ?storyqa= load review tools
+  const DEV = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.protocol === 'file:';
+  const q = new URLSearchParams(DEV ? location.search : '');
   if (q.get('unlock')) {
     noSave = true;
     save.cleared = D.STAGES.length; save.hardCleared = D.STAGES.length; save.xp = Math.max(save.xp, 999999);
