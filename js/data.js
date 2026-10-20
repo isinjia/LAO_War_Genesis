@@ -69,7 +69,7 @@
     ['ramiel', '라미엘', 'SS', 'splash', 'holy', 0xfff1b8, 'energy', '천벌의 빛을 터뜨리는 공격기', { range: 1.0, atk: 1.2, skill: 3 }],
   ];
   // balance pass (tools/balance.js): hp and attack x this, so units of a rank return about the same per money spent
-  const TUNE = {banshee: 0.84, nymph: 1.46, daphne: 0.83, impet: 1.11, leprechaun: 1.14, valkyrie: 0.87, undine: 0.87, hraesvelgr: 1.98, khan: 0.63, tiamat: 0.3, ullr: 0.41, zero: 1.39, brunhild: 0.66, titania: 0.82, ramiel: 0.93, leona: 1.07, mercury: 1.24, empress: 1.11, cyclopsprincess: 1.15, fafnir: 1.68, blacklilith: 2.3, saraqael: 1.83, azazel: 2.07, labiata: 2.09, sleipnir: 2.71, sylphid: 1.69, andvari: 0.42, eternity: 4.76, harpy: 1.18, constantia: 0.87, lrl: 1.18};
+  const TUNE = {banshee: 0.84, nymph: 1.46, daphne: 1.03, impet: 1.11, leprechaun: 1.14, valkyrie: 0.87, undine: 0.87, hraesvelgr: 1.98, khan: 0.53, tiamat: 0.3, ullr: 0.41, zero: 1.39, brunhild: 0.66, titania: 0.82, ramiel: 0.79, leona: 1.07, mercury: 1.24, empress: 1.11, cyclopsprincess: 1.15, fafnir: 1.68, blacklilith: 2.3, saraqael: 1.83, azazel: 2.07, labiata: 2.56, sleipnir: 2.08, sylphid: 1.69, andvari: 0.42, eternity: 12.03, harpy: 0.95, constantia: 0.87, lrl: 1.18, blindprincess: 2.76};
   // the starting squad, and the unit each stage hands out on its first clear (stage index -> id)
   const STARTERS = ['brownie', 'leprechaun', 'gnome'];
   const STAGE_REWARD = ['impet', 'nymph', 'valkyrie', 'raven', 'undine', 'phoenix', 'thetis', 'hraesvelgr'];
