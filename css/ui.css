@@ -309,6 +309,16 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .st-text.sys { color: #c9ccd0; font-style: normal; text-align: center; }
 .st-text.radio { color: #8fe3ff; }
 .st-arrow { position: absolute; right: 26px; bottom: 16px; width: 16px; height: 13px; background: var(--s-dlg_arrow) center / contain no-repeat; animation: bob 0.8s infinite alternate; }
+/* short screens (a phone held sideways): a slimmer dialogue frame so the scene stays visible */
+@media (max-height: 520px) {
+  .story .st-box { height: 104px; padding: 22px 26px 10px; bottom: max(8px, env(safe-area-inset-bottom)); }
+  .story .st-box::before { width: 110px; height: 48px; }
+  .story .st-name { height: 30px; font-size: 14px; min-width: 120px; padding: 0 20px; }
+  .story .st-text { font-size: 15px; line-height: 1.55; }
+  .story .st-arrow { right: 18px; bottom: 10px; }
+  .story .st-char { height: 94vh; height: 94dvh; max-width: 48vw; }
+  .story .st-char.L { left: 3vw; } .story .st-char.R { right: 3vw; }
+}
 .st-history { position: absolute; z-index: 3; top: max(14px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left)); width: 92px; height: 40px; border: 1px solid #9eaaad; background: #111a20db; color: #e5ecef; font: 700 13px var(--ko); border-radius: 3px; }
 .st-history:focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
 .story-log { height: min(50dvh, 440px); overflow-y: auto; overscroll-behavior: contain; text-align: left; padding: 0 10px; }
@@ -472,7 +482,6 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
   .money { font-size: 21px; }
   .stage-name span { display: none; }
   .st-char { height: 66vh; max-width: none; } /* wide art (Leprechaun's rifle) keeps its size: a width cap would sink her head */
-  .st-char:not(.portrait) { -webkit-mask-image: linear-gradient(to right, #000 calc(56vw - 48px), transparent 56vw); mask-image: linear-gradient(to right, #000 calc(56vw - 48px), transparent 56vw); } /* each side keeps its half: the art's far end (a rifle) is cut, never laid over the other speaker */
   .st-char.L { left: -8vw; } .st-char.R { right: -8vw; }
   .st-box { padding: 30px 18px 18px; height: 176px; }
 }

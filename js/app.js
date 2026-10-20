@@ -116,7 +116,7 @@
   // ── title ──────────────────────────────────────────────
   // TEST: every chapter opens and every story scene is listed for review (set false to close it again)
   const STORY_ALL_OPEN = true;
-  const VERSION = 'V0.93'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V0.94'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -550,6 +550,7 @@
     for (const line of sc.lines) {
       const src = line[3] && STORY.ART && STORY.ART[line[3].art];
       if (src) { const preload = new Image(); preload.src = src; }
+      if (D.UNIT[line[0]] && hasFull(line[0])) { const p = new Image(); p.src = art(line[0]); if (p.decode) p.decode().catch(() => {}); } // decoded before it is shown: a swap never shows the last speaker
     }
     ['stL', 'stR'].forEach((id) => { $(id).className = 'st-char ' + id.slice(2); $(id).removeAttribute('src'); });
     $('story').classList.remove('fx-shake', 'fx-flash', 'st-ominous'); // reset the previous scene's cues and ending mood
@@ -645,6 +646,7 @@
       const el = $('st' + side);
       if (st.slots[side] !== who) {
         st.slots[side] = who;
+        el.removeAttribute('src'); // drop the previous speaker at once: the new picture never shows the old one for a frame
         el.src = art(who);
         el.dataset.face = '';
         el.classList.toggle('portrait', !hasFull(who));
