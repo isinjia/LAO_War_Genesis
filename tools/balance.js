@@ -181,7 +181,7 @@
   const ROLE_NAME = { siege: '건물만 노림', ship: '전투함', tower: '방어 타워', single: '단일 공격', area: '범위 공격', multi: '다수 배치', tank: 'HP 탱킹', swarm: '마릿수 탱킹', evade: '회피 탱킹' };
 
   async function unitsAndRoles(log, runs = 2, reuse, only) {
-    const sc = scenarios(), L = 6, ids = D.UNITS.map((u) => u.id);
+    const sc = scenarios(), L = 9, ids = D.UNITS.map((u) => u.id);
     const eff = reuse || {}; // scenario -> id -> value per money, rank-adjusted
     window.BAL.eff = eff;
     for (const [name, s] of Object.entries(sc)) {
@@ -197,8 +197,9 @@
     // between; higher ranks are meant to be stronger). Siege units are valued by what they do to the fortress.
     const valOf = (id) => (has(id, 'siege') ? eff.siege[id] : eff.general[id]);
     const unitRows = ids.map((id) => {
-      const peers = ids.filter((x) => U[x].rank === U[id].rank).map(valOf);
-      const val = valOf(id), m = median(peers), dev = m && val ? Math.abs(Math.log2(val / m)) : 9;
+      // towers hold the base, which the ordinary battle barely tests: valued in their own situation against their rank
+      const peers = ids.filter((x) => U[x].rank === U[id].rank).map(U[id].tower ? (x) => eff.tower[x] : valOf);
+      const val = U[id].tower ? eff.tower[id] : valOf(id), m = median(peers), dev = m && val ? Math.abs(Math.log2(val / m)) : 9;
       const score = Math.round(clamp(100 - Math.max(0, dev - Math.log2(1.35)) / (Math.log2(2.6) - Math.log2(1.35)) * 100, 0, 100));
       return { id, rank: U[id].rank, val: +val.toFixed(2), med: +m.toFixed(2), x: +(val / m).toFixed(2), score };
     });
@@ -223,17 +224,17 @@
     return { units, roles, unitRows, roleRows, eff };
   }
 
-  // difficulty calibration: for each sampled stage, the factor on enemy strength and fortress HP at which a squad two
-  // levels under the economy's level wins with 20-60% of its base left (the expected squad wins comfortably, levels matter)
+  // difficulty calibration: for each sampled stage, the factor on enemy strength and fortress HP at which the squad of
+  // that point in the campaign, every card at level 10, wins with 35-75% of its base left (levels 11-12 make it easier)
   async function calibrate(log, chapters = [0, 1, 2, 3, 4, 5, 6, 7], stages = SAMPLE) {
     const out = [];
     for (const c of chapters) for (const s of stages) {
-      const base = D.STAGES[c * 10 + s], E = expectedLevel(base.ix), ids = expectedDeck(c), L = Math.max(1, E - 2);
+      const base = D.STAGES[c * 10 + s], ids = expectedDeck(c), L = 9; // every card at level 10 (battle level 9)
       let lo = 0.25, hi = 10, k = 1;
       for (let it = 0; it < 7; it++) {
         const st = Object.assign({}, base, { pow: base.pow * k, baseHp: Math.round(base.baseHp * k), finale: false });
         const r = await battle(st, squad(ids, L));
-        const tooEasy = r.win && r.base > 0.6, tooHard = !r.win || r.base < 0.2;
+        const tooEasy = r.win && r.base > 0.75, tooHard = !r.win || r.base < 0.35;
         if (!tooEasy && !tooHard) break;
         if (tooEasy) lo = k; else hi = k;
         k = Math.sqrt(lo * hi);

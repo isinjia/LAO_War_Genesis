@@ -68,8 +68,9 @@
     ['fafnir', '파프니르', 'SS', 'chain', 'lightning', 0x5aa8ff, 'elec', '주피터로 생체 전기를 증폭하는 공작원', { hp: 1.5, range: 1.0, skill: 3 }],
     ['ramiel', '라미엘', 'SS', 'splash', 'holy', 0xfff1b8, 'energy', '천벌의 빛을 터뜨리는 공격기', { range: 1.0, atk: 1.2, skill: 3 }],
   ];
-  // balance pass (tools/balance.js): hp and attack x this, so units of a rank return about the same per money spent
-  const TUNE = {banshee: 0.84, nymph: 1.46, daphne: 1.03, impet: 1.11, leprechaun: 1.14, valkyrie: 0.87, undine: 0.87, hraesvelgr: 1.98, khan: 0.53, tiamat: 0.3, ullr: 0.41, zero: 1.39, brunhild: 0.66, titania: 0.82, ramiel: 0.79, leona: 1.07, mercury: 1.24, empress: 1.11, cyclopsprincess: 1.15, fafnir: 1.68, blacklilith: 2.3, saraqael: 1.83, azazel: 2.07, labiata: 2.56, sleipnir: 2.08, sylphid: 1.69, andvari: 0.42, eternity: 12.03, harpy: 0.95, constantia: 0.87, lrl: 1.18, blindprincess: 2.76};
+  // balance pass at card level 10 (tools/balance.js): hp and attack x this, so units of a rank return about the same per
+  // money spent (towers by their raw stats: the ordinary battle barely reaches them)
+  const TUNE = {brownie: 0.89, leprechaun: 0.97, gnome: 1, impet: 1.01, daphne: 1.26, banshee: 0.72, sylphid: 0.79, raven: 1.12, nymph: 1.26, amy: 1.28, andvari: 0.84, phoenix: 4.67, thetis: 3.87, hraesvelgr: 6.39, undine: 1.09, valkyrie: 1.25, zero: 0.97, hela: 1.04, azazel: 1.39, saraqael: 1.53, leona: 0.81, ullr: 0.21, harpy: 0.48, eternity: 0.74, lemonadealpha: 0.59, sleipnir: 1.66, blacklilith: 1.83, cyclopsprincess: 1.94, blindprincess: 1.84, brunhild: 0.35, tiamat: 0.12, khan: 0.17, labiata: 1.55, lrl: 0.98, constantia: 0.62, titania: 0.33, mercury: 0.84, empress: 0.63, fafnir: 1.58, ramiel: 0.37};
   // the starting squad, and the unit each stage hands out on its first clear (stage index -> id)
   const STARTERS = ['brownie', 'leprechaun', 'gnome'];
   const STAGE_REWARD = ['impet', 'nymph', 'valkyrie', 'raven', 'undine', 'phoenix', 'thetis', 'hraesvelgr'];
@@ -192,19 +193,13 @@
   const SHOP_PRICE = { B: 150, A: 400, S: 1000, SS: 1000 }; // tuna, recruit shop (a link for an owned unit)
   const SHOP_NEW_SS = 1000; // a new SS costs the same as an owned one's card
 
-  // cards (as in Clash Royale): a unit's card level runs to 15 and starts by rank (B 1, A 3, S 6, SS 9).
-  // Each upgrade spends copies of that card (from duplicate pulls, the shop, wild cards) and XP (the 'gold').
-  // Battle power counts the levels gained above the starting level, so a fresh card of any rank fights as before.
-  const START_LV = { B: 1, A: 3, S: 6, SS: 9 };
-  // copies needed from level L to L+1, from the rank's starting level up (Clash Royale's quantities)
-  const CARDS = {
-    B: [2, 4, 10, 20, 50, 100, 200, 400, 800, 1000, 1500, 3000, 5000, 5000],
-    A: [2, 4, 10, 20, 50, 100, 200, 400, 500, 750, 1250, 2500],
-    S: [2, 4, 10, 20, 40, 50, 100, 200, 400],
-    SS: [2, 4, 6, 10, 20, 40],
-  };
+  // cards: every card starts at level 10 and goes to 12 (MAX_LV); unit stats are balanced at level 10 by deploy cost
+  // and rank (TUNE). Each upgrade spends copies of that card (duplicate pulls, the shop, wild cards) and XP.
+  const START_LV = { B: 10, A: 10, S: 10, SS: 10 };
+  // copies needed from level 10 to 11 and 11 to 12
+  const CARDS = { B: [1000, 1500], A: [400, 500], S: [20, 40], SS: [4, 6] };
   const cardsNeed = (rank, lv) => CARDS[rank][lv - START_LV[rank]] || 0; // 0 at the top
-  const relLv = (rank, lv) => lv - START_LV[rank] + 1; // the battle level (1 = fresh card)
+  const relLv = (rank, lv) => lv - 1; // the battle level (lvMul): card level 10 fights at 9, each upgrade +0.2
   // copies in one pull of a card you already have (chest-like bundles for the common ranks)
   const PULL_CARDS = { B: [20, 40], A: [6, 12], S: [1, 3], SS: [1, 1] };
   // wild cards: stand in for missing copies of any card of their rank
@@ -318,9 +313,9 @@
     Rampart_N: 26, Juggernaut_N: 26, BigChick_N: 24, Gigantes_N: 40, Destroyer_N: 45, Scout_N: 7, Speaker_N: 20, Stalker_EW: 22 };
   const PER_CH = 10;
   const MID = 4; // index of the elite stage in a chapter
-  // difficulty pass (tools/balance.js calibrate): worm strength and fortress HP x this per stage, so the squad the
-  // economy gives you clears each stage comfortably and one two levels under it only just
-  const DIFF = [1.5, 3.94, 3.94, 3.92, 3.9, 3.7, 3.5, 3.47, 3.45, 3.42, 9.82, 9.57, 9.31, 7.44, 5.78, 7.15, 8.66, 7.65, 6.63, 5.62, 8.48, 7.08, 5.62, 5.54, 5.43, 5.74, 6.04, 5.44, 4.86, 4.32, 4.46, 3.2, 2.13, 2.65, 3.16, 2.62, 2.13, 2.22, 1.84, 1.68, 2.12, 2.02, 2.05, 1.95, 1.84, 1.58, 1.31, 1.37, 1.67, 1.77, 2.12, 1.53, 1, 1.22, 1.33, 1.41, 1.41, 1.44, 1.47, 1.49, 1.5, 1.51, 1.51, 1.28, 1.06, 0.97, 0.88, 0.95, 0.92, 0.88, 2.02, 1.68, 1.33, 1.32, 1.31, 1.16, 1.15, 1.05, 0.9, 0.8];
+  // difficulty pass (tools/balance.js calibrate): worm strength and fortress HP x this per stage, so the squad of that
+  // point in the campaign with every card at level 10 wins keeping 35-75% of its base (chapters 1-2 x0.7 for newcomers)
+  const DIFF = [26.8, 24.33, 21.09, 15.97, 12.1, 12.05, 11.98, 11.58, 11.23, 10.85, 14.82, 14.28, 13.72, 11.1, 8.73, 9.35, 9.82, 9.46, 8.95, 8.28, 19.07, 16.95, 14.34, 12.53, 10.9, 10.1, 9.31, 9.01, 8.65, 8.26, 9.92, 7.09, 4.7, 5.95, 7.22, 5.78, 4.54, 4.51, 3.57, 3.1, 2.63, 2.69, 2.94, 2.85, 2.74, 2.22, 1.74, 1.8, 2.17, 2.28, 2.93, 2.08, 1.33, 1.75, 2.05, 2.08, 1.98, 1.99, 1.99, 1.98, 2.04, 2.11, 2.17, 1.85, 1.55, 1.47, 1.38, 1.37, 1.23, 1.09, 2.7, 2.37, 1.99, 1.8, 1.62, 1.41, 1.35, 1.36, 1.27, 1.23];
 
   // spawns: [enemy, first spawn (s), every (s), how many (0 = endless), strength x]
   // pow: every enemy's HP / attack in this stage; rush: spawns that start once the base falls below `at` of its HP;
@@ -357,7 +352,7 @@
   // worker (income) levels: money per second and wallet size; cost of the next level
   const WORKER = { rate: [24, 32, 40, 48, 56, 64, 72, 80], cap: [600, 900, 1200, 1500, 1800, 2200, 2600, 3000], cost: [80, 160, 240, 320, 400, 480, 560] };
   const CANNON = { charge: 22, reach: 15, dmg: 300 }; // damage x the stage's pow
-  const MAX_LV = 15; // card level cap
+  const MAX_LV = 12; // card level cap
   const lvMul = (lv) => 1 + 0.2 * (lv - 1); // hp / atk at battle level lv (levels above the card's start, 1-based)
   const lvCost = (lv) => Math.round(150 * Math.pow(lv, 1.9) / 50) * 50; // xp from battle level lv to lv + 1
   const xpNeed = (rank, lv) => lvCost(relLv(rank, lv)); // XP for a card's next level

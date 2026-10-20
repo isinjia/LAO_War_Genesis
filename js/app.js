@@ -60,6 +60,8 @@
   }
   save.cards = save.cards || {};
   save.wild = Object.assign({ B: 0, A: 0, S: 0, SS: 0 }, save.wild || {});
+  // every card is level 10 to 12: lower cards rise to 10, higher ones stay (down to the cap)
+  for (const id in save.owned) if (D.UNIT[id]) save.lv[id] = Math.min(D.MAX_LV, Math.max(D.START_LV[D.UNIT[id].rank], save.lv[id] || 0));
   const lvOf = (id) => save.lv[id] || D.START_LV[D.UNIT[id].rank];
   const relOf = (id) => D.relLv(D.UNIT[id].rank, lvOf(id)); // the battle level
   const cardsOf = (id) => save.cards[id] || 0;
@@ -116,7 +118,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.24'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.25'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
