@@ -129,7 +129,7 @@
     const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({
       map: c.tex, vertexColors: true, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide,
       blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
-      color: new THREE.Color(2, 2, 2), opacity: 2, // vertex colours/alpha are stored at half scale
+      color: new THREE.Color(2, 2, 2), opacity: 2 * (window.fxK ? fxK() : 1), // vertex colours/alpha are stored at half scale; x 설정 > 이펙트
     }));
     m.scale.set(c.d.scale, c.d.scale, 1); // positions are int16 normalised by the effect's extent
     m.frustumCulled = false;

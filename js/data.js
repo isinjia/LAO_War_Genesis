@@ -69,7 +69,7 @@
     ['ramiel', '라미엘', 'SS', 'splash', 'holy', 0xfff1b8, 'energy', '천벌의 빛을 터뜨리는 공격기', { range: 1.0, atk: 1.2, skill: 3 }],
   ];
   // balance pass (tools/balance.js): hp and attack x this, so units of a rank return about the same per money spent
-  const TUNE = {banshee: 0.84, nymph: 1.46, daphne: 0.63, impet: 1.11, leprechaun: 1.14, valkyrie: 0.69, undine: 0.87, hraesvelgr: 1.6, khan: 0.63, tiamat: 0.3, ullr: 0.41, zero: 0.97, brunhild: 0.66, titania: 0.82, ramiel: 0.93, leona: 1.07, mercury: 1.24, empress: 1.11, cyclopsprincess: 1.15, fafnir: 1.39, blacklilith: 1.37, saraqael: 1.83, azazel: 2.07, labiata: 1.61, sleipnir: 2.01, sylphid: 1.39, andvari: 0.42, eternity: 4.0, harpy: 1.0, constantia: 0.87, lrl: 1.18};
+  const TUNE = {banshee: 0.84, nymph: 1.46, daphne: 0.83, impet: 1.11, leprechaun: 1.14, valkyrie: 0.87, undine: 0.87, hraesvelgr: 1.98, khan: 0.63, tiamat: 0.3, ullr: 0.41, zero: 1.39, brunhild: 0.66, titania: 0.82, ramiel: 0.93, leona: 1.07, mercury: 1.24, empress: 1.11, cyclopsprincess: 1.15, fafnir: 1.68, blacklilith: 2.3, saraqael: 1.83, azazel: 2.07, labiata: 2.09, sleipnir: 2.71, sylphid: 1.69, andvari: 0.42, eternity: 4.76, harpy: 1.18, constantia: 0.87, lrl: 1.18};
   // the starting squad, and the unit each stage hands out on its first clear (stage index -> id)
   const STARTERS = ['brownie', 'leprechaun', 'gnome'];
   const STAGE_REWARD = ['impet', 'nymph', 'valkyrie', 'raven', 'undine', 'phoenix', 'thetis', 'hraesvelgr'];
@@ -95,6 +95,18 @@
   // (the dodgers Zero and Mercury fight on the ground: their evasion is how they hold the line)
   const FLYERS = new Set(['impet', 'daphne', 'banshee', 'sylphid', 'raven', 'phoenix', 'thetis', 'hraesvelgr', 'undine',
     'azazel', 'saraqael', 'harpy', 'sleipnir', 'brunhild', 'tiamat', 'titania']);
+  // reach by weapon and trait, not by template: blades and flamethrowers in hand's reach, walls just ahead of the line,
+  // close-quarters guns (assault rifle, Valkyrie who closes in quietly) short, machine guns long, shells mid, missiles and
+  // battleship guns far, snipers and lasers farthest, towers across the field (2.4 and above can hit flyers: ANTI_AIR)
+  const RANGE = {
+    zero: 1.4, blacklilith: 1.5, labiata: 1.8, valkyrie: 1.8, blindprincess: 1.9,
+    gnome: 1.8, azazel: 1.9, saraqael: 1.9, sleipnir: 1.9, undine: 2.0, sylphid: 2.0,
+    brownie: 2.4, nymph: 2.8, leprechaun: 3.2,
+    daphne: 3.0, impet: 3.4, banshee: 3.6, thetis: 4.0, brunhild: 4.0, cyclopsprincess: 4.0, phoenix: 4.2, leona: 4.2, mercury: 4.2,
+    raven: 4.6, hela: 4.6, titania: 4.8, lemonadealpha: 5.0, lrl: 5.0, fafnir: 5.0, ramiel: 5.0, harpy: 5.4,
+    amy: 6.5, hraesvelgr: 6.6, constantia: 6.7, empress: 6.8, khan: 7.5, ullr: 8.0, tiamat: 8.0,
+    eternity: 11.0, andvari: 11.2,
+  };
   const UNITS = LIST.map(([id, name, rank, type, fx, color, sfx, desc, tw = {}]) => {
     if (FLYERS.has(id)) desc = '비행 · ' + desc;
     const t = TYPES[type], R = RANKS[rank];
@@ -105,7 +117,7 @@
       hp: Math.round(t.hp * R.k * (tw.hp || 1) * (TUNE[id] || 1)),
       atk: Math.round(t.atk * R.k * (tw.atk || 1) * (TUNE[id] || 1)),
       rate: Math.round(t.rate * (tw.rate || 1) * 100) / 100,
-      range: Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10,
+      range: RANGE[id] || Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10,
       spd: Math.round(t.spd * (tw.spd || 1) * 100) / 100,
       kb: t.kb, area: t.area || 0,
       fly: FLYERS.has(id) ? 1 : 0,
@@ -162,25 +174,25 @@
 
   // money: reward when it falls
   const ENEMIES = {
-    NightChick_N: { name: '나이트 칙', hp: 110, atk: 9, rate: 1.2, range: 1.5, spd: 1.5, kb: 2, h: 1.0, money: 18, color: 0xff8855 },
-    Legion_N: { name: '레기온', hp: 280, atk: 20, rate: 1.4, range: 2.0, spd: 1.0, kb: 2, h: 1.45, money: 40, color: 0xff5555 },
+    NightChick_N: { name: '나이트 칙', hp: 110, atk: 9, rate: 1.2, range: 1.2, spd: 1.5, kb: 2, h: 1.0, money: 18, color: 0xff8855 },
+    Legion_N: { name: '레기온', hp: 280, atk: 20, rate: 1.4, range: 1.8, spd: 1.0, kb: 2, h: 1.45, money: 40, color: 0xff5555 },
     Drone_N: { name: '드론', hp: 150, atk: 14, rate: 1.0, range: 3.0, spd: 2.0, kb: 1, h: 1.1, fly: 1, dive: 1, traits: ['fly', 'dive'], money: 30, color: 0xffaa33 },
-    Fallen_N: { name: '폴른', hp: 520, atk: 34, rate: 1.3, range: 2.0, spd: 1.3, kb: 2, h: 1.5, money: 70, color: 0xff4466 },
+    Fallen_N: { name: '폴른', hp: 520, atk: 34, rate: 1.3, range: 1.5, spd: 1.3, kb: 2, h: 1.5, money: 70, color: 0xff4466 },
     Centurion_N: { name: '센츄리온', shield: 0.35, traits: ['shield'], hp: 820, atk: 52, rate: 1.6, range: 2.3, spd: 0.9, kb: 2, h: 1.6, money: 110, color: 0xff6644 },
     Intruder_N: { name: '인트루더', fly: 1, traits: ['fly'], hp: 520, atk: 70, rate: 2.0, range: 3.8, spd: 1.1, kb: 2, area: 1, h: 1.5, money: 120, color: 0xffcc44 },
-    Phalangites_N: { name: '팔랑기테스', artillery: 1, traits: ['artillery'], hp: 1100, atk: 64, rate: 2.2, range: 4.2, spd: 0.9, kb: 2, area: 1, h: 1.6, money: 160, color: 0xff7744 },
-    Rampart_N: { name: '램파트', armor: 1, traits: ['armor'], hp: 3600, atk: 40, rate: 1.8, range: 1.9, spd: 0.6, kb: 1, h: 1.8, money: 220, color: 0xff9966 },
-    Juggernaut_N: { name: '저거너트', armor: 1, traits: ['armor'], hp: 3000, atk: 170, rate: 2.4, range: 2.6, spd: 0.8, kb: 2, area: 1, h: 2.0, money: 280, color: 0xff3322 },
-    BigChick_N: { name: '빅 칙', hp: 2400, atk: 90, rate: 2.0, range: 2.2, spd: 0.9, kb: 2, area: 1, h: 2.1, money: 260, color: 0xff8844 },
-    Gigantes_N: { name: '기간테스', armor: 1, traits: ['armor'], hp: 6500, atk: 260, rate: 2.8, range: 2.8, spd: 0.7, kb: 2, area: 1, h: 2.5, money: 450, color: 0xff3333 },
-    Destroyer_N: { name: '디스트로이어', artillery: 1, traits: ['artillery', 'armor'], armor: 1, hp: 2600, atk: 240, rate: 3.0, range: 4.8, spd: 0.7, kb: 3, area: 1, h: 2.0, money: 500, color: 0xff2266 },
+    Phalangites_N: { name: '팔랑기테스', artillery: 1, traits: ['artillery'], hp: 1100, atk: 64, rate: 2.2, range: 4.8, spd: 0.9, kb: 2, area: 1, h: 1.6, money: 160, color: 0xff7744 },
+    Rampart_N: { name: '램파트', armor: 1, traits: ['armor'], hp: 3600, atk: 40, rate: 1.8, range: 1.6, spd: 0.6, kb: 1, h: 1.8, money: 220, color: 0xff9966 },
+    Juggernaut_N: { name: '저거너트', armor: 1, traits: ['armor'], hp: 3000, atk: 170, rate: 2.4, range: 2.0, spd: 0.8, kb: 2, area: 1, h: 2.0, money: 280, color: 0xff3322 },
+    BigChick_N: { name: '빅 칙', hp: 2400, atk: 90, rate: 2.0, range: 2.0, spd: 0.9, kb: 2, area: 1, h: 2.1, money: 260, color: 0xff8844 },
+    Gigantes_N: { name: '기간테스', armor: 1, traits: ['armor'], hp: 6500, atk: 260, rate: 2.8, range: 2.6, spd: 0.7, kb: 2, area: 1, h: 2.5, money: 450, color: 0xff3333 },
+    Destroyer_N: { name: '디스트로이어', artillery: 1, traits: ['artillery', 'armor'], armor: 1, hp: 2600, atk: 240, rate: 3.0, range: 5.6, spd: 0.7, kb: 3, area: 1, h: 2.0, money: 500, color: 0xff2266 },
     // roles' counterparts (original monsters): a sniper that one-shots the front, a runner that slips past the line to our
     // base, a speaker that heals the worms around it
-    Scout_N: { name: '스카우트', rush: 1, traits: ['rush'], hp: 260, atk: 30, rate: 1.0, range: 1.6, spd: 3.0, kb: 1, h: 1.2, money: 60, color: 0xffd060 },
-    Speaker_N: { name: '스피커', heal: [0.05, 3, 3.6], traits: ['heal'], hp: 700, atk: 15, rate: 1.5, range: 3.0, spd: 0.8, kb: 2, h: 1.4, money: 140, color: 0x80ffb0 },
-    Stalker_EW: { name: '스토커', traits: ['sniper'], hp: 900, atk: 220, rate: 4.0, range: 6.5, spd: 0.7, kb: 2, h: 1.7, money: 180, color: 0xff6040 },
+    Scout_N: { name: '스카우트', rush: 1, traits: ['rush'], hp: 260, atk: 30, rate: 1.0, range: 1.4, spd: 3.0, kb: 1, h: 1.2, money: 60, color: 0xffd060 },
+    Speaker_N: { name: '스피커', heal: [0.05, 3, 3.6], traits: ['heal'], hp: 700, atk: 15, rate: 1.5, range: 3.2, spd: 0.8, kb: 2, h: 1.4, money: 140, color: 0x80ffb0 },
+    Stalker_EW: { name: '스토커', traits: ['sniper'], hp: 900, atk: 220, rate: 4.0, range: 8.6, spd: 0.7, kb: 2, h: 1.7, money: 180, color: 0xff6040 },
     // bosses
-    EmperorChick_N: { name: '엠페러 칙', hp: 16000, atk: 220, rate: 2.4, range: 3.0, spd: 0.6, kb: 3, area: 1, h: 3.0, money: 1500, boss: 1, color: 0xffaa22 },
+    EmperorChick_N: { name: '엠페러 칙', hp: 16000, atk: 220, rate: 2.4, range: 3.2, spd: 0.6, kb: 3, area: 1, h: 3.0, money: 1500, boss: 1, color: 0xffaa22 },
     Executioner_EW: { name: '엑스큐셔너', armor: 1, traits: ['armor'], hp: 34000, atk: 480, rate: 2.6, range: 3.6, spd: 0.6, kb: 3, area: 1, h: 3.2, money: 2500, boss: 1, color: 0xff2244 },
     // the last boss: a scripted four-phase fight (js/game.js dreadStep); kb 1: its phases replace the HP knockbacks
     Dreadlurker_BOSS_IW_N: { name: '드레드러커', ai: 'dread', traits: ['phase'], hp: 56000, atk: 650, rate: 3.0, range: 3.4, spd: 0.6, kb: 1, area: 1, h: 3.6, money: 5000, boss: 1, color: 0xc040ff },
@@ -265,7 +277,7 @@
   const MID = 4; // index of the elite stage in a chapter
   // difficulty pass (tools/balance.js calibrate): worm strength and fortress HP x this per stage, so the squad the
   // economy gives you clears each stage comfortably and one two levels under it only just
-  const DIFF = [1.5, 3.94, 3.94, 3.92, 3.9, 3.7, 3.5, 3.47, 3.45, 3.42, 9.82, 9.57, 9.31, 8.41, 7.5, 8.08, 8.66, 7.65, 6.63, 5.62, 4.2, 4.25, 4.29, 4.0, 3.72, 3.79, 3.85, 3.67, 3.48, 3.3, 2.79, 2.27, 1.75, 2.17, 2.59, 2.34, 2.09, 1.9, 1.4, 1.15, 1.8, 1.85, 2.05, 2.04, 2.02, 1.69, 1.36, 1.53, 2.0, 2.3, 1.88, 1.44, 1.0, 1.39, 1.78, 1.56, 1.33, 1.38, 1.44, 1.49, 1.63, 1.57, 1.51, 1.39, 1.26, 1.16, 1.06, 1.05, 0.95, 0.85, 2.02, 1.68, 1.33, 1.32, 1.31, 1.16, 1.15, 1.05, 0.9, 0.8];
+  const DIFF = [1.5, 3.94, 3.94, 3.92, 3.9, 3.7, 3.5, 3.47, 3.45, 3.42, 9.82, 9.57, 9.31, 7.44, 5.78, 7.15, 8.66, 7.65, 6.63, 5.62, 8.48, 7.08, 5.62, 5.54, 5.43, 5.74, 6.04, 5.44, 4.86, 4.32, 4.46, 3.2, 2.13, 2.65, 3.16, 2.62, 2.13, 2.22, 1.84, 1.68, 2.12, 2.02, 2.05, 1.95, 1.84, 1.58, 1.31, 1.37, 1.67, 1.77, 2.12, 1.53, 1, 1.22, 1.33, 1.41, 1.41, 1.44, 1.47, 1.49, 1.5, 1.51, 1.51, 1.28, 1.06, 0.97, 0.88, 0.95, 0.92, 0.88, 2.02, 1.68, 1.33, 1.32, 1.31, 1.16, 1.15, 1.05, 0.9, 0.8];
 
   // spawns: [enemy, first spawn (s), every (s), how many (0 = endless), strength x]
   // pow: every enemy's HP / attack in this stage; rush: spawns that start once the base falls below `at` of its HP;

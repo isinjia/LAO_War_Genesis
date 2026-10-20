@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.16'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.17'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -1574,7 +1574,10 @@
   // ── settings / help ────────────────────────────────────
   function openSettings(back) {
     const row = (k, label) => `<div class="opt-row"><span>${label}</span><input type="range" min="0" max="100" value="${Math.round(AUDIO.volume(k) * 100)}" data-k="${k}"><b>${Math.round(AUDIO.volume(k) * 100)}</b></div>`;
+    const fxRow = (k, label, max) => `<div class="opt-row"><span>${label}</span><input type="range" min="0" max="${max}" value="${FXSET[k]}" data-fx="${k}"><b>${FXSET[k]}</b></div>`;
     modal('설정', row('bgm', '배경음') + row('sfx', '효과음') + row('voice', '음성') +
+      fxRow('power', '이펙트 강도', 100) + fxRow('trans', '이펙트 투명도', 80) +
+      '<div class="opt-row opt-toggle"><small>이펙트 강도를 낮추면 이펙트 양·화면 흔들림·밝기가 줄고, 투명도를 올리면 이펙트가 비쳐 보입니다</small></div>' +
       `<div class="opt-row opt-toggle"><span>스토리 다시 보기</span><button id="optStory" class="tgl${save.storyAlways ? ' on' : ''}">${save.storyAlways ? 'ON' : 'OFF'}</button>
         <small>ON: 스테이지 스토리를 매번 보여 줍니다 · OFF: 한 번 본 스토리는 건너뜁니다</small></div>` +
       (fsOk ? `<div class="opt-row opt-toggle"><span>전체화면</span><button id="optFs" class="tgl${fsOn() ? ' on' : ''}">${fsOn() ? 'ON' : 'OFF'}</button>
@@ -1599,8 +1602,12 @@
       AUDIO.play('click', 0.6, 1.15);
       if (fsOn()) exitFs(); else enterFs();
     };
-    document.querySelectorAll('.opt-row input').forEach((inp) => {
+    document.querySelectorAll('.opt-row input[data-k]').forEach((inp) => {
       inp.oninput = () => { AUDIO.setVolume(inp.dataset.k, inp.value / 100); inp.nextElementSibling.textContent = inp.value; };
+      inp.onchange = () => AUDIO.play('click', 0.6);
+    });
+    document.querySelectorAll('.opt-row input[data-fx]').forEach((inp) => {
+      inp.oninput = () => { FXSET[inp.dataset.fx] = +inp.value; fxSave(); inp.nextElementSibling.textContent = inp.value; };
       inp.onchange = () => AUDIO.play('click', 0.6);
     });
   }

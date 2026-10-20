@@ -237,7 +237,7 @@
           const prev = this.t;
           this.t += dt;
           const nt = d.dur > 0 ? Math.min(1, this.t / d.dur) : 0;
-          const rate = mm(d.emit.rate, nt, Math.random());
+          const rate = mm(d.emit.rate, nt, Math.random()) * (window.FXSET ? Math.max(0.2, FXSET.power / 100) : 1); // 설정 > 이펙트 강도
           this.acc += rate * dt;
           const ne = Math.floor(this.acc);
           const Mx = this.Ws || this.set.W, mo = this.Ws ? 0 : o;
@@ -343,7 +343,7 @@
         geo.setIndex(quadIndex(M));
         geo.setDrawRange(0, 0);
         const mat = new THREE.MeshBasicMaterial({ map: this.src.tex, vertexColors: true, transparent: true, depthTest: false, depthWrite: false,
-          side: THREE.DoubleSide, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending });
+          side: THREE.DoubleSide, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending, opacity: window.fxK ? fxK() : 1 });
         mat.onBeforeCompile = noMip; mat.customProgramCacheKey = () => 'sdps-nomip';
         const mesh = new THREE.Mesh(geo, mat);
         mesh.frustumCulled = false;

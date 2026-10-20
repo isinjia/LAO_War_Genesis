@@ -545,7 +545,7 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .tbtn:hover { border-color: var(--y); }
 /* settings */
 .opt-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
-.opt-row span { width: 70px; color: var(--ink); font-weight: 700; }
+.opt-row span { min-width: 96px; flex: none; white-space: nowrap; color: var(--ink); font-weight: 700; }
 .opt-row input[type=range] { flex: 1; accent-color: #ffcc00; height: 26px; }
 .opt-row b { width: 40px; text-align: right; font-family: var(--en); color: var(--y); }
 .help h4 { margin: 12px 0 4px; color: var(--y); font-size: 15px; }

@@ -3,6 +3,11 @@
 // the clip's own fire events (js/anim_events.js). Characters are the SD rigs of js/sd.js (built by tools/build_sd.py).
 (function () {
   const D = window.DATA;
+  // effect settings (설정 > 이펙트 강도 / 이펙트 투명도), kept per device: power 0-100 (amount, shake, brightness),
+  // trans 0-80 (% see-through). fxK(): the opacity factor every battle effect is drawn with
+  window.FXSET = (() => { try { return Object.assign({ power: 100, trans: 0 }, JSON.parse(localStorage.getItem('lwg_fx') || '{}')); } catch (e) { return { power: 100, trans: 0 }; } })();
+  window.fxK = () => (1 - FXSET.trans / 100) * (0.35 + 0.65 * FXSET.power / 100);
+  window.fxSave = () => { try { localStorage.setItem('lwg_fx', JSON.stringify(FXSET)); } catch (e) { /* ignore */ } };
   const STEP = 1 / 60;
   const ATK_SPEED_MAX = 2.8;
   // ordered skills: seconds of charge and damage multiplier (over the whole reach) by rank
@@ -1467,7 +1472,7 @@
       });
     }
   }
-  function shake(power, time) { if (G) { G.shake = Math.max(G.shake || 0, time); G.shakeP = Math.max(G.shakeP || 0, power); } }
+  function shake(power, time) { power *= FXSET.power / 100; if (G && power > 0) { G.shake = Math.max(G.shake || 0, time); G.shakeP = Math.max(G.shakeP || 0, power); } }
   function burst(x, y, color, size, life) {
     const m = sprite(tex.glow, color);
     m.position.set(x, y, 0);
@@ -1799,6 +1804,7 @@
       e.t += dt;
       const u = Math.min(1, e.t / e.life);
       e.step(u);
+      if (e.mesh.material && e.mesh.material.transparent) e.mesh.material.opacity *= fxK();
       if (u >= 1) { G.root.remove(e.mesh); e.mesh.material.dispose(); e.mesh.geometry.dispose(); G.fx.splice(i, 1); }
     }
     for (let i = G.texts.length - 1; i >= 0; i--) { G.texts[i].t += dt; if (G.texts[i].t > 1.1) G.texts.splice(i, 1); }
