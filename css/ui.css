@@ -69,6 +69,14 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .touch { margin-top: 18px; font-family: var(--en); font-weight: 600; letter-spacing: 6px; font-size: 13px; color: #cfcfcf; animation: blink 1.4s infinite; }
 @keyframes blink { 50% { opacity: 0.2; } }
 .ver { position: absolute; z-index: 4; right: 14px; bottom: max(10px, env(safe-area-inset-bottom)); color: #c9d2da; font-family: var(--en); font-weight: 700; font-size: 12px; letter-spacing: 1px; opacity: 0.8; }
+.patch-btn { position: absolute; z-index: 4; right: 12px; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 22px); padding: 6px 14px; border: 1px solid var(--y); border-radius: 4px;
+  background: rgba(10, 12, 16, 0.78); color: #f2f4f6; font-size: 13px; font-weight: 700; cursor: pointer; }
+.patch-btn:active { transform: scale(0.96); }
+.patch { max-height: 60vh; overflow-y: auto; text-align: left; padding-right: 6px; }
+.patch h4 { margin: 12px 0 4px; color: var(--y); font-size: 15px; }
+.patch h4:first-child { margin-top: 0; }
+.patch ul { margin: 0; padding-left: 18px; }
+.patch li { margin: 2px 0; line-height: 1.5; font-size: 14px; }
 
 /* ── lobby frame ── */
 .lobby-bg { filter: brightness(0.35) saturate(0.8); }

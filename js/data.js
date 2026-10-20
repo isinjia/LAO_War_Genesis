@@ -132,7 +132,7 @@
   // The player selects any SS. Half of ordinary SS draws are that unit; 40 pulls guarantee it. Duplicates turn into card copies (PULL_CARDS).
   const GACHA = {
     cost1: 500, cost10: 5000, rates: { B: 0.47, A: 0.32, S: 0.18, SS: 0.03 }, pity: 40, featuredShare: 0.5,
-    startParts: 5000, startTuna: 300,
+    startParts: 10000, startTuna: 300, // the tutorial 10-pull spends 5000; after it (+1-1 reward, +1000 mission) the player holds 6150: one more 10-pull
   };
   const SHOP_PRICE = { B: 150, A: 400, S: 1000, SS: 3000 }; // tuna, recruit shop (a link for an owned unit)
   const SHOP_NEW_SS = 10000; // a new SS recruited outright costs double: the making stays the main way to meet SS

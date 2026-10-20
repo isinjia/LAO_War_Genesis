@@ -116,7 +116,7 @@
   // ── title ──────────────────────────────────────────────
   // TEST: every chapter opens and every story scene is listed for review (set false to close it again)
   const STORY_ALL_OPEN = true;
-  const VERSION = 'V1.09'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.10'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -156,6 +156,12 @@
     openLobby('campaign');
   };
   AUDIO.music('title');
+  $('btnPatch').onclick = () => { // patch notes (js/patchnotes.js), newest first
+    AUDIO.play('click', 0.6, 0.85);
+    const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    const body = (window.PATCHNOTES || []).map((n) => `<h4>${esc(n.v)}</h4><ul>${n.items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`).join('');
+    modal('패치노트', `<div class="patch">${body}</div>`, [['닫기', closeModal, 'd']], true);
+  };
 
   // ── lobby ──────────────────────────────────────────────
   let pane = 'campaign', chapterOpen = -1, selStage = -1, operationView = 'hub';
