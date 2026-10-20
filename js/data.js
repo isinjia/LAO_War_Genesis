@@ -70,7 +70,7 @@
   ];
   // balance pass at card level 10 (tools/balance.js): hp and attack x this, so units of a rank return about the same per
   // money spent (towers by their raw stats: the ordinary battle barely reaches them)
-  const TUNE = {brownie: 0.89, leprechaun: 0.97, gnome: 1, impet: 1.01, daphne: 1.26, banshee: 0.72, sylphid: 0.79, raven: 1.12, nymph: 1.26, amy: 1.28, andvari: 0.84, phoenix: 4.67, thetis: 3.87, hraesvelgr: 6.39, undine: 1.09, valkyrie: 1.25, zero: 0.97, hela: 1.04, azazel: 1.39, saraqael: 1.53, leona: 0.81, ullr: 0.21, harpy: 0.48, eternity: 0.74, lemonadealpha: 0.59, sleipnir: 1.66, blacklilith: 1.83, cyclopsprincess: 1.94, blindprincess: 1.84, brunhild: 0.35, tiamat: 0.12, khan: 0.17, labiata: 1.55, lrl: 0.98, constantia: 0.62, titania: 0.33, mercury: 0.84, empress: 0.63, fafnir: 1.58, ramiel: 0.37};
+  const TUNE = {brownie: 0.89, leprechaun: 0.97, gnome: 1, impet: 1.01, daphne: 1.26, banshee: 0.72, sylphid: 0.79, raven: 1.12, nymph: 1.26, amy: 1.28, andvari: 0.84, phoenix: 4.67, thetis: 3.87, hraesvelgr: 8.31, undine: 1.09, valkyrie: 1.25, zero: 0.97, hela: 1.04, azazel: 1.39, saraqael: 1.53, leona: 0.81, ullr: 0.32, harpy: 0.29, eternity: 0.74, lemonadealpha: 0.59, sleipnir: 1.66, blacklilith: 1.83, cyclopsprincess: 1.94, blindprincess: 1.84, brunhild: 0.35, tiamat: 0.12, khan: 0.17, labiata: 1.55, lrl: 0.98, constantia: 0.62, titania: 0.33, mercury: 0.84, empress: 0.63, fafnir: 1.58, ramiel: 0.37};
   // the starting squad, and the unit each stage hands out on its first clear (stage index -> id)
   const STARTERS = ['brownie', 'leprechaun', 'gnome'];
   const STAGE_REWARD = ['impet', 'nymph', 'valkyrie', 'raven', 'undine', 'phoenix', 'thetis', 'hraesvelgr'];
@@ -199,7 +199,7 @@
   // copies needed from level 10 to 11 and 11 to 12
   const CARDS = { B: [1000, 1500], A: [400, 500], S: [20, 40], SS: [4, 6] };
   const cardsNeed = (rank, lv) => CARDS[rank][lv - START_LV[rank]] || 0; // 0 at the top
-  const relLv = (rank, lv) => lv - 1; // the battle level (lvMul): card level 10 fights at 9, each upgrade +0.2
+  const relLv = (rank, lv) => 4 * lv - 31; // the battle level (lvMul): card level 10 fights at 9, each upgrade +0.8 (about +30%)
   // copies in one pull of a card you already have (chest-like bundles for the common ranks)
   const PULL_CARDS = { B: [20, 40], A: [6, 12], S: [1, 3], SS: [1, 1] };
   // wild cards: stand in for missing copies of any card of their rank
@@ -315,7 +315,7 @@
   const MID = 4; // index of the elite stage in a chapter
   // difficulty pass (tools/balance.js calibrate): worm strength and fortress HP x this per stage, so the squad of that
   // point in the campaign with every card at level 10 wins keeping 35-75% of its base (chapters 1-2 x0.7 for newcomers)
-  const DIFF = [26.8, 24.33, 21.09, 15.97, 12.1, 12.05, 11.98, 11.58, 11.23, 10.85, 14.82, 14.28, 13.72, 11.1, 8.73, 9.35, 9.82, 9.46, 8.95, 8.28, 19.07, 16.95, 14.34, 12.53, 10.9, 10.1, 9.31, 9.01, 8.65, 8.26, 9.92, 7.09, 4.7, 5.95, 7.22, 5.78, 4.54, 4.51, 3.57, 3.1, 2.63, 2.69, 2.94, 2.85, 2.74, 2.22, 1.74, 1.8, 2.17, 2.28, 2.93, 2.08, 1.33, 1.75, 2.05, 2.08, 1.98, 1.99, 1.99, 1.98, 2.04, 2.11, 2.17, 1.85, 1.55, 1.47, 1.38, 1.37, 1.23, 1.09, 2.7, 2.37, 1.99, 1.8, 1.62, 1.41, 1.35, 1.36, 1.27, 1.23];
+  const DIFF = [31.36, 28.47, 24.68, 19.95, 16.14, 16.61, 17.06, 15.53, 14.18, 12.9, 17.34, 15.64, 14.08, 12.99, 11.65, 11.68, 11.49, 11.07, 10.47, 9.68, 17.73, 15.51, 12.91, 11.38, 9.98, 9.17, 8.38, 8.08, 7.74, 7.37, 8.93, 6.29, 4.11, 5.3, 6.55, 5.2, 4.05, 4.02, 3.19, 2.76, 2.51, 2.49, 2.65, 2.66, 2.64, 1.79, 1.17, 1.4, 1.94, 2.36, 2.7, 1.9, 1.2, 1.57, 1.84, 1.87, 1.78, 1.77, 1.75, 1.72, 1.9, 1.94, 1.99, 1.63, 1.31, 1.25, 1.18, 1.19, 1.08, 0.97, 2.35, 1.88, 1.44, 1.49, 1.53, 1.35, 1.3, 1.3, 1.19, 1.13];
 
   // spawns: [enemy, first spawn (s), every (s), how many (0 = endless), strength x]
   // pow: every enemy's HP / attack in this stage; rush: spawns that start once the base falls below `at` of its HP;
@@ -355,7 +355,7 @@
   const MAX_LV = 12; // card level cap
   const lvMul = (lv) => 1 + 0.2 * (lv - 1); // hp / atk at battle level lv (levels above the card's start, 1-based)
   const lvCost = (lv) => Math.round(150 * Math.pow(lv, 1.9) / 50) * 50; // xp from battle level lv to lv + 1
-  const xpNeed = (rank, lv) => lvCost(relLv(rank, lv)); // XP for a card's next level
+  const xpNeed = (rank, lv) => lvCost(lv - 1); // XP for a card's next level
 
   // ── after the campaign ──
   // hard: every campaign stage again, much stronger worms (opens per chapter once its normal 10 stages are cleared)

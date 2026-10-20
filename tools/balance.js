@@ -79,16 +79,17 @@
   const margin = (r) => (r.win ? 1 + 0.6 * r.base + 0.4 * clamp(1 - r.t / 600, 0, 1) : 1 - r.ebase);
 
   // ── 1. level balance ──
+  // every card starts at level 10 (battle level 9) and goes to 12: the level-10 squad of that point in the campaign
+  // clears each stage, and the same squad at level 12 does clearly better (levels matter)
   async function level(log) {
     const rows = [];
     for (let c = 0; c < 8; c++) for (const s of SAMPLE) {
-      const st = D.STAGES[c * 10 + s], L = expectedLevel(st.ix), ids = expectedDeck(c);
-      const a = await battle(st, squad(ids, L)), b = await battle(st, squad(ids, Math.max(1, L - 2)));
-      // (below battle level 3 there is no squad two levels lower: the opening stages are not asked to feel it)
-      // levels matter: two levels down loses, keeps clearly less of its base, or clears clearly slower
-      const ok = a.win && a.base >= 0.3, felt = L < 3 || !b.win || a.base - b.base >= 0.15 || b.t >= a.t * 1.2;
-      rows.push({ code: st.code, L, win: a.win, base: +a.base.toFixed(2), t: Math.round(a.t), low: b.win ? +b.base.toFixed(2) : 'lose', lowT: Math.round(b.t), ok, felt });
-      if (log) log(`level ${st.code} L${L} ${ok ? 'ok' : 'FAIL'} ${felt ? '' : '(levels barely matter)'}`);
+      const st = D.STAGES[c * 10 + s], ids = expectedDeck(c);
+      const a = await battle(st, squad(ids, D.relLv('B', 10))), b = await battle(st, squad(ids, D.relLv('B', D.MAX_LV)));
+      // levels matter: level 12 wins where 10 lost, keeps clearly more of its base, or clears clearly faster
+      const ok = a.win && a.base >= 0.3, felt = (b.win && !a.win) || (b.win && (b.base - a.base >= 0.15 || a.t >= b.t * 1.2));
+      rows.push({ code: st.code, win: a.win, base: +a.base.toFixed(2), t: Math.round(a.t), high: b.win ? +b.base.toFixed(2) : 'lose', highT: Math.round(b.t), ok, felt });
+      if (log) log(`level ${st.code} ${ok ? 'ok' : 'FAIL'} ${felt ? '' : '(levels barely matter)'}`);
     }
     const pass = rows.filter((r) => r.ok).length / rows.length, felt = rows.filter((r) => r.felt).length / rows.length;
     return { score: Math.round(100 * (0.7 * pass + 0.3 * felt)), pass, felt, rows };
@@ -180,6 +181,25 @@
     ['area', 'area', 'area'], ['multi', 'multi', 'area'], ['tank', 'tank', 'tank'], ['swarm', 'swarm', 'swarm'], ['evade', 'evade', 'evade']];
   const ROLE_NAME = { siege: '건물만 노림', ship: '전투함', tower: '방어 타워', single: '단일 공격', area: '범위 공격', multi: '다수 배치', tank: 'HP 탱킹', swarm: '마릿수 탱킹', evade: '회피 탱킹' };
 
+  // a tower against its closest-cost rank peers: the campaign's boss stages (chapters 3-8), the squad of that point
+  // without SS at card level 10 plus the tested unit; mean margin of the tower / mean margin of the peers
+  async function towerRatio(id, runs) {
+    const peers = D.UNITS.filter((u) => u.rank === U[id].rank && !u.tower && !u.roles.includes('siege'))
+      .sort((a, b) => Math.abs(a.cost - U[id].cost) - Math.abs(b.cost - U[id].cost)).slice(0, 3).map((u) => u.id);
+    const play = async (x) => {
+      let m = 0, n = 0;
+      for (const g of [29, 49, 59, 79]) for (let k = 0; k < runs; k++) {
+        const c = Math.floor(g / 10), ids = expectedDeck(c).filter((y) => U[y].rank !== 'SS' && !U[y].tower).slice(0, 9);
+        m += margin(await battle(D.STAGES[g], squad([...ids, x], 9))); n++;
+      }
+      return m / n;
+    };
+    const mine = await play(id);
+    let theirs = 0;
+    for (const p of peers) theirs += await play(p);
+    return mine / (theirs / peers.length);
+  }
+
   async function unitsAndRoles(log, runs = 2, reuse, only) {
     const sc = scenarios(), L = 9, ids = D.UNITS.map((u) => u.id);
     const eff = reuse || {}; // scenario -> id -> value per money, rank-adjusted
@@ -194,12 +214,19 @@
       if (log) log(`scenario ${name} done`);
     }
     // units: each within ±35% of its rank's median in the ordinary battle (rank peers are what a squad slot is chosen
-    // between; higher ranks are meant to be stronger). Siege units are valued by what they do to the fortress.
-    const valOf = (id) => (has(id, 'siege') ? eff.siege[id] : eff.general[id]);
+    // between; higher ranks are meant to be stronger). The ordinary battle's metric already counts fortress damage, so
+    // siege units are read there too (the siege scenario's fortress-per-money is on another scale).
+    // Towers hold the base, which the measuring window barely reaches: each is played in the campaign's boss stages in
+    // place of its closest-cost rank peers, and its result against theirs is its ratio.
+    if (!eff.campaign) {
+      eff.campaign = {};
+      for (const id of ids.filter((x) => U[x].tower)) eff.campaign[id] = await towerRatio(id, runs);
+      if (log) log('towers done');
+    }
+    const valOf = (id) => eff.general[id];
     const unitRows = ids.map((id) => {
-      // towers hold the base, which the ordinary battle barely tests: valued in their own situation against their rank
-      const peers = ids.filter((x) => U[x].rank === U[id].rank).map(U[id].tower ? (x) => eff.tower[x] : valOf);
-      const val = U[id].tower ? eff.tower[id] : valOf(id), m = median(peers), dev = m && val ? Math.abs(Math.log2(val / m)) : 9;
+      const peers = ids.filter((x) => U[x].rank === U[id].rank && !U[x].tower).map(valOf);
+      const m = median(peers), val = U[id].tower ? eff.campaign[id] * m : valOf(id), dev = m && val ? Math.abs(Math.log2(val / m)) : 9;
       const score = Math.round(clamp(100 - Math.max(0, dev - Math.log2(1.35)) / (Math.log2(2.6) - Math.log2(1.35)) * 100, 0, 100));
       return { id, rank: U[id].rank, val: +val.toFixed(2), med: +m.toFixed(2), x: +(val / m).toFixed(2), score };
     });
@@ -215,7 +242,7 @@
       const adv = Math.min(9, best / med);
       const niche = Math.round(60 * clamp((adv - 1) / 0.3, 0, 1));
       // usable: its members hold their own against their rank peers in the ordinary battle (val / rank median)
-      const rel = (id) => { const v = has(id, 'siege') ? eff.siege[id] : eff.general[id]; const m = median(ids.filter((x) => U[x].rank === U[id].rank).map((x) => eff.general[x])); return m ? v / m : 0; };
+      const rel = (id) => { const v = U[id].tower ? eff.campaign[id] * median(ids.filter((x) => U[x].rank === U[id].rank).map((x) => eff.general[x])) : eff.general[id]; const m = median(ids.filter((x) => U[x].rank === U[id].rank).map((x) => eff.general[x])); return m ? v / m : 0; };
       const gen = median(mem.map(rel));
       const usable = Math.round(20 * clamp((gen - 0.5) / 0.3, 0, 1));
       return { role: ROLE_NAME[role], members: mem.join(','), coverage, adv: +adv.toFixed(2), niche, gen: +gen.toFixed(2), usable, score: coverage + niche + usable };
@@ -225,21 +252,20 @@
   }
 
   // difficulty calibration: for each sampled stage, the factor on enemy strength and fortress HP at which the squad of
-  // that point in the campaign, every card at level 10, wins with 35-75% of its base left (levels 11-12 make it easier)
+  // that point in the campaign, every card at level 10, wins both of two runs keeping 40-85% of its base at worst
+  // (battles tend to end in a rout either way, so the level-10 squad is asked to win safely; levels 11-12 then win faster)
   async function calibrate(log, chapters = [0, 1, 2, 3, 4, 5, 6, 7], stages = SAMPLE) {
     const out = [];
     for (const c of chapters) for (const s of stages) {
-      const base = D.STAGES[c * 10 + s], ids = expectedDeck(c), L = 9; // every card at level 10 (battle level 9)
-      let lo = 0.25, hi = 10, k = 1;
-      for (let it = 0; it < 7; it++) {
+      const base = D.STAGES[c * 10 + s], ids = expectedDeck(c);
+      let lo = 0, hi = 0, k = 1;
+      for (let it = 0; it < 6; it++) {
         const st = Object.assign({}, base, { pow: base.pow * k, baseHp: Math.round(base.baseHp * k), finale: false });
-        const r = await battle(st, squad(ids, L));
-        const tooEasy = r.win && r.base > 0.75, tooHard = !r.win || r.base < 0.35;
-        if (!tooEasy && !tooHard) break;
-        if (tooEasy) lo = k; else hi = k;
-        k = Math.sqrt(lo * hi);
+        let worst = 1;
+        for (let r = 0; r < 2; r++) { const x = await battle(st, squad(ids, 9)); worst = Math.min(worst, x.win ? x.base : 0); }
+        if (worst > 0.85) { lo = k; k = hi ? Math.sqrt(k * hi) : k * 1.3; } else if (worst < 0.4) { hi = k; k = lo ? Math.sqrt(k * lo) : k * 0.75; } else break;
       }
-      out.push({ code: base.code, g: base.ix, k: +k.toFixed(2) });
+      out.push({ code: base.code, g: base.ix, k: +k.toFixed(3) });
       if (log) log(`calibrate ${base.code}: x${k.toFixed(2)}`);
     }
     return out;
