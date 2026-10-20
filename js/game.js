@@ -1417,7 +1417,9 @@
       const x0 = CAN.x + Math.random() * len * 0.9, x1 = Math.min(head, x0 + 0.6 + Math.random() * 1.2);
       bolt(x0, CAN.y + (Math.random() - 0.5) * 1.8, x1, CAN.y + (Math.random() - 0.5) * 1.8, 0xcff6ff);
     }
-    const dmg = D.CANNON.dmg * Math.min(3, G.st.pow || 1); // grows with the campaign, not with hard / infinite
+    // grows with the stage's worm strength like the worms themselves (hard mode: its normal stage's; infinite: up to 6)
+    const pw = G.st.hard ? (D.STAGES[G.st.ix] || G.st).pow : G.st.infinite ? Math.min(6, G.st.pow || 1) : G.st.pow || 1;
+    const dmg = D.CANNON.dmg * pw;
     for (const e of G.enemies) {
       if (e.dead || c.hit.has(e) || e.x > head) continue;
       c.hit.add(e);

@@ -118,7 +118,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.27'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.28'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -1542,7 +1542,7 @@
   const TUT = [
     { el: () => document.querySelector('#deck .slot'), text: (G) => `<b>${G.deck[0].def.name}</b> 버튼을 눌러 출격! 대원은 앞으로 걸어가 사거리 안의 적을 원작 공격 모션으로 공격합니다.`, done: (G) => G.allies.length > 0 },
     { el: () => $('btnWorker'), text: '<b>전력</b>은 계속 차오릅니다. <b>발전 효율</b>을 올리면 더 빨리, 더 많이 모입니다.', done: (G, t) => G.worker > 0 || t > 14 },
-    { el: () => $('deck'), text: '비용과 재배치 시간을 보며 섞어 내보내세요. <b>레프리콘</b>은 튼튼한 벽, <b>노움</b>은 범위 포격입니다.', done: (G, t) => t > 9 },
+    { el: () => $('deck'), text: '비용과 재배치 시간을 보며 섞어 내보내세요. <b>노움</b>은 앞을 막는 수비형, <b>레프리콘</b>은 기관총 공격형, <b>브라우니</b>는 싸고 빠른 소총 분대입니다.', done: (G, t) => t > 9 },
     { el: () => $('btnCannon'), text: '<b>오르카 포격</b> 준비 완료! 눌러서 앞의 철충을 한꺼번에 밀어내세요.', wait: (G) => G.cannon >= D.CANNON.charge, done: (G) => G.cannon < D.CANNON.charge },
     { el: () => $('timer'), text: '화면을 끌거나 상단 미니맵을 눌러 전장을 볼 수 있습니다. <b>10분 안에</b> 철충 요새를 부수면 승리!', done: (G, t) => t > 8 },
   ];
