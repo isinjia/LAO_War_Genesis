@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.11'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.12'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -256,12 +256,16 @@
     box.innerHTML = '';
     const head = (t, sub) => { const h = document.createElement('div'); h.className = 'sec-title'; h.innerHTML = `<b>${t}</b><small>${sub}</small>`; box.appendChild(h); };
     const sortOf = (a, b) => (b.s.done && !b.s.claimed) - (a.s.done && !a.s.claimed) || a.s.claimed - b.s.claimed;
-    for (const [sp, t] of [['day', '일일 임무'], ['week', '주간 임무']]) {
+    const periodic = () => { for (const [sp, t] of [['day', '일일 임무'], ['week', '주간 임무']]) {
       head(t, resetIn(sp));
       D.PERIODIC[sp].map((m) => ({ m, s: pstate(m, sp) })).sort(sortOf).forEach(({ m, s }) => card(m, s, () => { const p = D.periodic(save); (sp === 'day' ? p.cd : p.cw)[m.id] = 1; }));
-    }
-    head('업적', '한 번만 받을 수 있는 누적 목표');
-    D.MISSIONS.map((m) => ({ m, s: mstate(m) })).sort(sortOf).forEach(({ m, s }) => card(m, s, () => { save.claimed = save.claimed || {}; save.claimed[m.id] = 1; }));
+    } };
+    const achievements = () => {
+      head('업적', '한 번만 받을 수 있는 누적 목표');
+      D.MISSIONS.map((m) => ({ m, s: mstate(m) })).sort(sortOf).forEach(({ m, s }) => card(m, s, () => { save.claimed = save.claimed || {}; save.claimed[m.id] = 1; }));
+    };
+    // during the tutorial the achievements come first, so the tutorial's mission is on screen without scrolling
+    if (!save.tut && !noSave && save.cleared >= 1) { achievements(); periodic(); } else { periodic(); achievements(); }
   }
   function card(m, s, claim) {
     const box = $('missionList');
@@ -274,6 +278,7 @@
         <div class="mr">${rw}</div><button class="btn${s.done && !s.claimed ? '' : ' d'}" ${s.done && !s.claimed ? '' : 'disabled'}>${s.claimed ? '완료' : s.done ? '받기' : '진행 중'}</button>`;
       if (s.done && !s.claimed) el.querySelector('button').onclick = () => {
         claim();
+        if (!save.tut) save.tutClaimed = 1; // the tutorial's mission step is done by claiming any one mission
         save.tuna += m.reward.tuna; save.parts += m.reward.parts; addWild(m.reward.wild); persist();
         AUDIO.play('purchase'); refresh();
       };
@@ -1417,7 +1422,7 @@
       text: () => (document.querySelector('#cardMenu.show .cm-use') ? '<b>사용</b>을 눌러 발키리를 덱에 넣으세요.' : '새로 합류한 <b>발키리</b> 카드를 눌러 보세요.'),
       done: () => save.deck.includes(TUT_ADD) },
     { pane: 'missions', el: () => document.querySelector('#missionList .mis[data-mid="tut1"] button'),
-      text: '<b>임무</b>를 달성하면 보상을 받습니다. <b>받기</b>를 눌러 보세요!', done: () => !!(save.claimed || {}).tut1 },
+      text: '<b>임무</b>를 달성하면 보상을 받습니다. <b>받기</b>를 눌러 보세요!', done: () => !!(save.claimed || {}).tut1 || !!save.tutClaimed },
     { pane: 'campaign', el: () => (operationView === 'hub' ? document.querySelector('[data-operation="stages"]') : chapterOpen !== 0 ? document.querySelector('#chapterList .chap[data-ch="0"]')
       : selStage !== 1 || !infoShown() ? document.querySelector('#pStages .node[data-ix="1"]') : $('btnGo')),
       text: () => (operationView === 'hub' ? '<b>스테이지</b>를 선택하세요.' : chapterOpen !== 0 ? '준비 완료! <b>CHAPTER 1</b>로 돌아갑니다.' : selStage !== 1 || !infoShown() ? '다음 작전 <b>1-2</b>를 선택하세요.' : '<b>출격</b>! 이제부터는 사령관의 판단에 맡깁니다.'),
@@ -1459,6 +1464,7 @@
     const target = document.querySelector(lobbyOn ? '.lpulse' : '.pulse-target');
     if (!target) return; // nothing pointed at (a step waiting): free play
     if (target.contains(t) || t.closest('#tutSkip, #modal, #gachaResult, #story, #lcoach, #coach, #cardMenu') || (battleOn && t.id === 'gl')) return;
+    if (lobbyOn && pane === 'missions' && t.closest('#missionList .mis.done button')) return; // any mission's 받기 counts
     e.stopPropagation(); e.preventDefault();
     if (e.type === 'pointerdown') { // a nudge towards the right spot
       target.classList.remove('tut-nudge'); void target.offsetWidth; target.classList.add('tut-nudge');
