@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.21'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.22'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -192,10 +192,13 @@
     else if (pane !== 'campaign') { AUDIO.play('click', 0.5); setPane('campaign'); }
   });
 
+  let deckReturn = null; // the chapter whose stage sheet opened the deck editor: the 작전 tab goes back to it
   function setPane(name) {
     if (name === 'campaign' && pane !== 'campaign') operationView = 'hub';
+    if (name === 'campaign' && pane === 'squad' && deckReturn) { chapterOpen = deckReturn.chapter; operationView = 'stages'; sheetOpen = true; }
+    if (name !== 'squad') deckReturn = null;
     pane = name;
-    if (name !== 'campaign') chapterOpen = -1;
+    if (name !== 'campaign') chapterOpen = name === 'squad' && deckReturn ? chapterOpen : -1;
     document.querySelectorAll('.nav').forEach((x) => x.classList.toggle('on', x.dataset.pane === name));
     refresh();
   }
@@ -510,9 +513,12 @@
       <div class="si-label">${first ? '첫 클리어 보상' : '반복 보상'}</div>
       <div class="si-rewards">${rwHtml(D.reward(s, first ? 'first' : 'win'))}
         ${unit && first && !owned(unit.id) ? `<span class="rw unit"><img src="${IMG['u_' + unit.id]}" alt="">${rk(unit.rank)} ${unit.name} 합류</span>` : ''}</div>
-      <div class="si-go"><button class="btn lg${s.hard ? ' o' : ''}" id="btnGo">출격</button></div>
+      <div class="si-label si-decklbl">내 덱 <small>${save.deck.length}/${DECK_MAX}</small></div>
+      <div class="dsq si-deck">${save.deck.map((id) => `<span class="dsq-u r-${D.UNIT[id].rank}"><img src="${IMG['u_' + id]}" alt="">${rk(D.UNIT[id].rank)}<b class="lv">${lvOf(id)}</b></span>`).join('')}</div>
+      <div class="si-go">${lobbyTut() ? '' : '<button class="btn lg d si-edit" id="btnDeck">덱 편집</button>'}<button class="btn lg${s.hard ? ' o' : ''}" id="btnGo">출격</button></div>
       <button class="si-close" id="siClose" aria-label="닫기"></button>`;
     $('siClose').onclick = () => { AUDIO.play('click', 0.4, 0.8); sheetOpen = false; renderStages(); };
+    if ($('btnDeck')) $('btnDeck').onclick = () => { AUDIO.play('click', 0.55, 0.85); deckReturn = { chapter: chapterOpen }; openLobby('squad'); };
     $('btnGo').onclick = () => { AUDIO.play('click', 1, 0.78); startStage(s); };
   }
 

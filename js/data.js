@@ -143,11 +143,11 @@
   // gacha: rates per rank, a 10-pull guarantees S or better, and PITY pulls without the selected SS guarantee that unit.
   // The player selects any SS. Half of ordinary SS draws are that unit; 40 pulls guarantee it. Duplicates turn into card copies (PULL_CARDS).
   const GACHA = {
-    cost1: 500, cost10: 5000, rates: { B: 0.47, A: 0.32, S: 0.18, SS: 0.03 }, pity: 40, featuredShare: 0.5,
-    startParts: 10000, startTuna: 300, // the tutorial 10-pull spends 5000; after it (+1-1 reward, +1000 mission) the player holds 6500: one more 10-pull
+    cost1: 250, cost10: 2500, rates: { B: 0.47, A: 0.32, S: 0.18, SS: 0.03 }, pity: 40, featuredShare: 0.5,
+    startParts: 10000, startTuna: 300, // the tutorial 10-pull spends 2500; after it (+1-1 reward, +1000 mission) the player holds 9000: three more 10-pulls
   };
-  const SHOP_PRICE = { B: 150, A: 400, S: 1000, SS: 3000 }; // tuna, recruit shop (a link for an owned unit)
-  const SHOP_NEW_SS = 10000; // a new SS recruited outright costs double: the making stays the main way to meet SS
+  const SHOP_PRICE = { B: 150, A: 400, S: 1000, SS: 1000 }; // tuna, recruit shop (a link for an owned unit)
+  const SHOP_NEW_SS = 1000; // a new SS costs the same as an owned one's card
 
   // cards (as in Clash Royale): a unit's card level runs to 15 and starts by rank (B 1, A 3, S 6, SS 9).
   // Each upgrade spends copies of that card (from duplicate pulls, the shop, wild cards) and XP (the 'gold').

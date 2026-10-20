@@ -186,6 +186,12 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .si-rewards .rw.unit { font-family: var(--ko); font-size: 12px; border-color: var(--y); }
 .si-go { margin-top: auto; display: flex; gap: 8px; align-items: center; }
 .si-go .btn { flex: 1; }
+.si-go .btn, .si-go .btn.lg { min-width: 0; }
+.si-go .btn.si-edit { flex: 0 0 34%; }
+.si-decklbl small { margin-left: 4px; opacity: 0.8; }
+.si-deck .dsq-u { width: 38px; height: 38px; }
+.si-deck .dsq-u .rk-i { width: 13px; height: 13px; }
+.dsq-u .lv { position: absolute; right: 1px; bottom: 0; font: 900 10px var(--en); color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
 .si-stars { display: flex; gap: 4px; }
 .si-stars i { width: 26px; height: 25px; background: var(--s-star_frame) center / contain no-repeat; opacity: 0.6; }
 .si-stars i.on { background-image: var(--s-star); opacity: 1; }
