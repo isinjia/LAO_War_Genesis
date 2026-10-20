@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.18'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.19'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -1392,7 +1392,8 @@
       if (s) {
         b.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt="">${rk(s.def.rank)}<div class="cd"></div><div class="c">${s.def.cost}</div><div class="snm">${s.def.name.replace(/ .*/, '')}</div>` +
           (s.def.rank === 'SS' || s.def.rank === 'S' ? '<span class="sk" title="스킬 충전 (차면 자동 발동)"><i></i></span>' : '');
-        b.title = `${s.def.name} (${s.def.rank} ${s.def.role})  [${(i + 1) % 10}]`;
+        b.title = `${s.def.name} (${s.def.rank} ${s.def.role})  [${'QWERTASDFG'[i]}]`;
+        b.insertAdjacentHTML('beforeend', `<span class="hk">${'QWERTASDFG'[i]}</span>`);
         b.onpointerdown = (e) => { e.preventDefault(); GAME.deploy(i); };
       }
       rows[i < 5 ? 0 : 1].appendChild(b);
@@ -1642,7 +1643,7 @@
       <h4>성장</h4><p>XP로 레벨 업(체력 · 공격 +20%/레벨). 같은 대원을 다시 얻으면 코어 링크(최대 5, 링크당 +8%, 풀 링크 재배치 -15%).</p>
       <h4>재화</h4><p><b>부품</b>: 모든 승리에서 획득 → 제조(가챠). <b>참치</b>: 첫 클리어 · 새 기록에서 획득 → 원하는 대원 확정 영입.</p>
       <h4>별점 · 콘텐츠</h4><p>6분 안에 이기면 ★2, 기지 체력도 80% 이상 지키면 ★3. 노말 챕터를 깨면 하드가, 8-10을 깨면 무한 전장이 열립니다.</p>
-      <h4>조작</h4><p>대원 버튼 / 1~0 배치 · E 발전 효율 · F / Space 포격 · 드래그 · 휠 · 방향키 · 미니맵 이동 · P / Esc 일시정지</p></div>`,
+      <h4>조작</h4><p>대원 버튼 / Q W E R T (윗줄) · A S D F G (아랫줄) 배치 · Tab 발전 효율 · Space 오르카 포격 · 드래그 · 휠 · 방향키 · 미니맵 이동 · P / Esc 일시정지</p></div>`,
     [['확인', closeModal]], true);
   }
   $('btnOpt').onclick = () => { AUDIO.play('click', 0.5); openSettings(); };
@@ -1711,7 +1712,7 @@
     GAME.setPaused(on);
     if (!on) return closeModal();
     const st = GAME.state ? GAME.state.st : D.STAGES[0];
-    modal('일시정지', '<b>조작</b><br>대원 버튼 / 숫자키 1~0 · 배치<br>E · 발전 효율 강화 &nbsp; F / Space · 오르카 포격<br>드래그 · 휠 · 방향키 · 미니맵 · 전장 이동', [
+    modal('일시정지', '<b>조작</b><br>대원 버튼 / Q W E R T (윗줄) · A S D F G (아랫줄) · 배치<br>Tab · 발전 효율 강화 &nbsp; Space · 오르카 포격<br>드래그 · 휠 · 방향키 · 미니맵 · 전장 이동', [
       ['계속하기', () => pause(false)],
       ['설정', () => openSettings(() => pause(true)), 'd'],
       ['재시작', () => { closeModal(); GAME.stop(); launch(st); }, 'd'],

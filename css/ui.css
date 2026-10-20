@@ -380,6 +380,11 @@ img.portrait { object-fit: cover !important; aspect-ratio: 1; border: 3px solid 
 .slot.ready { box-shadow: inset 0 0 0 2px var(--y); }
 .slot.ready.r-SS { box-shadow: inset 0 0 0 2px var(--rSS), inset 0 0 16px rgba(255, 210, 0, 0.5); }
 .slot:active { transform: translateY(2px); }
+/* PC key hints (deck Q-T / A-G, Tab, Space): only with a mouse, never on touch screens */
+.hk { display: none; position: absolute; left: 2px; top: 21px; z-index: 3; min-width: 15px; padding: 0 3px; border-radius: 3px; background: rgba(0, 0, 0, 0.72);
+  color: #fff; font-family: var(--en); font-size: 11px; font-weight: 700; line-height: 15px; text-align: center; pointer-events: none; }
+@media (hover: hover) and (pointer: fine) { .hk { display: block; } }
+.side-btn .hk { left: 50%; top: 4px; transform: translateX(-50%); }
 .slot.empty { opacity: 0.2; pointer-events: none; }
 .side-btn { position: relative; width: 94px; height: 94px; flex: none; overflow: hidden; border-radius: 50%; font-weight: 700;
   background: radial-gradient(circle at 50% 35%, #2a2d33, #0d0e11); box-shadow: 0 0 0 3px #3a3d43, 0 4px 10px rgba(0, 0, 0, 0.6); }

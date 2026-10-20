@@ -9,6 +9,7 @@
   window.fxK = () => (1 - FXSET.trans / 100) * (0.35 + 0.65 * FXSET.power / 100);
   window.fxSave = () => { try { localStorage.setItem('lwg_fx', JSON.stringify(FXSET)); } catch (e) { /* ignore */ } };
   const STEP = 1 / 60;
+  const DECK_KEYS = ['KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG'];
   const ATK_SPEED_MAX = 2.8;
   // ordered skills: seconds of charge and damage multiplier (over the whole reach) by rank
   const SKILL = { SS: { charge: 12, mult: 4 }, S: { charge: 18, mult: 3 } }; // long attack clips play faster, up to this
@@ -247,10 +248,13 @@
     addEventListener('keydown', (e) => {
       if (!G || G.over) return;
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { pan = null; camX += e.key === 'ArrowLeft' ? -1 : 1; clampCam(); updateCam(); G.userCam = performance.now(); }
-      const n = '1234567890'.indexOf(e.key);
+      // PC keys (physical, so Korean input mode works too): deck top row Q W E R T, bottom row A S D F G (or 1~0),
+      // Tab upgrades the power plant, Space fires the Orca cannon
+      let n = DECK_KEYS.indexOf(e.code);
+      if (n < 0) n = '1234567890'.indexOf(e.key);
       if (n >= 0) deploy(n);
-      if (e.key === 'e' || e.key === 'E') upgradeWorker();
-      if (e.key === 'f' || e.key === 'F' || e.key === ' ') { e.preventDefault(); fireCannon(); }
+      if (e.code === 'Tab') { e.preventDefault(); upgradeWorker(); }
+      if (e.code === 'Space') { e.preventDefault(); fireCannon(); }
     });
   }
 
