@@ -203,22 +203,22 @@
   // pool: the chapter's worms, weakest first (the first two come endlessly, the rest in limited numbers)
   // boss: [enemy, strength]; reward: the unit that joins on the chapter's first clear; story: js/story.js
   const CHAPTERS = [
-    { title: '상륙 작전', sub: '오르카 해안', bg: 'bg_field', pool: ['NightChick_N', 'Legion_N', 'Drone_N'], boss: ['BigChick_N', 0.8],
-      stages: ['해안 교두보', '모래톱 방어선', '등대 언덕', '갯바위 돌파', '첫 번째 그림자', '젖은 숲길', '버려진 어촌', '방파제 사수', '해안 포대 탈환', '거대 개체 「빅 칙」'] },
-    { title: '잿빛 정찰', sub: '폐허 도시', bg: 'bg_city', pool: ['NightChick_N', 'Drone_N', 'Legion_N', 'Fallen_N', 'Scout_N'], boss: ['EmperorChick_N', 0.7],
-      stages: ['무너진 대로', '통신탑 탈환', '지하 차도', '빈 시장 거리', '상공의 감시자', '고가 철로', '붉은 신호', '폐병원', '도시 중심부', '군주 「엠페러 칙」'] },
-    { title: '전초기지 강습', sub: '철충 전진 거점', bg: 'bg_base', pool: ['Legion_N', 'Fallen_N', 'Drone_N', 'Centurion_N', 'Speaker_N'], boss: ['Gigantes_N', 1.0],
-      stages: ['외곽 감시선', '격납고 진입', '보급 라인 절단', '경비 순찰로', '철문 앞의 백부장', '탄약고 폭파', '제어실 확보', '냉각 구역', '중앙 승강기', '수문장 「기간테스」'] },
-    { title: '처형인의 사냥터', sub: '구조 작전', bg: 'bg_base', pool: ['Fallen_N', 'Centurion_N', 'Intruder_N', 'Legion_N', 'Stalker_EW'], boss: ['Executioner_EW', 0.6],
-      stages: ['구조 신호', '감옥 구역', '추적자들', '어둠 속의 침입자', '사냥꾼의 그물', '지하 수로', '탈출로 확보', '배신의 통로', '최후의 문', '처형인 「엑스큐셔너」'] },
+    { title: '좌초', sub: '동쪽 해안', bg: 'bg_field', pool: ['NightChick_N', 'Legion_N', 'Drone_N'], boss: ['BigChick_N', 0.8],
+      stages: ['좌초 지점', '모래톱 방어선', '등대 언덕', '갯바위 돌파', '첫 번째 그림자', '젖은 숲길', '버려진 어촌', '신호탄의 주인', '등대 점화', '거대 개체 「빅 칙」'] },
+    { title: '잿빛 변전소', sub: '폐허 도시', bg: 'bg_city', pool: ['NightChick_N', 'Drone_N', 'Legion_N', 'Fallen_N', 'Scout_N'], boss: ['EmperorChick_N', 0.7],
+      stages: ['무너진 대로', '빈 시장 거리', '지하 차도', '고압선 아래', '상공의 감시자', '고가 철로', '잠든 변전소', '차단기 탈환', '둥지의 중심', '군주 「엠페러 칙」'] },
+    { title: '증폭탑 강습', sub: '철충 전진 거점', bg: 'bg_base', pool: ['Legion_N', 'Fallen_N', 'Drone_N', 'Centurion_N', 'Speaker_N'], boss: ['Gigantes_N', 1.0],
+      stages: ['외곽 감시선', '격납고 진입', '보급 라인 절단', '경비 순찰로', '철문 앞의 백부장', '탄약고 폭파', '제어실 확보', '냉각 구역', '증폭탑 기부', '수문장 「기간테스」'] },
+    { title: '처형인의 사냥터', sub: '사냥 구역', bg: 'bg_base', pool: ['Fallen_N', 'Centurion_N', 'Intruder_N', 'Legion_N', 'Stalker_EW'], boss: ['Executioner_EW', 0.6],
+      stages: ['불 꺼진 해안', '사냥꾼의 발자국', '추적자들', '어둠 속의 침입자', '사냥꾼의 그물', '지하 수로', '저격수의 둥지', '무너진 등대', '최후의 문', '처형인 「엑스큐셔너」'] },
     { title: '포화의 시가지', sub: '회색 시가지', bg: 'bg_city', pool: ['Centurion_N', 'Intruder_N', 'Phalangites_N', 'Rampart_N', 'Stalker_EW', 'Scout_N'], boss: ['Gigantes_N', 1.4],
-      stages: ['포격 지대', '방벽 너머', '저격수의 거리', '광장 공방전', '움직이는 성벽', '폐허 아케이드', '교차로 봉쇄', '철벽 돌파', '포대 침묵', '강철 행렬'] },
+      stages: ['포격 지대', '방벽 너머', '저격수의 거리', '광장 공방전', '움직이는 성벽', '폐허 아케이드', '송신탑 오르막', '철벽 돌파', '두 번째 불', '강철 행렬'] },
     { title: '불길 속의 날개', sub: '불타는 평원', bg: 'bg_field', pool: ['Fallen_N', 'Intruder_N', 'Juggernaut_N', 'BigChick_N', 'Phalangites_N', 'Scout_N', 'Speaker_N'], boss: ['EmperorChick_N', 1.3],
-      stages: ['불붙은 들판', '연기 속의 행군', '재의 언덕', '타오르는 숲', '저거너트 진군로', '붉은 강', '검게 탄 마을', '불새의 비행', '열기의 장벽', '불사의 군주'] },
+      stages: ['불붙은 들판', '연기 속의 행군', '연료 저장소', '타오르는 숲', '저거너트 진군로', '붉은 강', '검게 탄 마을', '불새의 비행', '열기의 장벽', '불사의 군주'] },
     { title: '거인의 길', sub: '중장갑 회랑', bg: 'bg_field', pool: ['Centurion_N', 'Phalangites_N', 'Rampart_N', 'Gigantes_N', 'Destroyer_N', 'Stalker_EW', 'Speaker_N'], boss: ['Executioner_EW', 0.8],
-      stages: ['거인의 발자국', '무너진 고가도로', '포대 협곡', '강철 숲', '거인의 그림자', '파괴자의 사선', '철골 다리', '회랑 입구', '거인의 묘지', '처형인의 귀환'] },
-    { title: '지하 수송구', sub: '중앙 중계소', bg: 'bg_base', pool: ['Centurion_N', 'Fallen_N', 'Juggernaut_N', 'Destroyer_N', 'Gigantes_N', 'Stalker_EW', 'Scout_N', 'Speaker_N'], boss: ['Dreadlurker_BOSS_IW_N', 1.0],
-      stages: ['중계소 외곽', '겹치는 구조 요청', '돌아온 운반대', '지하 승강로', '수색대의 퇴로', '두 번의 진동', '마지막 들것', '중계선 절단', '수송구 앞', '「드레드러커」'] },
+      stages: ['거인의 발자국', '무너진 고가도로', '포대 협곡', '강철 숲', '거인의 그림자', '파괴자의 사선', '철골 다리', '회랑 입구', '조선소가 보이는 언덕', '처형인의 귀환'] },
+    { title: '옛 조선소', sub: '해군 조선소', bg: 'bg_base', pool: ['Centurion_N', 'Fallen_N', 'Juggernaut_N', 'Destroyer_N', 'Gigantes_N', 'Stalker_EW', 'Scout_N', 'Speaker_N'], boss: ['Dreadlurker_BOSS_IW_N', 1.0],
+      stages: ['조선소 외곽', '녹슨 크레인', '건조 도크', '관제탑 아래', '수문 경비대', '잠긴 창고', '방파제 길', '수문 개방', '부두 끝', '「드레드러커」'] },
   ];
   // stage conditions, hand-placed per chapter (CHAPTER_MODS): each changes how a stage has to be played
   const MODS = {
