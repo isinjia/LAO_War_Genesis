@@ -114,7 +114,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.20'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.21'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -222,7 +222,7 @@
     $('pSquad').classList.toggle('on', pane === 'squad');
     $('pGacha').classList.toggle('on', pane === 'gacha');
     $('pMissions').classList.toggle('on', pane === 'missions');
-    missionBadge();
+    missionBadge(); mailBadge();
     const canBack = pane === 'campaign' && !inHub;
     $('lobby').classList.toggle('operation-depth', canBack);
     $('btnBack').hidden = !canBack;
@@ -1651,6 +1651,49 @@
     [['확인', closeModal]], true);
   }
   $('btnOpt').onclick = () => { AUDIO.play('click', 0.5); openSettings(); };
+
+  // ── mailbox (js/mail.js): gifts sent with an update. Each mail is claimed once (save.mail[id]) and only between
+  // its from / until dates; mails not yet open stay hidden, expired ones stay in the list a few days as 기간 만료 ──
+  const mailTime = (s) => { const t = Date.parse(s); return Number.isFinite(t) ? t : null; };
+  function mailList() {
+    const now = Date.now();
+    save.mail = save.mail || {};
+    return (window.MAILS || []).map((m) => {
+      const from = mailTime(m.from), until = mailTime(m.until);
+      const claimed = !!save.mail[m.id], expired = until != null && now > until;
+      return { m, from, until, claimed, expired, open: (from == null || now >= from) && !expired && !claimed };
+    }).filter((x) => (x.from == null || now >= x.from) && !(x.expired && now - x.until > 7 * 86400000));
+  }
+  function mailBadge() { const n = mailList().filter((x) => x.open).length; $('mailBadge').textContent = n || ''; }
+  const rewardHtml = (r) => [r.parts ? `<span class="p"><i class="parts-i"></i>${fmt(r.parts)}</span>` : '', r.tuna ? `<span class="t"><i class="tuna-i"></i>${fmt(r.tuna)}</span>` : '',
+    r.xp ? `<span class="x"><i class="xp-i"></i>${fmt(r.xp)}</span>` : '', wildHtml(r.wild)].join('');
+  function claimMail(x) {
+    const now = Date.now();
+    if (save.mail[x.m.id] || (x.until != null && now > x.until) || (x.from != null && now < x.from)) return false; // once, and only in time
+    const r = x.m.reward || {};
+    save.mail[x.m.id] = now;
+    save.parts += r.parts || 0; save.tuna += r.tuna || 0; save.xp += r.xp || 0; addWild(r.wild);
+    return true;
+  }
+  function openMail() {
+    const list = mailList().sort((a, b) => b.open - a.open || (b.from || 0) - (a.from || 0));
+    const until = (x) => { const d = new Date(x.until); const left = Math.ceil((x.until - Date.now()) / 86400000);
+      return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}까지${left > 0 ? ` · ${left}일 남음` : ''}`; };
+    const body = list.length ? list.map((x, i) => `<div class="mailrow${x.open ? '' : ' off'}">
+        <div class="mi"><b>${x.m.title}</b><small>${x.m.body || ''}</small><div class="mr">${rewardHtml(x.m.reward || {})}</div>
+        ${x.until != null ? `<small class="mdate">${x.expired ? '기간 만료' : until(x)}</small>` : ''}</div>
+        <button class="btn${x.open ? '' : ' d'}" data-mi="${i}" ${x.open ? '' : 'disabled'}>${x.claimed ? '수령 완료' : x.expired ? '만료' : '받기'}</button></div>`).join('')
+      : '<div class="mailempty">받은 우편이 없습니다.</div>';
+    const anyOpen = list.some((x) => x.open);
+    modal('우편함', `<div class="mailbox">${body}</div>`, [
+      ...(anyOpen ? [['모두 받기', () => { let n = 0; list.forEach((x) => { if (x.open && claimMail(x)) n++; }); persist(); refresh(); AUDIO.play('purchase'); GAME.toast(`우편 ${n}개를 받았습니다`); openMail(); }]] : []),
+      ['닫기', closeModal, 'd'],
+    ], true);
+    document.querySelectorAll('.mailbox [data-mi]').forEach((b) => {
+      b.onclick = () => { const x = list[+b.dataset.mi]; if (claimMail(x)) { persist(); refresh(); AUDIO.play('purchase'); GAME.toast('우편을 받았습니다'); } else GAME.toast('받을 수 없는 우편입니다'); openMail(); };
+    });
+  }
+  $('btnMail').onclick = () => { AUDIO.play('click', 0.5); openMail(); };
   $('btnHelp').onclick = () => { AUDIO.play('click', 0.5); openHelp(); };
 
   let lastMoney = -1;
@@ -1737,6 +1780,58 @@
   const gain = (r) => { save.xp += r.xp; save.parts += r.parts; save.tuna += r.tuna; addWild(r.wild); };
 
   // stars: 1 for the win, 2 within 6 minutes, 3 within 6 minutes with the base at 80% or more
+  // defeat report: why the battle was lost and what to do next, from the battle's own records (js/game.js G.stat,
+  // capT, cannonShots) and the squad. Each reason has a weight; the heaviest few are shown.
+  function defeatReport(st, kind, G) {
+    if (!G) return '';
+    const t = G.t, mins = Math.max(1, t / 60), eLeft = G.ebase.max ? G.ebase.hp / G.ebase.max : 1;
+    const deck = G.deck.map((d) => d.def), fixed = !!st.daily; // the daily operation's squad is fixed
+    const R = [];
+    const add = (w, title, tip) => R.push({ w, title, tip });
+    const eIds = [...new Set(st.spawns.map((x) => x[0]).concat(st.boss ? [st.boss.e] : []))];
+    const fliers = eIds.filter((e) => D.ENEMIES[e] && D.ENEMIES[e].fly);
+    const aa = deck.filter((u) => u.range >= 2.4 && u.type !== 'wall');
+    if (kind === 'timeout') add(9, '적 기지를 부술 화력이 부족했습니다', '공격력이 높은 포격·저격·레이저 대원을 편성하고, 카드 업그레이드로 공격력을 올리세요.');
+    if (fliers.length && !aa.length) add(10, `비행 철충(${fliers.map((e) => D.ENEMIES[e].name).join('·')})을 공격할 대원이 없었습니다`, '사거리 2.4 이상인 원거리 대원만 비행 개체를 맞힐 수 있습니다. 원거리 대원을 편성하세요.');
+    if (G.capT >= 20) add(Math.min(9, G.capT / 8), `자원이 가득 찬 채 ${Math.round(G.capT)}초를 보냈습니다`, '자원이 차면 쉬지 말고 대원을 출격시키세요. 가득 찬 동안 들어오는 자원은 버려집니다.');
+    if (G.worker < 2 && t > 60 && G.worker < D.WORKER.cost.length) add(6, `발전 효율을 LV ${G.worker + 1}까지만 올렸습니다`, '초반에 발전 효율(PC: Tab)을 올리면 자원이 빨리 차서 더 많이 출격할 수 있습니다.');
+    if (!G.cannonShots && t > 40) add(5, '오르카 포격을 한 번도 쓰지 않았습니다', '게이지가 차면 오르카 포격(PC: Space)으로 몰려오는 철충을 한꺼번에 쓸어 내세요.');
+    if (G.deploys / mins < 3 && t > 60) add(5, `출격이 적었습니다(분당 ${(G.deploys / mins).toFixed(1)}회)`, '싼 대원을 자주 내보내 전열이 비지 않게 하세요.');
+    if (!fixed && !deck.some((u) => u.type === 'wall')) add(4, '방벽 대원이 없었습니다', '노움 같은 방벽 대원이 앞에서 막아 주면 뒤의 원거리 대원이 오래 버팁니다.');
+    if (!fixed && !tutBattle(st)) {
+      const ready = D.UNITS.filter((u) => {
+        if (!owned(u.id)) return false;
+        const lv = lvOf(u.id), need = lv < D.MAX_LV ? D.cardsNeed(u.rank, lv) : 0;
+        return need && cardsOf(u.id) >= need && save.xp >= D.xpNeed(u.rank, lv);
+      });
+      const inDeck = ready.filter((u) => save.deck.includes(u.id));
+      if (ready.length) add(inDeck.length ? 8 : 4, `지금 업그레이드할 수 있는 카드가 ${ready.length}장 있습니다`, `${(inDeck.length ? inDeck : ready).slice(0, 4).map((u) => u.name).join(', ')}${ready.length > 4 ? ' 등' : ''}. '대원 강화'에서 올리세요.`);
+      if (save.parts >= D.GACHA.cost10) add(7, `부품 ${fmt(save.parts)}개로 10회 제조를 할 수 있습니다`, '대원 제조에서 새 대원을 얻어 덱을 보강하세요.');
+      else if (save.parts >= D.GACHA.cost1) add(3, `부품 ${fmt(save.parts)}개로 대원 제조를 할 수 있습니다`, '새 대원을 얻어 덱을 보강하세요.');
+      if (save.deck.length < DECK_MAX) add(6, `덱에 빈 칸이 ${DECK_MAX - save.deck.length}개 있습니다`, '편성 코스트가 남는다면 대원을 더 넣어 출격할 수 있는 대원을 늘리세요.');
+    }
+    // the worm that hurt the base most, and how to answer it
+    const top = Object.entries(G.stat.base || {}).sort((a, b) => b[1] - a[1])[0];
+    if (top && D.ENEMIES[top[0]]) {
+      const e = D.ENEMIES[top[0]], tr = e.traits || [];
+      const tip = e.boss ? '보스는 체력이 많습니다. 카드 레벨을 올리고, 스킬과 오르카 포격을 보스가 올 때 몰아서 쓰세요.'
+        : tr.includes('fly') ? '사거리 2.4 이상인 원거리 대원으로 떨어뜨리세요.'
+        : tr.includes('armor') ? '장갑이 두껍습니다. 한 방이 센 저격·레이저 대원이 효과적입니다.'
+        : tr.includes('artillery') || tr.includes('sniper') ? '멀리서 쏘는 적입니다. 사거리가 긴 대원으로 먼저 처리하세요.'
+        : tr.includes('rush') ? '빠르게 파고드는 적입니다. 방벽 대원으로 길목을 막으세요.'
+        : tr.includes('heal') ? '주변 철충을 치료합니다. 원거리 대원으로 먼저 노리세요.'
+        : tr.includes('shield') ? '보호막이 있습니다. 공격 횟수가 많은 대원이나 범위 공격으로 벗겨 내세요.'
+        : '전열을 두껍게 하고 범위 공격 대원으로 무리를 정리하세요.';
+      add(2.5, `기지를 가장 많이 공격한 적: ${e.name}`, tip);
+    }
+    R.sort((a, b) => b.w - a.w);
+    const mvp = Object.entries(G.stat.dealt || {}).sort((a, b) => b[1] - a[1])[0];
+    const head = `<div class="dr-head">적 기지 체력 <b>${Math.round(eLeft * 100)}%</b> 남음 · 버틴 시간 ${Math.floor(t / 60)}분 ${pad2(Math.floor(t % 60))}초 · 처치 ${G.kills}${mvp && D.UNIT[mvp[0]] ? ` · 최다 피해 ${D.UNIT[mvp[0]].name}` : ''}</div>`;
+    const close = eLeft < 0.25 ? '<div class="dr-close">적 기지가 거의 무너졌습니다. 조금만 더 버티면 이깁니다.</div>' : '';
+    return `<div class="dreport"><div class="dr-t">패배 원인 분석</div>${head}${close}
+      ${R.slice(0, 4).map((r) => `<div class="dr-row"><b>${r.title}</b><span>${r.tip}</span></div>`).join('') || '<div class="dr-row"><span>전열을 두껍게 하고 카드를 강화해 다시 도전해 보세요.</span></div>'}</div>`;
+  }
+
   function result(st, kind) {
     // battle stats (kill / deploy / skill missions) count only for a win: a defeat pays nothing at all
     if (kind === 'win') { const G0 = GAME.state; if (G0) { save.stats = save.stats || {}; for (const [k, v] of [['kills', G0.kills], ['deploys', G0.deploys], ['skills', G0.skillsUsed]]) { save.stats[k] = (save.stats[k] || 0) + (v || 0); bump(k, v || 0); } } }
@@ -1794,11 +1889,14 @@
       if (joined && window.VOICE && VOICE[joined.id]) AUDIO.voice(VOICE[joined.id]);
     } else {
       if (st.infinite) { save.infBuffs = []; save.infRun = 0; st.buffs = []; } // the run ends: next time from floor 1
-      persist(); // a defeat pays nothing (no XP, parts, wild cards or mission progress)
       const tutorial = tutBattle(st); // the tutorial battle: try again until it is won (or the tutorial is skipped)
+      const r = D.reward(st, 'lose'); // campaign defeats pay a few parts (no XP, wild cards or mission progress)
+      if (r.parts) gain(r);
+      persist();
       modal('', `<div class="result"><div class="big fail">MISSION FAILED</div>
         <div style="margin:8px 0">${kind === 'timeout' ? '작전 시간(10분)이 초과되었습니다. 전선을 돌파하지 못했습니다.' : '전진기지가 함락되었습니다.'}</div>
-        <div style="margin-top:10px;font-size:13px">${tutorial ? '튜토리얼 작전입니다. 대원을 꾸준히 출격시키며 다시 도전해 보세요.' : '카드 업그레이드 · 편성을 바꿔 다시 도전해 보세요.'}</div></div>`, [
+        ${r.parts ? `<div class="rws"><span class="p"><i></i>+${fmt(r.parts)}</span></div>` : ''}
+        ${tutorial ? '<div style="margin-top:10px;font-size:13px">튜토리얼 작전입니다. 대원을 꾸준히 출격시키며 다시 도전해 보세요.</div>' : defeatReport(st, kind, G)}</div>`, [
         ['재도전', () => { closeModal(); GAME.stop(); launch(st.infinite ? Object.assign(D.infiniteFloor(1), { buffs: [] }) : st); }],
         ...(tutorial ? [] : [
           ['대원 강화', () => { closeModal(); GAME.stop(); openLobby('squad'); }, 'd'],

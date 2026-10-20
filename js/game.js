@@ -18,7 +18,9 @@
   const MAX_ENEMIES = 16; // regular spawns wait while this many are on the field
   const ALLY_K = 0.21; // world units per rig unit for every ally (brownie ~1.7 tall)
   // attack effects drawn smaller than the original for units whose effects cover the field (original effects and the sonic wave)
-  const FX_SIZE = { banshee: 0.5, labiata: 0.55 };
+  const FX_SIZE = { banshee: 0.4, labiata: 0.55, azazel: 0.55, ramiel: 0.65, titania: 0.7, saraqael: 0.6, brunhild: 0.75 };
+  // the rigs' own particle systems (smoke, sparks, sonic rings in the attack clips), same idea, read by js/particles.js
+  window.PS_SIZE = { banshee: 0.3, labiata: 0.55, azazel: 0.5, ramiel: 0.6, titania: 0.7, saraqael: 0.6, brunhild: 0.7 };
   const fxSize = (f) => FX_SIZE[f.def.id] || 1;
   // parts of an original rig left out: Hela's summoned mechs, Andvari's cargo box (as in the defence game)
   const RIG_HIDE = { hela: /^(Meca_\d+|Summons)$/, andvari: /^(Bone_Cargo_Box|Bone_InBox|bone_shadow_box)$/ };
@@ -304,8 +306,11 @@
       base: { hp: 0, max: 0 }, ebase: { hp: st.baseHp, max: st.baseHp },
       spawns: st.spawns.map((s) => ({ e: s[0], next: s[1], every: s[2], left: s[3] || Infinity, mag: s[4] })),
       bossDone: !st.boss, rushDone: !st.rush, userCam: false, root: new THREE.Group(),
-      // per unit id: damage dealt to worms / to the fortress, damage taken (dodged hits count as taken), money spent
-      stat: { dealt: {}, fort: {}, taken: {}, spent: {} },
+      // per unit id: damage dealt to worms / to the fortress, damage taken (dodged hits count as taken), money spent;
+      // base: per enemy id, damage done to our base
+      stat: { dealt: {}, fort: {}, taken: {}, spent: {}, base: {} },
+      // for the defeat report (js/app.js): seconds spent with a full wallet, Orca strikes fired
+      capT: 0, cannonShots: 0,
     };
     G.base.hp = G.base.max = Math.round(3000 * st.pow / 100) * 100;
     if (G.syn.has('lean')) G.worker = 1; // 소수 정예: work efficiency starts at Lv2
@@ -830,6 +835,7 @@
       }
       if (per > 0 && mv.reach && !baseHit && s[0] <= baseFront(f)) { // a claw that reaches our base
         baseHit = true;
+        G.stat.base[f.def.id] = (G.stat.base[f.def.id] || 0) + Math.min(per * 0.6, G.base.hp);
         G.base.hp = Math.max(0, G.base.hp - per * 0.6);
         G.base.flash = 0.12;
       }
@@ -975,6 +981,7 @@
       if (f.def.artillery && !f.ally) { sheet('smoke', baseFront(f) - 0.3, 1 + Math.random() * 2, 0xff8855, 2, 0.5, { grow: 0.5 }); shake(0.08, 0.15); }
       const bd = a.per * (shell ? 0.5 : 1) * (f.def.siege || 1); // siege units hit the fortress hard
       if (f.ally) G.stat.fort[f.def.id] = (G.stat.fort[f.def.id] || 0) + Math.min(bd, b.hp);
+      else G.stat.base[f.def.id] = (G.stat.base[f.def.id] || 0) + Math.min(bd, b.hp);
       b.hp = Math.max(0, b.hp - bd);
       b.flash = 0.12;
       if (!psLive) hitFx(f, baseFront(f) + f.dir * 0.4, 1.4 + Math.random(), mz);
@@ -1075,6 +1082,7 @@
     }
     // economy
     if (G.money < wallet()) G.money = Math.min(wallet(), G.money + D.WORKER.rate[G.worker] * (G.st.incomeK || 1) * (1 + 0.15 * buffN(G.st, 'income')) * dt);
+    else G.capT += dt;
     G.cds = G.cds.map((c) => Math.max(0, c - dt));
     if (G.cannon < D.CANNON.charge) G.cannon = Math.min(D.CANNON.charge, G.cannon + dt * (G.st.cannonK || 1) / (1 - 0.2 * Math.min(3, buffN(G.st, 'cannon'))));
     updateCannon(dt);
@@ -1343,7 +1351,7 @@
   const CAN = { x: 1.35, y: 1.45, charge: 0.35, sweep: 0.45, hold: 0.35, fade: 0.4 };
   function fireCannon() {
     if (!G || G.over || G.cannon < D.CANNON.charge || G.cannonFire) return;
-    G.cannon = 0;
+    G.cannon = 0; G.cannonShots++;
     G.cannonFire = { t: 0, hit: new Set(), fired: false, nextArc: 0 };
     AUDIO.play('charge', 0.8);
     // energy pulled into the barrel

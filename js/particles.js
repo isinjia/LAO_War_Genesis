@@ -214,8 +214,8 @@
         } else if (x0 != null) { px = x0; py = y0; }
         P[b] = px; P[b + 1] = py; P[b + 2] = pz; P[b + 3] = vx; P[b + 4] = vy; P[b + 5] = vz;
         P[b + 6] = 0; P[b + 7] = Math.max(0.01, mm(d.life, nt, Math.random()));
-        const sz = mm(d.size, nt, Math.random());
-        P[b + 8] = sz; P[b + 9] = d.s3 ? mm(d.sy, nt, Math.random()) : sz;
+        const sz = mm(d.size, nt, Math.random()) * (this.set.sizeK || 1);
+        P[b + 8] = sz; P[b + 9] = d.s3 ? mm(d.sy, nt, Math.random()) * (this.set.sizeK || 1) : sz;
         P[b + 10] = mm(d.rot, nt, Math.random()) * (d.rdir && Math.random() < d.rdir ? -1 : 1);
         P[b + 11] = 0;
         P[b + 12] = Math.random(); P[b + 13] = Math.random(); P[b + 14] = Math.random(); P[b + 15] = Math.random();
@@ -299,6 +299,8 @@
   class Set {
     constructor(sd, src) {
       this.sd = sd; this.total = 0;
+      // per-unit particle size (window.PS_SIZE, js/game.js): rigs whose own effects cover the field are drawn smaller
+      this.sizeK = (sd && sd.tpl && window.PS_SIZE && window.PS_SIZE[sd.tpl.id]) || 1;
       // viewH: the view's height in this set's units, for Unity's Max Particle Size (a fraction of the view height)
       this.src = src || { nodes: sd.tpl.data.nodes, W: sd.W, EA: sd.EA, tex: sd.tpl.atlas.tex, rects: sd.tpl.atlas.rects,
         parent: sd.mesh, order: () => sd.mesh.renderOrder || 0,
@@ -607,8 +609,10 @@
     dispose() { this.set.dispose(); }
   }
   // fire: def = rig data.shots[clip]; from / to in field units; k = the rig's scale, dir = facing
+  const unitK = (sd) => (sd && sd.tpl && window.PS_SIZE && window.PS_SIZE[sd.tpl.id]) || 1; // per-unit effect size (js/game.js)
   function shot(sd, def, from, to, field, k, dir, order) {
     const tex = sd.tpl.atlas.tex, rects = sd.tpl.atlas.rects;
+    k *= unitK(sd);
     const g = new THREE.Group();
     g.position.set(from[0], from[1], 0); g.scale.set(k * dir, k, 1);
     field.add(g);
@@ -656,6 +660,7 @@
   }
   // a hit effect played once on the target (the clip's EventHit effect, for hits without a projectile)
   function burst(sd, tree, at, field, k, dir, order) {
+    k *= unitK(sd);
     const g = new THREE.Group();
     g.position.set(at[0], at[1], 0); g.scale.set(k * dir, k, 1);
     field.add(g);

@@ -144,7 +144,7 @@
   // The player selects any SS. Half of ordinary SS draws are that unit; 40 pulls guarantee it. Duplicates turn into card copies (PULL_CARDS).
   const GACHA = {
     cost1: 500, cost10: 5000, rates: { B: 0.47, A: 0.32, S: 0.18, SS: 0.03 }, pity: 40, featuredShare: 0.5,
-    startParts: 10000, startTuna: 300, // the tutorial 10-pull spends 5000; after it (+1-1 reward, +1000 mission) the player holds 6150: one more 10-pull
+    startParts: 10000, startTuna: 300, // the tutorial 10-pull spends 5000; after it (+1-1 reward, +1000 mission) the player holds 6500: one more 10-pull
   };
   const SHOP_PRICE = { B: 150, A: 400, S: 1000, SS: 3000 }; // tuna, recruit shop (a link for an owned unit)
   const SHOP_NEW_SS = 10000; // a new SS recruited outright costs double: the making stays the main way to meet SS
@@ -428,17 +428,18 @@
     ...[50, 200].map((n, i) => ({ id: 'pull' + n, name: `제조 ${n}회`, desc: '대원 제조 횟수', goal: (sv) => [sv.pulls || 0, n], reward: { tuna: 300 * (i + 1), parts: 0 } })),
   ];
 
-  // rewards for a stage result. kind: 'first' (first clear), 'win' (repeat clear), 'lose' (nothing)
+  // rewards for a stage result. kind: 'first' (first clear), 'win' (repeat clear), 'lose' (campaign: a quarter of the
+  // first-clear parts, so a stuck player still saves up for the making; daily / infinite: nothing)
   function reward(st, kind) {
-    if (kind === 'lose') return { xp: 0, parts: 0, tuna: 0 };
+    if (kind === 'lose') return { xp: 0, parts: st.daily || st.infinite ? 0 : Math.round(reward(st, 'first').parts * 0.25 / 10) * 10, tuna: 0 };
     if (st.daily) return kind === 'first' ? { xp: st.xp, parts: 1000, tuna: 300, wild: { A: 5 } } : { xp: Math.round(st.xp / 3), parts: 200, tuna: 0 };
     if (st.infinite) return { xp: st.xp, parts: 1200 + 120 * st.floor, tuna: kind === 'first' ? 150 + 20 * st.floor : 0, wild: kind === 'first' && st.floor % 5 === 0 ? { S: 1 } : null };
-    const g = st.ix, k = st.hard ? 1.6 : 1, boss = st.last ? 5 : 1;
+    const g = st.ix, k = st.hard ? 1.6 : 1, boss = st.last ? 5 : 1, bossP = st.last ? 2 : 1;
     // first clears also bring wild cards: every stage B, the elite A, the boss S (hard: A / S, its boss SS)
     const wild = kind !== 'first' ? null : st.hard ? (st.last ? { SS: 1, S: 2 } : { A: 4 }) : st.last ? { S: 1, A: 5 } : st.elite ? { A: 5 } : { B: 10 };
     return {
       xp: kind === 'first' ? st.xp : Math.round(st.xp / 2),
-      parts: Math.round((150 + 10 * g) * k * (st.bonus || 1) * (kind === 'first' ? 1 : 0.5) / 10) * 10, // replays pay half
+      parts: Math.round((500 + 30 * g) * k * bossP * (st.bonus || 1) * (kind === 'first' ? 1 : 0.5) / 10) * 10, // ~a 10-pull every 5-8 stages; bosses double; replays pay half
       tuna: kind === 'first' ? Math.round((30 + 3 * g) * k * boss / 10) * 10 : 0,
       wild,
     };
