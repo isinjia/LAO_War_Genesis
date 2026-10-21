@@ -5,3 +5,5 @@ tools/ui_ref/fbx_manifest.json
 tools/ui_ref/guid_index.json
 .claude/settings.local.json
 tools/compare/cmp.js
+dist/
+node_modules/

@@ -97,6 +97,8 @@
   // animated illustrations (transparent looping video) shown instead of the still outside the story (the story draws
   // expressions onto the still)
   const ANIM = { blacklilith: 'assets/full/blacklilith.webm' };
+  // a picture file's usable URL (the deployed build restores the scrambled files in memory: js/pack.js)
+  const pic = (u) => (window.PACKED ? PACKED.pic(u) : Promise.resolve(u));
   const fullTag = (id, attrs = '') => (ANIM[id]
     ? `<video ${attrs} src="${ANIM[id]}" poster="${FULL[id]}" autoplay loop muted playsinline disablepictureinpicture></video>`
     : `<img ${attrs} src="${art(id)}" alt="">`);
@@ -118,7 +120,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.28'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.29'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -567,8 +569,8 @@
     delete $('story').dataset.storyArt;
     for (const line of sc.lines) {
       const src = line[3] && STORY.ART && STORY.ART[line[3].art];
-      if (src) { const preload = new Image(); preload.src = src; }
-      if (D.UNIT[line[0]] && hasFull(line[0])) { const p = new Image(); p.src = art(line[0]); if (p.decode) p.decode().catch(() => {}); } // decoded before it is shown: a swap never shows the last speaker
+      if (src) pic(src).then((u) => { const preload = new Image(); preload.src = u; });
+      if (D.UNIT[line[0]] && hasFull(line[0])) pic(art(line[0])).then((u) => { const p = new Image(); p.src = u; if (p.decode) p.decode().catch(() => {}); }); // decoded before it is shown: a swap never shows the last speaker
     }
     ['stL', 'stR'].forEach((id) => { $(id).className = 'st-char ' + id.slice(2); $(id).removeAttribute('src'); });
     $('story').classList.remove('fx-shake', 'fx-flash', 'st-ominous'); // reset the previous scene's cues and ending mood
@@ -616,7 +618,7 @@
         } catch (e) { res(null); }
       };
       a.onload = b.onload = go; a.onerror = b.onerror = () => res(null);
-      a.src = FULL[who]; b.src = f.e[ex];
+      Promise.all([pic(FULL[who]), pic(f.e[ex])]).then(([ua, ub]) => { a.src = ua; b.src = ub; });
     });
     return faceCache[key];
   }
@@ -641,8 +643,10 @@
         delete $('story').dataset.storyArt;
       }
       if (stage.art && STORY.ART && STORY.ART[stage.art]) {
-        $('stBg').style.backgroundImage = `url(${STORY.ART[stage.art]})`;
-        $('story').dataset.storyArt = stage.art;
+        const key = stage.art;
+        $('story').dataset.storyArt = key;
+        const u0 = STORY.ART[key], setBg = (u) => { if ($('story').dataset.storyArt === key) $('stBg').style.backgroundImage = `url(${u})`; };
+        if (!(window.PACKED && PACKED.on) || /^blob:/.test(u0)) setBg(u0); else pic(u0).then(setBg); // the deployed build: once restored
       }
       if (stage.sfx) AUDIO.play(stage.sfx, 0.8);
       if (stage.fx) { const box = $('story'); box.classList.remove('fx-shake', 'fx-flash'); void box.offsetWidth; box.classList.add('fx-' + stage.fx); box.onanimationend = (ev) => { if (ev.target === box) box.classList.remove('fx-shake'); }; }

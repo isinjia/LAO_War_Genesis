@@ -1,9 +1,15 @@
+// Cloudflare Workers static-asset deploy (Workers Builds runs `npx wrangler deploy` on every push to main).
+// The build step (tools/build_dist.mjs) copies only the game files into dist/, minifies the game's own scripts and
+// ships the pictures scrambled (js/pack.js restores them in memory); the repository keeps the readable source.
 {
   "name": "lao-war-genesis",
   "compatibility_date": "2026-10-19",
   "workers_dev": true,
   "preview_urls": true,
+  "build": {
+    "command": "node tools/build_dist.mjs"
+  },
   "assets": {
-    "directory": "."
+    "directory": "./dist"
   }
 }

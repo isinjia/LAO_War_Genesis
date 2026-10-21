@@ -247,7 +247,7 @@
       if (document.querySelectorAll('#story .st-char.show').length) throw new Error('characters present in unseen underground');
       const artCue = lines.findIndex(line => line[3]?.art === 'underground');
       for (let i = cue; i < artCue; i++) { box.click(); box.click(); }
-      if (story.dataset.storyArt !== 'underground' || !document.getElementById('stBg').style.backgroundImage.includes('underground-v1.webp')) throw new Error('ending illustration missing');
+      if (story.dataset.storyArt !== 'underground' || !(window.PACKED && PACKED.on ? /blob:/ : /underground-v1\.webp/).test(document.getElementById('stBg').style.backgroundImage)) throw new Error('ending illustration missing');
       for (let i = artCue; i < lines.length; i++) { box.click(); box.click(); }
       const credits = document.getElementById('credits');
       if (!credits.classList.contains('show') || !credits.textContent.includes('TO BE CONTINUED')) throw new Error('continued credits missing');

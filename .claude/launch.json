@@ -22,6 +22,18 @@
         "E:/LAO_MINI_GAME/5_LAO_Defence"
       ],
       "port": 8766
+    },
+    {
+      "name": "war-genesis-dist",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8791",
+        "--directory",
+        "E:/LAO_MINI_GAME/9_LAO_War_Genesis/dist"
+      ],
+      "port": 8791
     }
   ]
 }
