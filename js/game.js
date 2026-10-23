@@ -596,7 +596,7 @@
   function spawnEnemy(eid, mag, boss) {
     const def = Object.assign({ id: eid }, D.ENEMIES[eid]);
     const f = makeFighter(-1, def, 'e_' + eid, G.len - 0.6, mag * (G.st.pow || 1));
-    f.atk *= window.TUNE_EATK || 1.4; // monsters hit harder than their HP scale suggests: the line has to be held
+    f.atk *= window.TUNE_EATK || 1.0; // monsters' attack factor (1.4 before V1.30: the line melted, units had to be resent constantly)
     if (def.shield) f.shield = f.maxHp * def.shield;
     f.money = Math.round(def.money * (0.8 + 0.2 * mag) * (0.6 + 0.4 * Math.min(3, G.st.pow || 1))); // tougher stages pay more (up to the campaign's top)
     if (boss) f.boss = true;
@@ -990,6 +990,7 @@
     if (any || a.i === 0) attackSfx(f);
   }
 
+  const GUARD_DR = 0.6; // damage a defender (보호기, data.js guard) takes
   function damage(o, dmg, src) {
     if (o.dead) return;
     const dodge = o.def.evade && src && Math.random() < o.def.evade;
@@ -1012,6 +1013,7 @@
     // armour shrugs splash off: grey sparks and a ping
     if (o.def.armor && src && src.ally && src.def.area && src.def.type !== 'snipe' && Math.random() < 0.4) { sheet('spark', o.x, aimY(o) + o.h * 0.1, 0xd8d8d8, 0.8, 0.2); AUDIO.play('handgun', 0.25); }
     if (o.ai && o.ai.roar) dmg *= 0.5; // rearing up between phases: half damage
+    if (o.ally && o.def.guard) dmg *= GUARD_DR; // defenders (보호기) take less: the front line holds
     if (!o.ally && src && src.ally) G.stat.dealt[src.def.id] = (G.stat.dealt[src.def.id] || 0) + Math.min(dmg, Math.max(0, o.hp));
     o.hp -= dmg;
     o.flashT = 0.08;

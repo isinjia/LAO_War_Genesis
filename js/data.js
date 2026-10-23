@@ -70,12 +70,15 @@
   ];
   // balance pass at card level 10 (tools/balance.js): hp and attack x this, so units of a rank return about the same per
   // money spent (towers by their raw stats: the ordinary battle barely reaches them)
-  const TUNE = {brownie: 0.89, leprechaun: 0.97, gnome: 1, impet: 1.01, daphne: 1.26, banshee: 0.72, sylphid: 0.79, raven: 1.12, nymph: 1.26, amy: 1.28, andvari: 0.84, phoenix: 4.67, thetis: 3.87, hraesvelgr: 8.31, undine: 1.09, valkyrie: 1.25, zero: 0.97, hela: 1.04, azazel: 1.39, saraqael: 1.53, leona: 0.81, ullr: 0.32, harpy: 0.29, eternity: 0.74, lemonadealpha: 0.59, sleipnir: 1.66, blacklilith: 1.83, cyclopsprincess: 1.94, blindprincess: 1.84, brunhild: 0.35, tiamat: 0.12, khan: 0.17, labiata: 1.55, lrl: 0.98, constantia: 0.62, titania: 0.33, mercury: 0.84, empress: 0.63, fafnir: 1.58, ramiel: 0.37};
+  const TUNE = {brownie: 0.89, leprechaun: 0.97, gnome: 1.0, impet: 1.34, daphne: 1.26, banshee: 0.72, sylphid: 0.79, raven: 1.12, nymph: 0.92, amy: 1.28, andvari: 0.84, phoenix: 4.67, thetis: 3.87, hraesvelgr: 8.31, undine: 1.09, valkyrie: 1.25, zero: 0.97, hela: 1.04, azazel: 1.39, saraqael: 1.53, leona: 0.81, ullr: 0.23, harpy: 0.2, eternity: 0.74, lemonadealpha: 0.59, sleipnir: 1.66, blacklilith: 1.83, cyclopsprincess: 1.94, blindprincess: 1.84, brunhild: 0.35, tiamat: 0.12, khan: 0.17, labiata: 1.55, lrl: 0.98, constantia: 0.62, titania: 0.33, mercury: 0.84, empress: 0.88, fafnir: 1.58, ramiel: 0.37};
   // the starting squad, and the unit each stage hands out on its first clear (stage index -> id)
   const STARTERS = ['brownie', 'leprechaun', 'gnome'];
   const STAGE_REWARD = ['impet', 'nymph', 'valkyrie', 'raven', 'undine', 'phoenix', 'thetis', 'hraesvelgr'];
 
   const r10 = (v) => Math.max(10, Math.round(v / 10) * 10);
+  // unit value: every unit fights VALUE times as hard (hp / atk) and costs VALUE times the energy, so the same income
+  // fields fewer, sturdier units (fewer deploys to hold the line); the energy cap grows with it (WORKER.cap)
+  const VALUE = 2;
   // what a unit is for (the squad screen, tools/balance.js): every role has units at more than one rank
   const ROLES = {
     single: '단일 공격', area: '범위 공격', tank: '체력 탱커', swarm: '물량 탱커', evade: '회피 탱커',
@@ -156,10 +159,10 @@
     const t = TYPES[type], R = RANKS[rank];
     const u = {
       id, name, rank, type, role: t.role, cls: CLASS[id] || '', fx, color, sfx, desc,
-      cost: r10(t.cost * R.c * (tw.cost || 1)),
+      cost: r10(t.cost * R.c * (tw.cost || 1) * VALUE),
       cd: Math.min(45, Math.round(t.cd * R.cd * (tw.cd || 1) * 10) / 10),
-      hp: Math.round(t.hp * R.k * (tw.hp || 1) * (TUNE[id] || 1)),
-      atk: Math.round(t.atk * R.k * (tw.atk || 1) * (TUNE[id] || 1)),
+      hp: Math.round(t.hp * R.k * (tw.hp || 1) * (TUNE[id] || 1) * VALUE),
+      atk: Math.round(t.atk * R.k * (tw.atk || 1) * (TUNE[id] || 1) * VALUE),
       rate: Math.round(t.rate * (tw.rate || 1) * 100) / 100,
       range: RANGE[id] || Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10,
       spd: Math.round(t.spd * (tw.spd || 1) * 100) / 100,
@@ -172,6 +175,8 @@
       siege: tw.siege || 0, ship: tw.ship || 0, tower: tw.tower || 0, multi: tw.multi || 1, evade: tw.evade || 0,
       gacha: rank === 'SS' ? 1 : 0,
       legend: rank === 'SS' ? 1 : 0,
+      // the original's defenders (보호기) hold the line: they take less damage (GUARD_DR, js/game.js damage())
+      guard: (CLASS[id] || '').endsWith('보호기') ? 1 : 0,
     };
     u.roles = roleTags(u, type);
     const tag = [u.siege && '요새 공격', u.ship && '전투함', u.tower && '방어 타워', u.multi > 1 && `${u.multi}기 배치`, u.evade && `회피 ${Math.round(u.evade * 100)}%`].filter(Boolean);
@@ -315,7 +320,7 @@
   const MID = 4; // index of the elite stage in a chapter
   // difficulty pass (tools/balance.js calibrate): worm strength and fortress HP x this per stage, so the squad of that
   // point in the campaign with every card at level 10 wins keeping 35-75% of its base (chapters 1-2 x0.7 for newcomers)
-  const DIFF = [8.56, 16.8, 15.8, 14.76, 12.11, 6.98, 9.55, 11.65, 9.22, 7.61, 17.34, 15.64, 14.08, 12.99, 11.65, 11.68, 11.49, 11.07, 10.47, 9.68, 17.73, 15.51, 12.91, 11.38, 9.98, 9.17, 8.38, 8.08, 7.74, 7.37, 8.93, 6.29, 4.11, 5.3, 6.55, 5.2, 4.05, 4.02, 3.19, 2.76, 2.51, 2.49, 2.65, 2.66, 2.64, 1.79, 1.17, 1.4, 1.94, 2.36, 2.7, 1.9, 1.2, 1.57, 1.84, 1.87, 1.78, 1.77, 1.75, 1.72, 1.9, 1.94, 1.99, 1.63, 1.31, 1.25, 1.18, 1.19, 1.08, 0.97, 2.35, 1.88, 1.44, 1.49, 1.53, 1.35, 1.3, 1.3, 1.19, 1.13];
+  const DIFF = [8.56, 16.8, 15.8, 14.76, 12.11, 6.98, 9.55, 11.65, 9.22, 7.61, 17.34, 15.64, 14.08, 12.99, 11.65, 11.68, 11.49, 11.07, 10.47, 6.78, 17.73, 15.51, 12.91, 11.38, 9.98, 9.17, 8.38, 8.08, 7.74, 7.37, 8.93, 6.29, 4.11, 5.3, 6.55, 5.2, 2.75, 3.22, 2.55, 2.21, 2.01, 1.99, 2.12, 2.13, 1.79, 1.43, 0.94, 1.12, 1.55, 1.37, 2.7, 1.9, 0.68, 1.57, 1.84, 1.87, 1.78, 1.77, 1.75, 1.72, 1.9, 1.94, 1.99, 1.63, 1.31, 1.25, 1.18, 1.19, 1.08, 0.82, 2.35, 1.88, 1.44, 1.49, 1.53, 1.35, 1.3, 1.3, 1.19, 1.13];
 
   // spawns: [enemy, first spawn (s), every (s), how many (0 = endless), strength x]
   // pow: every enemy's HP / attack in this stage; rush: spawns that start once the base falls below `at` of its HP;
@@ -350,7 +355,7 @@
   const CHAPTER_REWARD = STAGE_REWARD;
 
   // worker (income) levels: money per second and wallet size; cost of the next level
-  const WORKER = { rate: [24, 32, 40, 48, 56, 64, 72, 80], cap: [600, 900, 1200, 1500, 1800, 2200, 2600, 3000], cost: [80, 160, 240, 320, 400, 480, 560] };
+  const WORKER = { rate: [24, 32, 40, 48, 56, 64, 72, 80], cap: [600, 900, 1200, 1500, 1800, 2200, 2600, 3000].map((v) => v * VALUE), cost: [80, 160, 240, 320, 400, 480, 560] };
   const CANNON = { charge: 22, reach: 15, dmg: 300 }; // damage x the stage's pow
   const MAX_LV = 12; // card level cap
   const lvMul = (lv) => 1 + 0.2 * (lv - 1); // hp / atk at battle level lv (levels above the card's start, 1-based)
@@ -512,5 +517,5 @@
   }
 
   window.DATA = { UNITS, UNIT, TYPES, ROLES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, DECK_COST, DECK_CAP, START_LV, CARDS, cardsNeed, relLv, PULL_CARDS, WILD_SHOP, SHOP_CARDS,
-    ENEMIES, TRAITS, MODS, INF_BUFFS, dailyStage, SYNERGIES, synergiesOf, MISSIONS, PERIODIC, periodic, dayNo, BASE_RIG, STAGES, HARD, infiniteFloor, WORKER, CANNON, MAX_LV, lvMul, lvCost, xpNeed, reward };
+    ENEMIES, TRAITS, MODS, INF_BUFFS, dailyStage, SYNERGIES, synergiesOf, MISSIONS, PERIODIC, periodic, dayNo, BASE_RIG, STAGES, HARD, infiniteFloor, WORKER, CANNON, VALUE, MAX_LV, lvMul, lvCost, xpNeed, reward };
 })();

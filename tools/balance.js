@@ -74,7 +74,7 @@
     const T = opt.T || 600;
     let n = 0;
     while (!G.over && G.t < T) { (opt.bot || bot)(G, deck); GAME.sim(0.25); if (++n % 80 === 0) await breathe(); }
-    const r = { win: G.over === 'win', over: G.over || 'time', t: G.t, base: G.base.hp / G.base.max, ebase: G.ebase.hp / G.ebase.max, stat: G.stat };
+    const r = { win: G.over === 'win', over: G.over || 'time', t: G.t, deploys: G.deploys, base: G.base.hp / G.base.max, ebase: G.ebase.hp / G.ebase.max, stat: G.stat };
     GAME.stop();
     return r;
   }
@@ -147,7 +147,7 @@
       const r = await battle(st, squad(ids, L), {
         T: 150,
         // a measuring window: the tested unit can be afforded at once and neither base falls inside it
-        setup: (G) => { G.money = 1500; G.base.hp = G.base.max *= 20; G.ebase.hp = G.ebase.max *= 4; if (setup) setup(G); },
+        setup: (G) => { G.money = 1500 * (D.VALUE || 1); G.base.hp = G.base.max *= 20; G.ebase.hp = G.ebase.max *= 4; if (setup) setup(G); },
         bot: (G, deck) => { // the tested unit first whenever it is ready; the core only on a full wallet
           if (G.worker < 2 && G.money >= D.WORKER.cost[G.worker]) GAME.upgradeWorker();
           const towers = G.allies.filter((a) => !a.dead && a.def.tower).length;
@@ -275,6 +275,85 @@
     return out;
   }
 
+  // ── 5 / 6. feel: an ordinary player, and how long the front line holds ──
+  // casual commander: two income upgrades, reacts once a second, picks a random card it can bank for and waits until it
+  // can pay for it (no tank-first ordering, no cost planning), fires the cannon as soon as it is charged and anything is
+  // near. A worse player than bot(), on purpose.
+  function casualBot(seed) {
+    let next = 0, want = -1, r = seed * 9301 + 49297;
+    const rnd = () => ((r = (r * 9301 + 49297) % 233280) / 233280);
+    return (G, deck) => {
+      if (G.t < next) return;
+      next = G.t + 1;
+      if (G.worker < 2 && G.money >= D.WORKER.cost[G.worker]) { GAME.upgradeWorker(); return; }
+      const towers = G.allies.filter((a) => !a.dead && a.def.tower).length;
+      const can = (i) => G.cds[i] <= 0 && !GAME.onField(U[deck[i].id]) && !(U[deck[i].id].tower && towers >= 2) && U[deck[i].id].cost <= GAME.wallet();
+      if (want < 0 || !can(want)) {
+        const ok = deck.map((d, i) => i).filter(can);
+        want = ok.length ? ok[Math.floor(rnd() * ok.length)] : -1;
+      }
+      if (want >= 0 && G.money >= U[deck[want].id].cost) { GAME.deploy(want); want = -1; }
+      if (G.cannon >= D.CANNON.charge && G.enemies.some((e) => !e.dead && e.x < D.CANNON.reach + 1)) GAME.fireCannon();
+    };
+  }
+  // tanks: the original's defenders (보호기) on the line, towers and battleships excluded
+  const isWall = (u) => u.guard && !u.tower && !u.ship;
+  async function feel(log, stages) {
+    const rows = [], lives = [], allLives = [], paces = [];
+    for (let c = 0; c < 8; c++) for (const s of SAMPLE) {
+      const st = D.STAGES[c * 10 + s], ids = expectedDeck(c, st.ix), dk = squad(ids, 9);
+      if (stages && !stages.includes(st.ix)) continue;
+      // the ordinary player
+      const cas = await battle(st, dk, { bot: casualBot(st.ix + 1) });
+      // the front line under the standard commander: each wall unit's time on the field (until it falls or the end)
+      // and every unit's time on the field (how often the player has to send replacements)
+      const born = new Map(), life = [], lifeAll = [];
+      const track = (G, deck) => {
+        for (const a of G.allies) if (!a.def.tower && !born.has(a)) born.set(a, G.t);
+        for (const [a, t0] of born) if (a.dead && t0 != null) { (isWall(a.def) ? life : lifeAll).push(G.t - t0); born.set(a, null); }
+        bot(G, deck);
+      };
+      const std = await battle(st, dk, { bot: track });
+      for (const [a, t0] of born) if (t0 != null) (isWall(a.def) ? life : lifeAll).push(Math.max(0, std.t - t0)); // still standing at the end
+      lifeAll.push(...life);
+      const med = life.length ? median(life) : null, medAll = lifeAll.length ? median(lifeAll) : 0;
+      if (med != null) lives.push(med);
+      allLives.push(medAll);
+      const pace = cas.deploys / Math.max(1, cas.t / 60); // the ordinary player's deploys per minute
+      paces.push(pace);
+      const ok = cas.win && cas.base >= 0.25;
+      rows.push({ code: st.code, casual: cas.win ? +cas.base.toFixed(2) : 'lose', ok, tank: med == null ? '-' : +med.toFixed(1), n: life.length, life: +medAll.toFixed(1), pace: +pace.toFixed(1), stdPace: +(std.deploys / Math.max(1, std.t / 60)).toFixed(1) });
+      if (log) log(`feel ${st.code}: casual ${cas.win ? 'W ' + Math.round(cas.base * 100) + '%' : cas.over + ' e' + Math.round(cas.ebase * 100) + '%'} · wall life ${med == null ? '-' : med.toFixed(1) + 's'} (${life.length}) · unit life ${medAll.toFixed(1)}s · deploys/min ${pace.toFixed(1)}`);
+    }
+    // an ordinary player clears with a quarter of the base left (a close win counts half)
+    const casual = rows.reduce((a, r) => a + (r.ok ? 1 : r.casual !== 'lose' ? 0.5 : 0), 0) / rows.length;
+    // the wall holds: median time on the field per stage, 20 s or more full marks, 8 s or less none
+    const tank = mean(lives.map((m) => clamp((m - 8) / 12, 0, 1)));
+    // control load: units last long enough that replacements are an occasional call, not a constant drill
+    // (median time on the field of every unit per stage: 30 s or more full marks, 10 s or less none)
+    const load = mean(allLives.map((m) => clamp((m - 10) / 20, 0, 1)));
+    return { casual: Math.round(100 * casual), tank: Math.round(100 * tank), load: Math.round(100 * load), tankMed: +median(lives).toFixed(1), lifeMed: +median(allLives).toFixed(1), paceMed: +median(paces).toFixed(1), rows };
+  }
+
+  // difficulty for an ordinary player: the factor on a sampled stage's enemy strength and fortress HP at which the casual
+  // commander (two seeds) with that point's squad at card level 10 wins both runs keeping lo..hi of its base at worst
+  async function calibrateCasual(log, chapters = [0, 1, 2, 3, 4, 5, 6, 7], stages = SAMPLE, lo0 = 0.3, hi0 = 0.75) {
+    const out = [];
+    for (const c of chapters) for (const s of stages) {
+      const base = D.STAGES[c * 10 + s], ids = expectedDeck(c, base.ix);
+      let lo = 0, hi = 0, k = 1, worst = 0;
+      for (let it = 0; it < 7; it++) {
+        const st = Object.assign({}, base, { pow: base.pow * k, baseHp: Math.round(base.baseHp * k), finale: false });
+        worst = 1;
+        for (let r = 0; r < 2; r++) { const x = await battle(st, squad(ids, 9), { bot: casualBot(base.ix * 7 + r + 1) }); worst = Math.min(worst, x.win ? x.base : 0); }
+        if (worst > hi0) { lo = k; k = hi ? Math.sqrt(k * hi) : k * 1.25; } else if (worst < lo0) { hi = k; k = lo ? Math.sqrt(k * lo) : k * 0.75; } else break;
+      }
+      out.push({ code: base.code, g: base.ix, k: +k.toFixed(3), worst: +worst.toFixed(2) });
+      if (log) log(`casual calibrate ${base.code}: x${k.toFixed(2)} (worst base ${Math.round(worst * 100)}%)`);
+    }
+    return out;
+  }
+
   async function all(opt = {}) {
     const box = document.createElement('pre');
     box.style.cssText = 'position:fixed;inset:10px;z-index:99;overflow:auto;background:rgba(0,0,10,.92);color:#cfe;font:12px monospace;padding:12px;margin:0';
@@ -284,12 +363,15 @@
     if (!opt.skip || !opt.skip.includes('ur')) Object.assign(out, await unitsAndRoles(log, opt.runs || 2, opt.eff));
     if (!opt.skip || !opt.skip.includes('level')) out.level = await level(log);
     if (!opt.skip || !opt.skip.includes('difficulty')) out.difficulty = await difficulty(log);
+    if (!opt.skip || !opt.skip.includes('feel')) out.feel = await feel(log);
+    const parts = [out.level && out.level.score, out.difficulty && out.difficulty.score, out.units, out.roles, out.feel && out.feel.casual, out.feel && out.feel.tank, out.feel && out.feel.load].filter((v) => v != null);
+    out.total = Math.round(mean(parts));
     log('\n== SCORES ==');
-    log(`레벨 밸런스 ${out.level && out.level.score} · 난이도 완성도 ${out.difficulty && out.difficulty.score} · 캐릭터 밸런스 ${out.units} · 캐릭터 활용도 ${out.roles}`);
+    log(`종합 ${out.total} · 레벨 밸런스 ${out.level && out.level.score} · 난이도 완성도 ${out.difficulty && out.difficulty.score} · 캐릭터 밸런스 ${out.units} · 캐릭터 활용도 ${out.roles} · 체감 난이도 ${out.feel && out.feel.casual} · 탱커 생존 ${out.feel && out.feel.tank} (중앙 ${out.feel && out.feel.tankMed}초) · 조작 부담 ${out.feel && out.feel.load} (대원 생존 중앙 ${out.feel && out.feel.lifeMed}초, 분당 출격 ${out.feel && out.feel.paceMed})`);
     (out.roleRows || []).forEach((r) => log(`  ${r.role}: ${r.score} (구성 ${r.coverage} · 전문 ${r.niche} [x${r.adv}] · 범용 ${r.usable} [x${r.gen}]) ${r.members}`));
     window.BAL.last = out;
     return out;
   }
 
-  window.BAL = { all, calibrate, level, difficulty, unitsAndRoles, battle, bot, expectedLevel, expectedDeck, needLevel, spotlight, scenarios, squad };
+  window.BAL = { all, feel, casualBot, calibrate, calibrateCasual, level, difficulty, unitsAndRoles, battle, bot, expectedLevel, expectedDeck, needLevel, spotlight, scenarios, squad };
 })();
