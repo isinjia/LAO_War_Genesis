@@ -104,16 +104,19 @@
     for (let L = from; L <= 15; L++) { const r = await battle(st, squad(ids, L)); if (r.win && r.base >= 0.2) return L; }
     return 16;
   }
+  // every card starts at level 10 (battle level 9), so every stage must clear at battle level 9; below that, the lowest
+  // battle level that clears is a probe of how much a stage asks. The target curve climbs from 1 (1-1) to 9 (8-10).
+  const targetLevel = (g) => Math.round(1 + 8 * g / 79);
   async function difficulty(log) {
     const rows = [];
     for (let c = 0; c < 8; c++) for (const s of SAMPLE) {
-      const st = D.STAGES[c * 10 + s], E = expectedLevel(st.ix), ids = expectedDeck(c);
+      const st = D.STAGES[c * 10 + s], E = targetLevel(st.ix), ids = expectedDeck(c);
       const R = await needLevel(st, ids, Math.max(1, E - 6));
       rows.push({ code: st.code, g: st.ix, E, R, kind: st.last ? 'boss' : st.elite ? 'elite' : '' });
-      if (log) log(`need ${st.code}: L${R} (expected L${E})`);
+      if (log) log(`need ${st.code}: L${R} (target L${E})`);
     }
-    // in reach (R <= E) and not trivial (R >= E - 4)
-    const reach = rows.filter((r) => r.R <= r.E && r.R >= r.E - 4).length / rows.length;
+    // in reach (the starting card level 10, battle level 9, clears it) and on the curve (within 3 of the target)
+    const reach = rows.filter((r) => r.R <= 9 && Math.abs(r.R - r.E) <= 3).length / rows.length;
     // climbs with the campaign: rank correlation between stage order and the level it asks for
     const rank = (a) => { const s = a.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0]); const r = []; s.forEach(([, i], k) => { r[i] = k; }); return r; };
     const rg = rank(rows.map((r) => r.g)), rr = rank(rows.map((r) => r.R + r.g * 1e-4)), n = rows.length;

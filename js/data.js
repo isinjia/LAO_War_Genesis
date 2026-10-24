@@ -79,6 +79,8 @@
   // unit value: every unit fights VALUE times as hard (hp / atk) and costs VALUE times the energy, so the same income
   // fields fewer, sturdier units (fewer deploys to hold the line); the energy cap grows with it (WORKER.cap)
   const VALUE = 2;
+  // a flat lift on every unit's hp and attack (cost unchanged): V1.31 x1.35
+  const STAT_K = 1.35;
   // what a unit is for (the squad screen, tools/balance.js): every role has units at more than one rank
   const ROLES = {
     single: '단일 공격', area: '범위 공격', tank: '체력 탱커', swarm: '물량 탱커', evade: '회피 탱커',
@@ -161,8 +163,8 @@
       id, name, rank, type, role: t.role, cls: CLASS[id] || '', fx, color, sfx, desc,
       cost: r10(t.cost * R.c * (tw.cost || 1) * VALUE),
       cd: Math.min(45, Math.round(t.cd * R.cd * (tw.cd || 1) * 10) / 10),
-      hp: Math.round(t.hp * R.k * (tw.hp || 1) * (TUNE[id] || 1) * VALUE),
-      atk: Math.round(t.atk * R.k * (tw.atk || 1) * (TUNE[id] || 1) * VALUE),
+      hp: Math.round(t.hp * R.k * (tw.hp || 1) * (TUNE[id] || 1) * VALUE * STAT_K),
+      atk: Math.round(t.atk * R.k * (tw.atk || 1) * (TUNE[id] || 1) * VALUE * STAT_K),
       rate: Math.round(t.rate * (tw.rate || 1) * 100) / 100,
       range: RANGE[id] || Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10,
       spd: Math.round(t.spd * (tw.spd || 1) * 100) / 100,
