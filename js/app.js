@@ -793,11 +793,12 @@
     const b = document.createElement('button');
     b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (ready ? ' up' : '') + (have && need && n >= need ? ' full' : '');
     b.dataset.id = u.id;
-    b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt="" draggable="false"><i class="crc-cost">${u.cost}</i>${rk(u.rank, u)}` +
+    b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt="" draggable="false"><i class="crc-cost" aria-label="출격 전력 ${u.cost}"><span aria-hidden="true"></span>${u.cost}</i>${rk(u.rank, u)}` +
+      `<span class="crc-deck-cost">편성 ${D.DECK_COST[u.rank]}</span>` +
       `</div>` +
       `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
       (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-xp crc-name">${u.name}</div>`);
-    b.title = `${u.name} (${u.rank} · 편성 코스트 ${D.DECK_COST[u.rank]})`;
+    b.title = `${u.name} · 출격 전력 ${fmt(u.cost)} · 편성 코스트 ${D.DECK_COST[u.rank]}`;
     b.onclick = onClick;
     return b;
   }
@@ -1047,11 +1048,11 @@
     const fx = u.slow ? (u.slow[0] >= 1 ? ` · 맞은 적 ${u.slow[1]}초 기절` : ` · 맞은 적 ${Math.round(u.slow[0] * 100)}% 둔화`) : '';
     const body = `<div class="detail">${fullTag(u.id, `class="art${hasFull(u.id) ? '' : ' portrait'}" style="${have ? '' : 'filter:brightness(0.12) grayscale(1)'}"`)}
       <div class="stats"><div class="nm">${rk(u.rank, u)}${u.name} ${have ? `<small>LV.${lv}</small>` : ''}</div>
-      <div class="role">${u.cls ? `<b class="ucls">${u.cls}</b> · ` : ''}${u.role}${u.area ? ' · 범위' : ' · 단일'}${fx} · 편성 코스트 ${D.DECK_COST[u.rank]}</div>
+      <div class="role">${u.cls ? `<b class="ucls">${u.cls}</b> · ` : ''}${u.role}${u.area ? ' · 범위' : ' · 단일'}${fx}</div>
       <div class="utr">${u.guard ? '<span>받는 피해 -40%</span>' : ''}${u.range < 2.4 ? '<span class="no">대공 불가</span>' : '<span>대공 가능</span>'}${u.type === 'snipe' ? '<span>장갑 관통 x1.5</span>' : u.area ? '<span class="no">장갑에 50%</span>' : ''}</div>
       <div>${have ? u.desc : howToGet(u)}</div>
       ${have ? `<div class="card-row"><span>카드</span><div class="crc-xp"><i style="width:${need ? Math.min(100, (n / need) * 100) : 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>${short && save.wild[u.rank] ? `<small>${u.rank} 와일드카드 ${fmt(save.wild[u.rank])}장 보유</small>` : ''}</div>` : ''}
-      <div class="stat-grid"><span>비용 <b>${u.cost}</b></span><span>재배치 <b>${u.cd}s</b></span>
+      <div class="stat-grid"><span class="unit-costs">출격 전력 <b>${fmt(u.cost)}</b><small>편성 코스트 <b>${D.DECK_COST[u.rank]}</b></small></span><span>재배치 <b>${u.cd}s</b></span>
       <span>체력 ${stat(u.hp)}</span><span>공격 ${stat(u.atk)}</span>
       <span>사거리 <b>${u.range}</b></span><span>이동 <b>${u.spd}</b></span>
       <span>넉백 <b>${u.kb}회</b></span><span>${u.skill ? `스킬 <b>${u.skill}타</b>` : ''}</span></div>
