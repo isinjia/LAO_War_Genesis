@@ -1,0 +1,105 @@
+{
+  "reportSet": "range_roles",
+  "phase": "formation",
+  "cardLevel": 10,
+  "rows": [
+    {
+      "name": "노움 후발 출격 후 최전열 배치",
+      "pass": true,
+      "guard": 16.9,
+      "attackers": 14.92,
+      "t": 70.1
+    },
+    {
+      "name": "블랙 리리스 후발 출격 후 최전열 배치",
+      "pass": true,
+      "guard": 16.81,
+      "attackers": 15.82,
+      "t": 70.2
+    },
+    {
+      "name": "블라인드 프린세스 후발 출격 후 최전열 배치",
+      "pass": true,
+      "guard": 16.61,
+      "attackers": 15.82,
+      "t": 70.2
+    },
+    {
+      "name": "이터니티 후발 출격 후 최전열 배치",
+      "pass": true,
+      "guard": 16.7,
+      "attackers": 15.82,
+      "t": 70.2
+    },
+    {
+      "name": "운디네 지상 근접 적 통과·비공격 유지",
+      "pass": true,
+      "guard": 21.7,
+      "enemy": 2.89,
+      "undamaged": true,
+      "t": 32.1
+    },
+    {
+      "name": "아자젤 지상 근접 적 통과·비공격 유지",
+      "pass": true,
+      "guard": 21.81,
+      "enemy": 2.89,
+      "undamaged": true,
+      "t": 32.2
+    },
+    {
+      "name": "사라카엘 지상 근접 적 통과·비공격 유지",
+      "pass": true,
+      "guard": 21.7,
+      "enemy": 2.89,
+      "undamaged": true,
+      "t": 32.2
+    },
+    {
+      "name": "슬레이프니르 지상 근접 적 통과·비공격 유지",
+      "pass": true,
+      "guard": 21.62,
+      "enemy": 2.89,
+      "undamaged": true,
+      "t": 32.2
+    },
+    {
+      "name": "쿠노이치 제로 지상 근접 대공 불가",
+      "pass": true,
+      "damage": 0,
+      "t": 45.2
+    },
+    {
+      "name": "라비아타 프로토타입 지상 근접 대공 불가",
+      "pass": true,
+      "damage": 0,
+      "t": 45.2
+    },
+    {
+      "name": "블랙 리리스 지상 근접 대공 불가",
+      "pass": true,
+      "damage": 0,
+      "t": 45.2
+    },
+    {
+      "name": "블라인드 프린세스 지상 근접 대공 불가",
+      "pass": true,
+      "damage": 0,
+      "t": 45.2
+    },
+    {
+      "name": "프랭스터 머큐리 지상 근접 대공 불가",
+      "pass": true,
+      "damage": 0,
+      "t": 45.2
+    },
+    {
+      "name": "레프리콘 원거리 대공 양성 대조",
+      "pass": true,
+      "damage": 2974,
+      "t": 45.2
+    }
+  ],
+  "complete": true,
+  "pass": true
+}

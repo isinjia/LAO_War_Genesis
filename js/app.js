@@ -1049,7 +1049,7 @@
     const body = `<div class="detail">${fullTag(u.id, `class="art${hasFull(u.id) ? '' : ' portrait'}" style="${have ? '' : 'filter:brightness(0.12) grayscale(1)'}"`)}
       <div class="stats"><div class="nm">${rk(u.rank, u)}${u.name} ${have ? `<small>LV.${lv}</small>` : ''}</div>
       <div class="role">${u.cls ? `<b class="ucls">${u.cls}</b> · ` : ''}${u.role}${u.area ? ' · 범위' : ' · 단일'}${fx}</div>
-      <div class="utr">${u.guard ? '<span>받는 피해 -40%</span>' : ''}${u.range < 2.4 ? '<span class="no">대공 불가</span>' : '<span>대공 가능</span>'}${u.type === 'snipe' ? '<span>장갑 관통 x1.5</span>' : u.area ? '<span class="no">장갑에 50%</span>' : ''}</div>
+      <div class="utr">${u.guard ? '<span>받는 피해 -40%</span>' : ''}${u.siege ? '<span>요새 전용</span>' : u.range < 2.4 ? '<span class="no">대공 불가</span>' : '<span>대공 가능</span>'}${u.type === 'snipe' ? '<span>장갑 관통 x1.5</span>' : u.area ? '<span class="no">장갑에 50%</span>' : ''}</div>
       <div>${have ? u.desc : howToGet(u)}</div>
       ${have ? `<div class="card-row"><span>카드</span><div class="crc-xp"><i style="width:${need ? Math.min(100, (n / need) * 100) : 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>${short && save.wild[u.rank] ? `<small>${u.rank} 와일드카드 ${fmt(save.wild[u.rank])}장 보유</small>` : ''}</div>` : ''}
       <div class="stat-grid"><span class="unit-costs">출격 전력 <b>${fmt(u.cost)}</b><small>편성 코스트 <b>${D.DECK_COST[u.rank]}</b></small></span><span>재배치 <b>${u.cd}s</b></span>
@@ -1807,7 +1807,7 @@
     const add = (w, title, tip) => R.push({ w, title, tip });
     const eIds = [...new Set(st.spawns.map((x) => x[0]).concat(st.boss ? [st.boss.e] : []))];
     const fliers = eIds.filter((e) => D.ENEMIES[e] && D.ENEMIES[e].fly);
-    const aa = deck.filter((u) => u.range >= 2.4 && u.type !== 'wall');
+    const aa = deck.filter((u) => !u.siege && u.range >= 2.4 && u.type !== 'wall');
     if (kind === 'timeout') add(9, '적 기지를 부술 화력이 부족했습니다', '공격력이 높은 포격·저격·레이저 대원을 편성하고, 카드 업그레이드로 공격력을 올리세요.');
     if (fliers.length && !aa.length) add(10, `비행 철충(${fliers.map((e) => D.ENEMIES[e].name).join('·')})을 공격할 대원이 없었습니다`, '사거리 2.4 이상인 원거리 대원만 비행 개체를 맞힐 수 있습니다. 원거리 대원을 편성하세요.');
     if (G.capT >= 20) add(Math.min(9, G.capT / 8), `자원이 가득 찬 채 ${Math.round(G.capT)}초를 보냈습니다`, '자원이 차면 쉬지 말고 대원을 출격시키세요. 가득 찬 동안 들어오는 자원은 버려집니다.');
@@ -1974,7 +1974,8 @@
     if (story && story.typing) nextLine();
   }
   if (q.get('smoke')) { const sc = document.createElement('script'); sc.src = 'tools/smoke.js'; document.head.appendChild(sc); }
-  if (q.get('balance') || (noSave && q.get('audit'))) { const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now(); document.head.appendChild(sc); } // tools/balance.js: the balance report
+  if (q.get('balance') || (noSave && (q.get('audit') || q.get('formationqa')))) { const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now(); document.head.appendChild(sc); } // tools/balance.js: the balance report
   if (noSave && q.get('audit')) { const sc = document.createElement('script'); sc.src = 'tools/campaign_audit.js?t=' + Date.now(); document.head.appendChild(sc); }
+  if (noSave && q.get('formationqa')) { const sc = document.createElement('script'); sc.src = 'tools/formation_test.js?t=' + Date.now(); document.head.appendChild(sc); }
   if (noSave && q.get('storyqa')) { const sc = document.createElement('script'); sc.src = 'tools/story_layout_test.js'; document.head.appendChild(sc); }
 })();

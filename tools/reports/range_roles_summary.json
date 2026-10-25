@@ -1,0 +1,372 @@
+{
+  "date": "2026-10-25",
+  "cardLevel": 10,
+  "units": 40,
+  "campaignStages": 160,
+  "verifiedBattles": 780,
+  "allPassed": true,
+  "formationTests": 14,
+  "smokePassed": 22,
+  "originalStatsPreserved": true,
+  "flightPreserved": true,
+  "dailySamples": 120,
+  "dailyAirSamples": 73,
+  "retunedStages": [
+    "H3-6",
+    "H6-8"
+  ],
+  "changedRanges": 19,
+  "ranges": [
+    {
+      "id": "brownie",
+      "name": "브라우니",
+      "group": "원거리 대원",
+      "before": 2.4,
+      "after": 3.1,
+      "fly": false
+    },
+    {
+      "id": "leprechaun",
+      "name": "레프리콘",
+      "group": "원거리 대원",
+      "before": 3.2,
+      "after": 3.6,
+      "fly": false
+    },
+    {
+      "id": "gnome",
+      "name": "노움",
+      "group": "보호기",
+      "before": 1.8,
+      "after": 1.1,
+      "fly": false
+    },
+    {
+      "id": "impet",
+      "name": "임펫",
+      "group": "원거리 대원",
+      "before": 3.4,
+      "after": 3.8,
+      "fly": true
+    },
+    {
+      "id": "daphne",
+      "name": "다프네",
+      "group": "원거리 대원",
+      "before": 3,
+      "after": 3,
+      "fly": true
+    },
+    {
+      "id": "banshee",
+      "name": "밴시",
+      "group": "원거리 대원",
+      "before": 3.6,
+      "after": 4,
+      "fly": true
+    },
+    {
+      "id": "sylphid",
+      "name": "실피드",
+      "group": "원거리 대원",
+      "before": 2,
+      "after": 3.7,
+      "fly": true
+    },
+    {
+      "id": "raven",
+      "name": "레이븐",
+      "group": "원거리 대원",
+      "before": 4.6,
+      "after": 4.6,
+      "fly": true
+    },
+    {
+      "id": "nymph",
+      "name": "님프",
+      "group": "원거리 대원",
+      "before": 2.8,
+      "after": 3.3,
+      "fly": false
+    },
+    {
+      "id": "amy",
+      "name": "에이미 레이저",
+      "group": "원거리 대원",
+      "before": 6.5,
+      "after": 6.5,
+      "fly": false
+    },
+    {
+      "id": "andvari",
+      "name": "안드바리",
+      "group": "고정 지원 포대",
+      "before": 11.2,
+      "after": 11.2,
+      "fly": false
+    },
+    {
+      "id": "phoenix",
+      "name": "피닉스",
+      "group": "원거리 대원",
+      "before": 4.2,
+      "after": 4.2,
+      "fly": true
+    },
+    {
+      "id": "thetis",
+      "name": "테티스",
+      "group": "원거리 대원",
+      "before": 4,
+      "after": 4,
+      "fly": true
+    },
+    {
+      "id": "hraesvelgr",
+      "name": "흐레스벨그",
+      "group": "원거리 대원",
+      "before": 6.6,
+      "after": 6.6,
+      "fly": true
+    },
+    {
+      "id": "undine",
+      "name": "운디네",
+      "group": "보호기",
+      "before": 2,
+      "after": 1.2,
+      "fly": true
+    },
+    {
+      "id": "valkyrie",
+      "name": "발키리",
+      "group": "원거리 대원",
+      "before": 1.8,
+      "after": 3,
+      "fly": false
+    },
+    {
+      "id": "zero",
+      "name": "쿠노이치 제로",
+      "group": "근접 대원",
+      "before": 1.4,
+      "after": 1.9,
+      "fly": false
+    },
+    {
+      "id": "hela",
+      "name": "헬라",
+      "group": "원거리 대원",
+      "before": 4.6,
+      "after": 4.6,
+      "fly": false
+    },
+    {
+      "id": "azazel",
+      "name": "아자젤",
+      "group": "보호기",
+      "before": 1.9,
+      "after": 1.1,
+      "fly": true
+    },
+    {
+      "id": "saraqael",
+      "name": "사라카엘",
+      "group": "보호기",
+      "before": 1.9,
+      "after": 1.2,
+      "fly": true
+    },
+    {
+      "id": "leona",
+      "name": "철혈의 레오나",
+      "group": "원거리 대원",
+      "before": 4.2,
+      "after": 4.2,
+      "fly": false
+    },
+    {
+      "id": "ullr",
+      "name": "우르",
+      "group": "원거리 대원",
+      "before": 8,
+      "after": 8,
+      "fly": false
+    },
+    {
+      "id": "harpy",
+      "name": "하르페이아",
+      "group": "원거리 대원",
+      "before": 5.4,
+      "after": 5.4,
+      "fly": true
+    },
+    {
+      "id": "eternity",
+      "name": "이터니티",
+      "group": "보호기",
+      "before": 11,
+      "after": 1.3,
+      "fly": false
+    },
+    {
+      "id": "lemonadealpha",
+      "name": "레모네이드 알파",
+      "group": "원거리 대원",
+      "before": 5,
+      "after": 5,
+      "fly": false
+    },
+    {
+      "id": "sleipnir",
+      "name": "슬레이프니르",
+      "group": "보호기",
+      "before": 1.9,
+      "after": 1.3,
+      "fly": true
+    },
+    {
+      "id": "blacklilith",
+      "name": "블랙 리리스",
+      "group": "보호기",
+      "before": 1.5,
+      "after": 1.2,
+      "fly": false
+    },
+    {
+      "id": "cyclopsprincess",
+      "name": "사이클롭스 프린세스",
+      "group": "원거리 대원",
+      "before": 4,
+      "after": 4,
+      "fly": false
+    },
+    {
+      "id": "blindprincess",
+      "name": "블라인드 프린세스",
+      "group": "보호기",
+      "before": 1.9,
+      "after": 1.4,
+      "fly": false
+    },
+    {
+      "id": "brunhild",
+      "name": "브륀힐드",
+      "group": "근접 대원",
+      "before": 4,
+      "after": 2.3,
+      "fly": true
+    },
+    {
+      "id": "tiamat",
+      "name": "티아멧",
+      "group": "원거리 대원",
+      "before": 8,
+      "after": 8,
+      "fly": true
+    },
+    {
+      "id": "khan",
+      "name": "신속의 칸",
+      "group": "원거리 대원",
+      "before": 7.5,
+      "after": 7.5,
+      "fly": false
+    },
+    {
+      "id": "labiata",
+      "name": "라비아타 프로토타입",
+      "group": "근접 대원",
+      "before": 1.8,
+      "after": 2.2,
+      "fly": false
+    },
+    {
+      "id": "lrl",
+      "name": "LRL",
+      "group": "원거리 대원",
+      "before": 5,
+      "after": 5,
+      "fly": false
+    },
+    {
+      "id": "constantia",
+      "name": "콘스탄챠 S2",
+      "group": "원거리 대원",
+      "before": 6.7,
+      "after": 6.7,
+      "fly": false
+    },
+    {
+      "id": "titania",
+      "name": "티타니아 프로스트",
+      "group": "원거리 대원",
+      "before": 4.8,
+      "after": 4.8,
+      "fly": true
+    },
+    {
+      "id": "mercury",
+      "name": "프랭스터 머큐리",
+      "group": "근접 대원",
+      "before": 4.2,
+      "after": 2.1,
+      "fly": false
+    },
+    {
+      "id": "empress",
+      "name": "엠프리스",
+      "group": "원거리 대원",
+      "before": 6.8,
+      "after": 6.8,
+      "fly": false
+    },
+    {
+      "id": "fafnir",
+      "name": "파프니르",
+      "group": "원거리 대원",
+      "before": 5,
+      "after": 5,
+      "fly": false
+    },
+    {
+      "id": "ramiel",
+      "name": "라미엘",
+      "group": "원거리 대원",
+      "before": 5,
+      "after": 5,
+      "fly": false
+    }
+  ],
+  "antiAirChanges": [
+    {
+      "name": "발키리",
+      "before": false,
+      "after": true
+    },
+    {
+      "name": "이터니티",
+      "before": true,
+      "after": false
+    },
+    {
+      "name": "브륀힐드",
+      "before": true,
+      "after": false
+    },
+    {
+      "name": "프랭스터 머큐리",
+      "before": true,
+      "after": false
+    }
+  ],
+  "hashes": {
+    "js/data.js": "9e265ca96bb5207c0e60c4198ac01ebadab520f8ae07e1932c9d126489b8ef3e",
+    "js/game.js": "a13ebb4d91cfd98d8aba1ed68efcfc8754fc1ea38fbe08b555668fe9bef6fb0f",
+    "js/app.js": "a9b6ddc451f3c3e49bfcc326e60108ffcc9d1968cb0cf8f2929f59d948576120",
+    "tools/campaign_audit.js": "68773ba0ded6687d9b1d23df16866d4e6bdd38b6dba491e7ac067145e8b67b9d",
+    "tools/formation_test.js": "33ef0906cacbc1ab6b4d2555c9d02b7785b8636c95ad515ac0f8badba455025d",
+    "tools/reports/range_roles_verify.json": "b7369e325e8def82a3bebdd98224906842a2569d733f5354913edfe5f490bd7d",
+    "tools/reports/range_roles_formation.json": "a088cab07aca53f43c92cfa85098ab55bceb5130a46e344422614a837a8a94ed"
+  }
+}

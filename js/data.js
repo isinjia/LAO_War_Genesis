@@ -50,7 +50,7 @@
     ['leona', '철혈의 레오나', 'SS', 'stun', 'laser', 0xff9ad5, 'laserBig', '드론 사격으로 적을 묶는 지원기', { hp: 1.4, skill: 4 }],
     ['ullr', '우르', 'SS', 'laser', 'laser', 0x7fe8ff, 'laserBig', '초장거리 정밀 레이저', { range: 1.2, hp: 0.8, skill: 3 }],
     ['harpy', '하르페이아', 'SS', 'splash', 'missile', 0xff8a3d, 'missile', '적을 넘어 요새에 미사일을 쏟는 폭격기', { range: 1.0, skill: 3, siege: 2.5 }],
-    ['eternity', '이터니티', 'SS', 'wall', 'bullet', 0xffd98a, 'mg', '기지 앞에 버티고 서서 기관포를 쏘는 보호기', { hp: 1.6, atk: 2, range: 8.5, skill: 3, tower: 1 }],
+    ['eternity', '이터니티', 'SS', 'wall', 'bullet', 0xffd98a, 'mg', '전열로 이동해 기관포를 쏘며 버티는 보호기', { hp: 1.6, atk: 2, skill: 3 }],
     ['lemonadealpha', '레모네이드 알파', 'SS', 'chain', 'lightning', 0xffe14d, 'elec', '전장을 가르는 전격', { range: 0.8, skill: 3 }],
     ['sleipnir', '슬레이프니르', 'SS', 'wall', 'missile', 0xffb070, 'missile', '고속으로 전열에 끼어들어 막는 보호기', { spd: 1.6, skill: 3 }],
     ['blacklilith', '블랙 리리스', 'SS', 'melee', 'slash', 0xd0405a, 'slash', '거대한 낫의 학살', { atk: 1.2, skill: 3 }],
@@ -88,7 +88,7 @@
   };
   function roleTags(u, t) {
     const r = [u.area ? 'area' : 'single'];
-    if (t === 'wall' || u.ship || u.tower) r.push('tank');
+    if (u.guard || t === 'wall' || u.ship || u.tower) r.push('tank');
     if (u.multi > 1) r.push('multi', 'swarm');
     if (u.evade) r.push('evade');
     if (u.siege) r.push('siege');
@@ -101,17 +101,17 @@
   // (the dodgers Zero and Mercury fight on the ground: their evasion is how they hold the line)
   const FLYERS = new Set(['impet', 'daphne', 'banshee', 'sylphid', 'raven', 'phoenix', 'thetis', 'hraesvelgr', 'undine',
     'azazel', 'saraqael', 'harpy', 'sleipnir', 'brunhild', 'tiamat', 'titania']);
-  // reach by weapon and trait, not by template: blades and flamethrowers in hand's reach, walls just ahead of the line,
-  // close-quarters guns (assault rifle, Valkyrie who closes in quietly) short, machine guns long, shells mid, missiles and
-  // battleship guns far, snipers and lasers farthest, towers across the field (2.4 and above can hit flyers: ANTI_AIR)
+  // 보호기는 최전열(1.1~1.4), 근접 무기는 그 뒤(1.9~2.3), 원거리는 후열(3.0 이상)에 선다.
+  // 같은 구간 안에서도 무기별 차이를 유지한다. 지원기 안드바리는 고정포대 예외다.
+  // 비행 및 대공 판정은 유지한다. 지상 근접 무기는 대공 기준 2.4에 닿지 않는다.
   const RANGE = {
-    zero: 1.4, blacklilith: 1.5, labiata: 1.8, valkyrie: 1.8, blindprincess: 1.9,
-    gnome: 1.8, azazel: 1.9, saraqael: 1.9, sleipnir: 1.9, undine: 2.0, sylphid: 2.0,
-    brownie: 2.4, nymph: 2.8, leprechaun: 3.2,
-    daphne: 3.0, impet: 3.4, banshee: 3.6, thetis: 4.0, brunhild: 4.0, cyclopsprincess: 4.0, phoenix: 4.2, leona: 4.2, mercury: 4.2,
+    gnome: 1.1, azazel: 1.1, saraqael: 1.2, undine: 1.2, blacklilith: 1.2, sleipnir: 1.3, eternity: 1.3, blindprincess: 1.4,
+    zero: 1.9, mercury: 2.1, labiata: 2.2, brunhild: 2.3,
+    valkyrie: 3.0, brownie: 3.1, nymph: 3.3, leprechaun: 3.6, sylphid: 3.7,
+    daphne: 3.0, impet: 3.8, banshee: 4.0, thetis: 4.0, cyclopsprincess: 4.0, phoenix: 4.2, leona: 4.2,
     raven: 4.6, hela: 4.6, titania: 4.8, lemonadealpha: 5.0, lrl: 5.0, fafnir: 5.0, ramiel: 5.0, harpy: 5.4,
     amy: 6.5, hraesvelgr: 6.6, constantia: 6.7, empress: 6.8, khan: 7.5, ullr: 8.0, tiamat: 8.0,
-    eternity: 11.0, andvari: 11.2,
+    andvari: 11.2,
   };
   // the original game's class (Table_CharCollection Char_Class / Char_Role): shown on the unit sheet only, battle stats stay
   const CLASS = {
@@ -418,7 +418,7 @@
     'H3-3': [0.64, 1, 84100],
     'H3-4': [0.64, 1, 77800],
     'H3-5': [0.64, 1, 70400],
-    'H3-6': [0.8, 1, 78300],
+    'H3-6': [0.8, 0.85, 78300],
     'H3-7': [0.8, 1, 73700],
     'H3-8': [0.4212, 0.72, 89100],
     'H3-9': [0.2622, 1, 32500],
@@ -443,6 +443,7 @@
     'H5-8': [0.3743, 1, 12600],
     'H5-9': [0.2143, 1, 12300],
     'H5-10': [0.2538, 1, 12800],
+    'H6-8': [0.7639, 1, 32800],
     'H7-5': [0.512, 1, 18400],
     'H7-6': [0.4435, 1, 22200],
     'H7-7': [0.1802, 1, 11100],
@@ -510,7 +511,7 @@
     const must = [];
     const need = (ok, n) => { pick(pool.filter((u) => ok(u) && !must.includes(u.id)), n).forEach((u) => must.push(u.id)); };
     const pools = st.spawns.map((x) => x[0]).concat(st.boss ? [st.boss.e] : []);
-    if (st.mod === 'air' || pools.some((e) => ENEMIES[e].fly)) need((u) => u.range >= 2.4 && u.type !== 'wall', 2);
+    if (st.mod === 'air' || pools.some((e) => ENEMIES[e].fly)) need((u) => !u.siege && u.range >= 2.4 && u.type !== 'wall', 2);
     if (st.mod === 'armor' || pools.some((e) => ENEMIES[e].armor)) need((u) => u.type === 'snipe', 1);
     if (pools.some((e) => ENEMIES[e].artillery)) need((u) => u.type === 'snipe' || u.range >= 5, 1); // something that reaches the guns
     const mid = must.concat(pick(pool.filter((u) => !must.includes(u.id)).map((u) => u.id), 6 - must.length));

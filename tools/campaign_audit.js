@@ -14,7 +14,7 @@
     if (!/^[a-z][a-z_]{0,40}$/.test(reportSet)) throw new Error('지원하지 않는 검증 기록 이름입니다.');
     while (!window.BAL) await new Promise((r) => setTimeout(r, 100));
     const D = DATA;
-    out.units = D.UNITS.map(({ id, cost, hp, atk }) => ({ id, cost, hp, atk }));
+    out.units = D.UNITS.map(({ id, cost, hp, atk, range, spd, fly, guard, tower, roles }) => ({ id, cost, hp, atk, range, spd, fly, guard, tower, roles }));
     function deck(st, expanded = false) {
       const rewards = D.CHAPTER_REWARD.slice(0, st.chapter + (st.hard ? 1 : 0));
       const ids = [...new Set([...D.STARTERS, ...(st.ix > 0 || st.hard ? ['valkyrie'] : []), ...rewards])];
