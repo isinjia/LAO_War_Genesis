@@ -202,9 +202,10 @@
         const b = i * 16;
         sampleShape(d.shape);
         // Unity (left-handed) -> rig space: z mirrored
-        let px = _p[0], py = _p[1], pz = -_p[2], dx = _d[0], dy = _d[1], dz = -_d[2];
+        const spread = this.set.spreadK || 1;
+        let px = _p[0] * spread, py = _p[1] * spread, pz = -_p[2] * spread, dx = _d[0], dy = _d[1], dz = -_d[2];
         if (x0 != null) { px = 0; py = 0; pz = 0; }
-        const speed = mm(d.speed, nt, Math.random());
+        const speed = mm(d.speed, nt, Math.random()) * spread;
         let vx = dx * speed, vy = dy * speed, vz = dz * speed;
         if (world) {
           const wx = W[o] * px + W[o + 3] * py + W[o + 6] * pz + W[o + 9], wy = W[o + 1] * px + W[o + 4] * py + W[o + 7] * pz + W[o + 10];
@@ -301,6 +302,7 @@
       this.sd = sd; this.total = 0;
       // per-unit particle size (window.PS_SIZE, js/game.js): rigs whose own effects cover the field are drawn smaller
       this.sizeK = (sd && sd.tpl && window.PS_SIZE && window.PS_SIZE[sd.tpl.id]) || 1;
+      this.spreadK = (sd && sd.tpl && window.PS_SPREAD && window.PS_SPREAD[sd.tpl.id]) || 1;
       // viewH: the view's height in this set's units, for Unity's Max Particle Size (a fraction of the view height)
       this.src = src || { nodes: sd.tpl.data.nodes, W: sd.W, EA: sd.EA, tex: sd.tpl.atlas.tex, rects: sd.tpl.atlas.rects,
         parent: sd.mesh, order: () => sd.mesh.renderOrder || 0,

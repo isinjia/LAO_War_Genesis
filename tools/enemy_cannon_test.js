@@ -7,7 +7,7 @@
   const checks = [];
   const check = (name, pass) => { checks.push({ name, pass: !!pass }); if (!pass) throw Error(name); };
   try {
-    const st = Object.assign({}, DATA.STAGES[0], { pow: 2, enemyHpK: 1, enemyAtkK: 1, spawns: [], rush: { at: 0.5, spawns: [] }, boss: null, finale: false });
+    const st = Object.assign({}, DATA.STAGES[0], { pow: 6, enemyHpK: 1, enemyAtkK: 1, spawns: [], rush: { at: 0.5, spawns: [] }, boss: null, finale: false });
     const defs = [0, 1, 2].map(i => Object.assign({}, DATA.UNIT.leprechaun, { spd: 0, range: 0, guard: 0, evade: 0, fly: i === 2 ? 1 : 0 }));
     await GAME.preload(st, defs, () => {});
     GAME.start(st, defs.map(def => ({ def, lv: DATA.relLv('B', 10) })), {});
@@ -16,6 +16,7 @@
     const probes = [];
     for (let i = 0; i < defs.length; i++) {
       if (!GAME.deploy(i)) throw Error('시험 대원 배치 실패');
+      GAME.sim(defs[i].production + 0.05);
       const f = G.allies.at(-1);
       f.hp = f.max = 1000000;
       f.x = G.len / 2 + [-2, 2, 4][i];
@@ -34,10 +35,10 @@
     check('아군·적군 레이저 무늬 독립', G.cannonFire.body.material.map !== first.layers[2].material.map);
     GAME.sim(1.3);
     check('중앙 밖 아군 보호', probes[0].hp === 1000000);
-    check('적진 지상 대원 한 번 타격', probes[1].hp === 999400);
-    check('적진 공중 대원 한 번 타격', probes[2].hp === 999400);
+    check('적진 지상 대원 한 번 타격', probes[1].hp === 998200);
+    check('적진 공중 대원 한 번 타격', probes[2].hp === 998200);
     GAME.sim(2);
-    check('추가 중복 피해 없음', probes[1].hp === 999400 && probes[2].hp === 999400);
+    check('추가 중복 피해 없음', probes[1].hp === 998200 && probes[2].hp === 998200);
     check('발사 후 효과 정리', G.enemyCannonFire === null);
     check('같은 증원 조건에서 재발사 없음', G.rushDone && G.enemyCannonFire !== first);
     G.rushDone = false;

@@ -29,13 +29,12 @@
   D.CHAPTERS.forEach((ch, c) => { if (save.cleared >= ch.first + D.PER_CH) save.owned[D.CHAPTER_REWARD[c]] = 1; });
   if (save.tuna == null) save.tuna = D.GACHA.startTuna;
   save.hstars = save.hstars || {};
-  save.deck = (save.deck || []).filter((id) => save.owned[id] && D.UNIT[id]);
-  while (deckCost(save.deck) > D.DECK_CAP) save.deck.splice(save.deck.reduce((m, id, i, a) => (D.formationCost(id) > D.formationCost(a[m]) ? i : m), 0), 1);
+  save.deck = [...new Set((save.deck || []).filter((id) => save.owned[id] && D.UNIT[id]))].slice(0, DECK_MAX);
   if (!save.deck.length) save.deck = autoDeck();
   // three deck presets (덱 1 / 2 / 3); save.deck is the active one, copied into save.decks on every save
   if (!Array.isArray(save.decks) || save.decks.length !== 3) save.decks = [save.deck.slice(), [], []];
   save.deckIx = save.deckIx || 0;
-  save.decks = save.decks.map((d) => (d || []).filter((id) => save.owned[id] && D.UNIT[id]));
+  save.decks = save.decks.map((d) => [...new Set((d || []).filter((id) => save.owned[id] && D.UNIT[id]))].slice(0, DECK_MAX));
   let noSave = false; // ?unlock=1 test runs never write the real save
   let saveWarned = false;
   const persist = () => {
@@ -68,16 +67,15 @@
   const owned = (id) => !!save.owned[id];
   const rankIx = (u) => D.RANK_ORDER.indexOf(u.rank);
 
-  function deckCost(ids) { return ids.reduce((a, id) => a + D.formationCost(id), 0); }
-  const fits = (id) => save.deck.length < DECK_MAX && deckCost(save.deck) + D.formationCost(id) <= D.DECK_CAP;
+  const fits = (id) => save.deck.length < DECK_MAX && !save.deck.includes(id);
   function autoDeck() {
     const out = [];
     D.UNITS.filter((u) => save.owned[u.id]).sort((a, b) => a.cost - b.cost).forEach((u) => {
-      if (out.length < DECK_MAX && deckCost(out) + D.formationCost(u) <= D.DECK_CAP) out.push(u.id);
+      if (out.length < DECK_MAX) out.push(u.id);
     });
     return out;
   }
-  // a new unit joins the formation by itself while there is room (slots and cost)
+  // 빈 칸이 있으면 새 대원이 자동으로 편성된다.
   function grant(id, keepOut) {
     if (save.owned[id]) return false;
     save.owned[id] = 1;
@@ -120,7 +118,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.35'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.36'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -798,16 +796,14 @@
     b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (ready ? ' up' : '') + (have && need && n >= need ? ' full' : '');
     b.dataset.id = u.id;
     b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt="" draggable="false"><i class="crc-cost" aria-label="출격 전력 ${u.cost}"><span aria-hidden="true"></span>${u.cost}</i>${rk(u.rank, u)}` +
-      `<span class="crc-deck-cost">편성 ${D.formationCost(u)}</span>` +
       `</div>` +
       `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
       (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-xp crc-name">${u.name}</div>`);
-    b.title = `${u.name} · 출격 전력 ${fmt(u.cost)} · 편성 코스트 ${D.formationCost(u)}`;
+    b.title = `${u.name} · 출격 전력 ${fmt(u.cost)}`;
     b.onclick = onClick;
     return b;
   }
   function renderSquad() {
-    const cost = deckCost(save.deck);
     // presets
     const tabs = $('deckTabs');
     tabs.innerHTML = [0, 1, 2].map((k) => `<button class="${k === save.deckIx ? 'on' : ''}" data-k="${k}">${k + 1}</button>`).join('');
@@ -833,7 +829,7 @@
     }
     const avg = save.deck.length ? Math.round(save.deck.reduce((a, id) => a + D.UNIT[id].cost, 0) / save.deck.length) : 0;
     $('deckAvg').innerHTML = `<i class="pw"></i>평균 전력 <b>${avg}</b>`;
-    $('deckCount').innerHTML = `${save.deck.length}/${DECK_MAX} · 편성 코스트 <em class="${cost > D.DECK_CAP - 3 ? 'hi' : ''}">${cost}/${D.DECK_CAP}</em>`;
+    $('deckCount').textContent = `${save.deck.length}/${DECK_MAX}명 편성`;
     // synergies: a small button; the full list opens on demand
     const on = D.synergiesOf(save.deck.map((id) => D.UNIT[id]));
     $('synBtn').innerHTML = `시너지 <b>${on.length}</b> ›`;
@@ -899,7 +895,7 @@
     if (k === 'use') {
       closeCardMenu();
       if (save.deck.length < DECK_MAX && fits(u.id)) { save.deck.push(u.id); persist(); AUDIO.play('click', 0.5, 1.1); renderSquad(); return; }
-      // the deck is full (or over its cost): pick the card to replace
+      // 열 칸이 모두 찼으면 교체할 카드를 고른다.
       swapIn = u.id; renderSquad();
       $('deckEdit').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       GAME.toast(`교체할 덱 카드를 고르세요 (${u.name})`);
@@ -908,7 +904,6 @@
   function swapInto(i) {
     const id = swapIn, out = save.deck[i];
     const next = save.deck.slice(); next[i] = id;
-    if (deckCost(next) > D.DECK_CAP) return GAME.toast(`편성 코스트 초과 (${deckCost(next)} > ${D.DECK_CAP})`);
     save.deck = next; swapIn = null; persist();
     AUDIO.play('click', 0.5, 1.1); renderSquad();
     GAME.toast(`${D.UNIT[out].name} → ${D.UNIT[id].name}`);
@@ -975,7 +970,6 @@
         if (deck.length >= DECK_MAX) return;
         deck.push(id);
       }
-      if (deckCost(deck) > D.DECK_CAP) return GAME.toast(`편성 코스트 초과 (${deckCost(deck)} > ${D.DECK_CAP})`);
       save.deck = deck;
     }
     persist(); AUDIO.play('click', 0.5, 1.1);
@@ -1056,7 +1050,7 @@
       <div class="utr">${u.guard ? '<span>받는 피해 -40%</span>' : ''}${u.siege ? '<span>요새 전용</span>' : u.range < 2.4 ? '<span class="no">대공 불가</span>' : '<span>대공 가능</span>'}${u.type === 'snipe' ? '<span>장갑 관통 x1.5</span>' : u.area ? '<span class="no">장갑에 50%</span>' : ''}</div>
       <div>${have ? u.desc : howToGet(u)}</div>
       ${have ? `<div class="card-row"><span>카드</span><div class="crc-xp"><i style="width:${need ? Math.min(100, (n / need) * 100) : 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>${short && save.wild[u.rank] ? `<small>${u.rank} 와일드카드 ${fmt(save.wild[u.rank])}장 보유</small>` : ''}</div>` : ''}
-      <div class="stat-grid"><span class="unit-costs">출격 전력 <b>${fmt(u.cost)}</b><small>편성 코스트 <b>${D.formationCost(u)}</b></small></span><span>재배치 <b>${u.cd}s</b></span>
+      <div class="stat-grid"><span class="unit-costs">출격 전력 <b>${fmt(u.cost)}</b></span><span>생산 <b>${u.production}초</b><small style="display:block">재배치 ${u.cd}초</small></span>
       <span>체력 ${stat(u.hp)}</span><span>공격 ${stat(u.atk)}</span>
       <span>사거리 <b>${u.range}</b></span><span>이동 <b>${u.spd}</b></span>
       <span>넉백 <b>${u.kb}회</b></span><span>${u.skill ? `스킬 <b>${u.skill}타</b>` : ''}</span></div>
@@ -1078,7 +1072,6 @@
       btns.push([inDeck ? '편성 해제' : '편성', () => {
         if (inDeck) { if (save.deck.length <= 1) return GAME.toast('최소 1명은 편성해야 합니다'); save.deck = save.deck.filter((x) => x !== u.id); }
         else if (save.deck.length >= DECK_MAX) return GAME.toast('편성 칸을 눌러 대원을 먼저 빼 주세요');
-        else if (!fits(u.id)) return GAME.toast(`편성 코스트 초과 (${deckCost(save.deck)} + ${D.formationCost(u)} > ${D.DECK_CAP})`);
         else save.deck.push(u.id);
         persist(); closeModal(); renderSquad();
       }, inDeck ? 'd' : 'b']);
@@ -1415,14 +1408,14 @@
       b.className = 'slot' + (s ? ` r-${s.def.rank}` : ' empty');
       b.dataset.page = i < 5 ? 0 : 1; // phones show one row of five at a time (the swap button flips)
       if (s) {
-        b.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt="">${rk(s.def.rank, s.def)}<div class="cd"></div><div class="c">${s.def.cost}</div><div class="snm">${s.def.name.replace(/ .*/, '')}</div>` +
+        b.innerHTML = `<img src="${IMG['u_' + s.def.id]}" alt="">${rk(s.def.rank, s.def)}<div class="cd"></div><span class="production"><b>생산 중</b><small></small><span class="production-bar"><i></i></span></span><div class="c">${s.def.cost}</div><div class="snm">${s.def.name.replace(/ .*/, '')}</div>` +
           (s.def.rank === 'SS' || s.def.rank === 'S' ? '<span class="sk" title="스킬 충전 (차면 자동 발동)"><i></i></span>' : '');
-        b.title = `${s.def.name} (${s.def.rank} ${s.def.cls || s.def.role})  [${'QWERTASDFG'[i]}]`;
+        b.title = `${s.def.name} · 생산 ${s.def.production}초 (${s.def.rank} ${s.def.cls || s.def.role})  [${'QWERTASDFG'[i]}]`;
         b.insertAdjacentHTML('beforeend', `<span class="hk">${'QWERTASDFG'[i]}</span>`);
         b.onpointerdown = (e) => { e.preventDefault(); GAME.deploy(i); };
       }
       rows[i < 5 ? 0 : 1].appendChild(b);
-      deckEls.push(s ? { b, cd: b.querySelector('.cd'), def: s.def, sk: b.querySelector('.sk') } : null);
+      deckEls.push(s ? { b, cd: b.querySelector('.cd'), def: s.def, production: b.querySelector('.production'), sk: b.querySelector('.sk') } : null);
     }
   }
 
@@ -1549,9 +1542,9 @@
   // ── first battle coaching (1-1 until finished once) ────
   // each step: target element, text, done(G) — advanced from the HUD sync
   const TUT = [
-    { el: () => document.querySelector('#deck .slot'), text: (G) => `<b>${G.deck[0].def.name}</b> 버튼을 눌러 출격! 대원은 앞으로 걸어가 사거리 안의 적을 원작 공격 모션으로 공격합니다.`, done: (G) => G.allies.length > 0 },
+    { el: () => document.querySelector('#deck .slot'), text: (G) => `<b>${G.deck[0].def.name}</b> 버튼을 누르면 전력을 사용해 생산합니다. 생산이 끝나면 출격해 앞으로 이동하고 사거리 안의 적을 공격합니다.`, done: (G) => G.allies.length > 0 },
     { el: () => $('btnWorker'), text: '<b>전력</b>은 계속 차오릅니다. <b>발전 효율</b>을 올리면 더 빨리, 더 많이 모입니다.', done: (G, t) => G.worker > 0 || t > 14 },
-    { el: () => $('deck'), text: '비용과 재배치 시간을 보며 섞어 내보내세요. <b>노움</b>은 앞을 막는 수비형, <b>레프리콘</b>은 기관총 공격형, <b>브라우니</b>는 싸고 빠른 소총 분대입니다.', done: (G, t) => t > 9 },
+    { el: () => $('deck'), text: '비용과 생산·재배치 시간을 보며 섞어 내보내세요. <b>노움</b>은 앞을 막는 수비형, <b>레프리콘</b>은 기관총 공격형, <b>브라우니</b>는 싸고 빠른 소총 분대입니다.', done: (G, t) => t > 9 },
     { el: () => $('btnCannon'), text: '<b>오르카 포격</b> 준비 완료! 눌러서 앞의 철충을 한꺼번에 밀어내세요.', wait: (G) => G.cannon >= D.CANNON.charge, done: (G) => G.cannon < D.CANNON.charge },
     { el: () => $('timer'), text: '화면을 끌거나 상단 미니맵을 눌러 전장을 볼 수 있습니다. <b>10분 안에</b> 철충 요새를 부수면 승리!', done: (G, t) => t > 8 },
   ];
@@ -1670,7 +1663,7 @@
       대원은 걷다가 사거리 안에 적이 오면 멈춰 공격하고, 체력이 깎이면 뒤로 밀려납니다(넉백).</p>
       <h4>전력 · 포격</h4><p>전력은 시간이 지나면 차오르고 적을 쓰러뜨리면 더 들어옵니다. 발전 효율을 올리면 충전 속도와 최대 전력이 커집니다.
       오르카 포격은 충전되면 기지 앞 적을 모두 때리고 밀어냅니다.</p>
-      <h4>편성</h4><p>최대 10명, 편성 코스트 ${D.DECK_CAP} 이하(B ${D.DECK_COST.B} · A ${D.DECK_COST.A} · S ${D.DECK_COST.S} · SS ${D.DECK_COST.SS}).
+      <h4>편성</h4><p>최대 10명을 비용 합계 제한 없이 편성할 수 있습니다. 최고 등급만으로도 편성할 수 있습니다.
       싼 벽 유닛과 화력 유닛을 섞는 것이 기본입니다.</p>
       <h4>성장</h4><p>XP로 레벨 업(체력 · 공격 +20%/레벨). 같은 대원을 다시 얻으면 코어 링크(최대 5, 링크당 +8%, 풀 링크 재배치 -15%).</p>
       <h4>재화</h4><p><b>부품</b>: 모든 승리에서 획득 → 제조(가챠). <b>참치</b>: 첫 클리어 · 새 기록에서 획득 → 원하는 대원 확정 영입.</p>
@@ -1739,14 +1732,21 @@
     let otherReady = false;
     deckEls.forEach((d, i) => {
       if (!d) return;
-      const cd = G.cds[i];
+      const cd = G.cds[i], production = GAME.productionState(i);
+      d.b.classList.toggle('producing', !!production);
+      d.b.setAttribute('aria-busy', String(!!production));
+      if (production) {
+        d.production.querySelector('small').textContent = production.remaining.toFixed(1) + '초';
+        d.production.style.setProperty('--build', (production.progress * 100).toFixed(1) + '%');
+      }
+      d.b.setAttribute('aria-label', d.def.name + (production ? ' 생산 중 ' + production.remaining.toFixed(1) + '초' : ' 출격 전력 ' + d.def.cost));
       d.cd.style.height = cd > 0 ? (cd / d.def.cd) * 100 + '%' : '0';
       const poor = G.money < d.def.cost;
       d.b.classList.toggle('poor', poor);
       const busy = GAME.onField(d.def); // an SS already fighting: the card waits for it
-      if (!poor && cd <= 0 && !busy && (i < 5 ? 0 : 1) !== deckPage) otherReady = true;
+      if (!poor && cd <= 0 && !busy && !production && (i < 5 ? 0 : 1) !== deckPage) otherReady = true;
       d.b.classList.toggle('busy', busy);
-      d.b.classList.toggle('ready', !poor && cd <= 0 && !busy);
+      d.b.classList.toggle('ready', !poor && cd <= 0 && !busy && !production);
       if (d.sk) { // SS: the skill chip shows the best charge among the deployed copies
         const k = GAME.skillState(i);
         d.sk.classList.toggle('on', k != null && k >= 0);
@@ -1836,7 +1836,7 @@
       if (ready.length) add(inDeck.length ? 8 : 4, `지금 업그레이드할 수 있는 카드가 ${ready.length}장 있습니다`, `${(inDeck.length ? inDeck : ready).slice(0, 4).map((u) => u.name).join(', ')}${ready.length > 4 ? ' 등' : ''}. '대원 강화'에서 올리세요.`);
       if (save.parts >= D.GACHA.cost10) add(7, `부품 ${fmt(save.parts)}개로 10회 제조를 할 수 있습니다`, '대원 제조에서 새 대원을 얻어 덱을 보강하세요.');
       else if (save.parts >= D.GACHA.cost1) add(3, `부품 ${fmt(save.parts)}개로 대원 제조를 할 수 있습니다`, '새 대원을 얻어 덱을 보강하세요.');
-      if (save.deck.length < DECK_MAX) add(6, `덱에 빈 칸이 ${DECK_MAX - save.deck.length}개 있습니다`, '편성 코스트가 남는다면 대원을 더 넣어 출격할 수 있는 대원을 늘리세요.');
+      if (save.deck.length < DECK_MAX) add(6, `덱에 빈 칸이 ${DECK_MAX - save.deck.length}개 있습니다`, '빈 칸에 대원을 더 넣어 출격 선택지를 늘리세요.');
     }
     // the worm that hurt the base most, and how to answer it
     const top = Object.entries(G.stat.base || {}).sort((a, b) => b[1] - a[1])[0];
@@ -1995,6 +1995,27 @@
     sc.onload = () => { const audit = document.createElement('script'); audit.src = 'tools/unit_cost_audit.js?t=' + Date.now(); document.head.appendChild(audit); };
     document.head.appendChild(sc);
   }
+  if (noSave && q.get('replayqa')) {
+    const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now();
+    sc.onload = () => { const test = document.createElement('script'); test.src = 'tools/balance_replay_test.js'; document.head.appendChild(test); };
+    document.head.appendChild(sc);
+  }
+  if (noSave && q.get('srankaudit')) {
+    const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now();
+    sc.onload = () => { const test = document.createElement('script'); test.src = 'tools/s_rank_audit.js?t=' + Date.now(); document.head.appendChild(test); };
+    document.head.appendChild(sc);
+  }
+  if (noSave && q.get('legendvalueqa')) {
+    const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now();
+    sc.onload = () => { const test = document.createElement('script'); test.src = 'tools/legend_value_test.js?t=' + Date.now(); document.head.appendChild(test); };
+    document.head.appendChild(sc);
+  }
+  if (noSave && q.get('highcostqa')) {
+    const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now();
+    sc.onload = () => { const audit = document.createElement('script'); audit.src = 'tools/high_cost_audit.js?t=' + Date.now(); document.head.appendChild(audit); };
+    document.head.appendChild(sc);
+  }
+  if (noSave && q.get('productionqa')) { const sc = document.createElement('script'); sc.src = 'tools/production_test.js'; document.head.appendChild(sc); }
   if (noSave && q.get('enemycannonqa')) { const sc = document.createElement('script'); sc.src = 'tools/enemy_cannon_test.js'; document.head.appendChild(sc); }
   if (noSave && q.get('formationqa')) { const sc = document.createElement('script'); sc.src = 'tools/formation_test.js?t=' + Date.now(); document.head.appendChild(sc); }
   if (noSave && q.get('storyqa')) { const sc = document.createElement('script'); sc.src = 'tools/story_layout_test.js'; document.head.appendChild(sc); }

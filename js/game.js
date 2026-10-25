@@ -18,9 +18,10 @@
   const MAX_ENEMIES = 16; // regular spawns wait while this many are on the field
   const ALLY_K = 0.21; // world units per rig unit for every ally (brownie ~1.7 tall)
   // attack effects drawn smaller than the original for units whose effects cover the field (original effects and the sonic wave)
-  const FX_SIZE = { banshee: 0.4, labiata: 0.55, azazel: 0.55, ramiel: 0.65, titania: 0.7, saraqael: 0.6, brunhild: 0.75 };
+  const FX_SIZE = { phoenix: 0.45, sleipnir: 0.4, harpy: 0.65, empress: 0.65, banshee: 0.4, labiata: 0.55, azazel: 0.55, ramiel: 0.65, titania: 0.7, saraqael: 0.6, brunhild: 0.75 };
   // the rigs' own particle systems (smoke, sparks, sonic rings in the attack clips), same idea, read by js/particles.js
-  window.PS_SIZE = { banshee: 0.3, labiata: 0.55, azazel: 0.5, ramiel: 0.6, titania: 0.7, saraqael: 0.6, brunhild: 0.7 };
+  window.PS_SIZE = { phoenix: 0.35, sleipnir: 0.35, harpy: 0.6, empress: 0.6, banshee: 0.3, labiata: 0.55, azazel: 0.5, ramiel: 0.6, titania: 0.7, saraqael: 0.6, brunhild: 0.7 };
+  window.PS_SPREAD = { phoenix: 0.5, sleipnir: 0.5, harpy: 0.75, empress: 0.75 };
   const fxSize = (f) => FX_SIZE[f.def.id] || 1;
   // parts of an original rig left out: Hela's summoned mechs, Andvari's cargo box (as in the defence game)
   const RIG_HIDE = { hela: /^(Meca_\d+|Summons)$/, andvari: /^(Bone_Cargo_Box|Bone_InBox|bone_shadow_box)$/ };
@@ -298,16 +299,22 @@
     ]);
   }
 
+  // 음성과 화면 효과의 난수가 회피·증원·조준 판정에 영향을 주지 않도록 분리한다.
+  function combatRandom() {
+    G.randomState = (Math.imul(G.randomState, 1664525) + 1013904223) >>> 0;
+    return G.randomState / 4294967296;
+  }
   // deck: [{ def, lv }]
   function start(stage, deck, hooks) {
     stop();
     const st = stageOf(stage);
     G = {
+      randomState: st.simulationSeed == null ? (Math.random() * 4294967296) >>> 0 : st.simulationSeed >>> 0,
       ix: st.ix, st, len: st.len, deck, hooks, t: 0, speed: 1, paused: false, over: null, overT: 0,
       allies: [], enemies: [], fx: [], texts: [], bfx: [], sfx: [],
       syn: new Set(D.synergiesOf(deck.map((d) => d.def))), kills: 0, deploys: 0, skillsUsed: 0,
       money: (st.startMoney || 0) + 300 * buffN(st, 'money'), worker: 0, cannon: D.CANNON.charge, cannonFire: null, enemyCannonFire: null,
-      cds: deck.map(() => 0),
+      cds: deck.map(() => 0), productions: deck.map(() => null),
       base: { hp: 0, max: 0 }, ebase: { hp: st.baseHp, max: st.baseHp },
       spawns: st.spawns.map((s) => ({ e: s[0], next: s[1], every: s[2], left: s[3] || Infinity, mag: s[4] })),
       bossDone: !st.boss, rushDone: !st.rush, userCam: false, root: new THREE.Group(),
@@ -551,24 +558,47 @@
   }
 
   // an SS fights alone: one of each on the field at a time (a fallen one can be sent again)
-  const onField = (def) => def.rank === 'SS' && G.allies.some((a) => !a.dead && a.def.id === def.id);
+  const onField = (def) => def.rank === 'SS' && (G.allies.some(a => !a.dead && a.def.id === def.id) || G.productions.some(job => job && job.def.id === def.id));
+  function productionState(i) {
+    const job = G && G.productions[i];
+    return job ? { remaining: job.remaining, total: job.total, progress: 1 - job.remaining / job.total } : null;
+  }
   function deploy(i) {
     if (!G || G.over || G.paused) return false;
     const slot = G.deck[i];
-    if (!slot) return false;
+    if (!slot || G.productions[i]) return false;
     const def = slot.def;
     if (G.cds[i] > 0 || G.money < def.cost) { AUDIO.play('fail', 0.6); return false; }
-    // the field holds 40 deploys: a squad (multi) shares one slot, so cheap squads don't lock the dearer units out
-    if (G.allies.length >= 80 || G.allies.reduce((a, o) => a + (o.dead ? 0 : 1 / (o.def.multi || 1)), 0) >= 40) { toast('필드가 가득 찼습니다'); return false; }
-    if (onField(def)) { toast(`${def.name}은(는) 이미 출격 중입니다 (SS는 한 명씩)`); AUDIO.play('fail', 0.6); return false; }
+    const queued = G.productions.filter(Boolean);
+    const reservedBodies = queued.reduce((n, job) => n + (job.def.multi || 1), 0);
+    const live = G.allies.reduce((n, ally) => n + (ally.dead ? 0 : 1 / (ally.def.multi || 1)), 0);
+    if (G.allies.length + reservedBodies + (def.multi || 1) > 80 || live + queued.length >= 40) { toast('필드가 가득 찼습니다'); return false; }
+    if (onField(def)) { toast(`${def.name}은(는) 이미 생산 또는 출격 중입니다`); AUDIO.play('fail', 0.6); return false; }
     G.money -= def.cost;
     G.stat.spent[def.id] = (G.stat.spent[def.id] || 0) + def.cost;
+    const total = def.production || 1;
+    G.productions[i] = { def, lv: slot.lv, remaining: total, total };
+    AUDIO.play('click', 0.4);
+    return true;
+  }
+  function updateProductions(dt) {
+    if (G.paused || G.over) return;
+    G.productions.forEach((job, i) => {
+      if (!job) return;
+      job.remaining = Math.max(0, job.remaining - dt);
+      if (job.remaining > 1e-6) return;
+      G.productions[i] = null;
+      completeProduction(i, job);
+    });
+  }
+  function completeProduction(i, slot) {
+    const def = slot.def;
     G.cds[i] = def.cd * Math.pow(0.88, buffN(G.st, 'cd')) * (G.syn.has('lean') ? 0.7 : 1) *
       (G.syn.has('tide') && (def.id === 'undine' || def.id === 'thetis') ? 0.75 : 1);
     let f = null;
     for (let n = 0; n < (def.multi || 1); n++) {
       // a tower takes its post in front of our base; a squad (multi) comes out in a short file
-      const x0 = def.tower ? TOWER_X + Math.random() * 0.5 : 0.9 - n * 0.45;
+      const x0 = def.tower ? TOWER_X + combatRandom() * 0.5 : 0.9 - n * 0.45;
       f = makeFighter(1, def, def.id, x0, D.lvMul(slot.lv)); // slot.lv: battle level (levels above the card's start)
       f.atk *= 1 + 0.12 * buffN(G.st, 'atk'); f.hp = f.maxHp = f.maxHp * (1 + 0.15 * buffN(G.st, 'hp'));
       // squad synergies (data.js SYNERGIES)
@@ -585,7 +615,6 @@
       if (S.has('wings') && (id === 'raven' || id === 'hraesvelgr')) { f.range = (f.range || def.range) + 0.5; f.atk *= 1.1; }
       if (S.has('shore') && (id === 'brownie' || id === 'leprechaun' || id === 'gnome')) { f.atk *= 1.12; f.hp = f.maxHp = f.maxHp * 1.12; }
       if (S.has('command')) f.hp = f.maxHp = f.maxHp * 1.08;
-      if (S.has('grunt')) { f.atk *= 1.2; f.hp = f.maxHp = f.maxHp * 1.15; }
       if (def.tower) f.kbRes = 1; // planted: knockbacks don't move it
       if (def.ship) f.kbRes = Math.max(f.kbRes || 0, 0.8); // a battleship barely rocks
       G.allies.push(f);
@@ -779,8 +808,8 @@
     if (mv.aim === 'snipe') { const o = near.slice().sort((a, b) => b.def.cost - a.def.cost)[0]; return [[o.x - mv.w / 2, o.x + mv.w / 2]]; }
     if (mv.aim === 'spots') {
       const xs = [];
-      for (const o of near.slice().sort(() => Math.random() - 0.5)) if (xs.every((x) => Math.abs(x - o.x) > mv.w * 0.8)) xs.push(o.x);
-      while (xs.length < mv.hits.length) xs.push(f.x - 2 - Math.random() * 8); // the rest fall around the line
+      for (const o of near.slice().sort(() => combatRandom() - 0.5)) if (xs.every((x) => Math.abs(x - o.x) > mv.w * 0.8)) xs.push(o.x);
+      while (xs.length < mv.hits.length) xs.push(f.x - 2 - combatRandom() * 8); // the rest fall around the line
       return xs.slice(0, mv.hits.length).map((x) => [x - mv.w / 2, x + mv.w / 2]);
     }
     return [[f.x - 3, f.x]];
@@ -896,7 +925,7 @@
         k.top.material.opacity = k.bot.material.opacity = 0.8 * on * blink;
       }
       while (m.i < mv.hits.length && m.t >= mv.hits[m.i]) { dreadHit(f, m); m.i++; if (f.dead || !A.move) return true; }
-      if (m.t >= mv.end) { dreadDrop(f); A.rest = 0.7 + Math.random() * 0.6; f.state = 'walk'; }
+      if (m.t >= mv.end) { dreadDrop(f); A.rest = 0.7 + combatRandom() * 0.6; f.state = 'walk'; }
       return true;
     }
     if (A.step) { // its walk: a lurch forward (Fowardstep: it travels between the clip's jump-move events)
@@ -913,7 +942,7 @@
     const inReach = G.allies.some((o) => !o.dead && f.x - o.x > -0.5 && f.x - o.x < melee.reach - 0.4) || f.x - baseFront(f) < melee.reach - 0.4;
     const anyNear = G.allies.some((o) => !o.dead && f.x - o.x > -0.5 && f.x - o.x < 11);
     const ready = set.slice(1).filter((k) => A.cd[k] <= 0 && (anyNear || DL_MOVES[k].summon) && (!DL_MOVES[k].reach || inReach));
-    if (ready.length && dreadStart(f, ready[Math.floor(Math.random() * ready.length)])) return true;
+    if (ready.length && dreadStart(f, ready[Math.floor(combatRandom() * ready.length)])) return true;
     if (inReach && dreadStart(f, set[0])) return true;
     // no one in reach: lurch forward, never into our line and never far from the shaft it guards (the story: it does not
     // leave the transport shaft): our line has to come to it
@@ -1002,7 +1031,7 @@
   const GUARD_DR = 0.6; // damage a defender (보호기, data.js guard) takes
   function damage(o, dmg, src) {
     if (o.dead) return;
-    const dodge = o.def.evade && src && Math.random() < o.def.evade;
+    const dodge = o.def.evade && src && combatRandom() < o.def.evade;
     // statistics: what an ally held off (a dodged hit in full); what it dealt is counted below, after armour and shields
     if (o.ally) G.stat.taken[o.def.id] = (G.stat.taken[o.def.id] || 0) + (dodge ? dmg : Math.min(dmg, o.hp));
     if (dodge) { // a dodger lets the hit pass
@@ -1096,6 +1125,7 @@
     if (G.money < wallet()) G.money = Math.min(wallet(), G.money + D.WORKER.rate[G.worker] * (G.st.incomeK || 1) * (1 + 0.15 * buffN(G.st, 'income')) * dt);
     else G.capT += dt;
     G.cds = G.cds.map((c) => Math.max(0, c - dt));
+    updateProductions(dt);
     if (G.cannon < D.CANNON.charge) G.cannon = Math.min(D.CANNON.charge, G.cannon + dt * (G.st.cannonK || 1) / (1 - 0.2 * Math.min(3, buffN(G.st, 'cannon'))));
     updateCannon(dt);
     updateEnemyCannon(dt);
@@ -1218,7 +1248,7 @@
       if (enemiesAlive >= MAX_ENEMIES + enrage() * 2 && !s.rush) { s.next = G.t + 1; continue; }
       spawnEnemy(s.e, s.mag * (1 + 0.25 * enrage()));
       s.left--;
-      s.next = G.t + s.every * (0.85 + Math.random() * 0.3) * Math.max(0.5, 1 - G.t / 900); // a long stand-off tilts to the worms
+      s.next = G.t + s.every * (0.85 + combatRandom() * 0.3) * Math.max(0.5, 1 - G.t / 900); // a long stand-off tilts to the worms
     }
     const ratio = G.ebase.hp / G.ebase.max;
     if (!G.rushDone && ratio <= G.st.rush.at) {
@@ -1253,8 +1283,10 @@
   function finish(kind) {
     if (G.over) return;
     G.over = kind;
+    G.productions.fill(null);
     updateEnemyCannon(0);
     G.overT = 0;
+    if (G.manualSim) return; // 다음 시험 전투에 종료 연출 타이머가 넘어가지 않게 한다.
     if (kind === 'win') {
       G.enemies.forEach((e) => { if (!e.dead) die(e); });
       G.allies.forEach((a) => { if (!a.dead && a.sd) { a.act = null; a.sd.speed = 1; a.sd.play(a.sd.has('win') ? 'win' : 'idle', null, true); } });
@@ -1394,9 +1426,9 @@
   function fireEnemyCannon() {
     if (!G || G.over || G.enemyCannonFire) return;
     const layers = [cannonLayer(tex.glow, 0xff3344, 2001), cannonLayer(tex.beam, 0xff243c, 1998),
-      cannonLayer(tex.energy, 0xff5160, 1999), cannonLayer(tex.beam, 0xffd4d8, 2000), cannonLayer(tex.glow, 0xff4255, 2001)];
+      cannonLayer(tex.energy, 0xff5160, 1999), cannonLayer(tex.beam, 0xffd4d8, 2000), cannonLayer(tex.glow, 0xff4255, 2001), cannonLayer(tex.beam, 0xff3344, 1997)];
     layers.forEach(m => { m.material.opacity = 0; });
-    G.enemyCannonFire = { t: 0, fired: false, hit: new Set(), layers };
+    G.enemyCannonFire = { t: 0, fired: false, hit: new Set(), nextArc: 0, layers };
     AUDIO.play('charge', 0.65);
     ring(G.len - CAN.x, CAN.y, 0xff3344, 3, 0.9);
   }
@@ -1410,31 +1442,42 @@
     if (G.over) { dispose(); return; }
     c.t += dt;
     const x = G.len - CAN.x, end = G.len * 0.5, charge = 0.9;
-    const [orb, glow, body, core, flare] = c.layers;
+    const [orb, glow, body, core, flare, trail] = c.layers;
     orb.position.set(x, CAN.y, 0);
     if (c.t < charge) {
       const size = 0.5 + c.t / charge * 2;
       orb.scale.set(size, size, 1); orb.material.opacity = 0.3 + c.t / charge * 0.5;
       return;
     }
-    if (!c.fired) { c.fired = true; AUDIO.play('beam', 0.7); shake(0.16, 0.25); }
-    const t = c.t - charge, fade = t < 0.7 ? 1 : Math.max(0, 1 - (t - 0.7) / 0.35);
+    if (!c.fired) {
+      c.fired = true; AUDIO.play('beam'); AUDIO.play('laserBig'); hitstop(0.06); shake(0.25, 0.6);
+      sheet('burst', x - 0.3, CAN.y, 0xffe2df, 3.2, 0.25);
+      sheet('flash', x - 0.2, CAN.y, 0xff6677, 2.6, 0.18);
+      ring(x, CAN.y, 0xff6173, 5, 0.45);
+    }
+    const t = c.t - charge, fade = t < 0.8 ? 1 : Math.max(0, 1 - (t - 0.8) / 0.4);
     const head = x - Math.min(1, t / 0.45) * (x - end), length = Math.max(0.01, x - head), center = (x + head) / 2;
     orb.material.opacity = 0.7 * fade;
-    for (const [m, height, opacity] of [[glow, 3.7, 0.18], [body, 2.3, 0.55], [core, 0.5, 0.85]]) {
+    for (const [m, height, opacity] of [[glow, 4.2, 0.2], [body, 2.5, 0.6], [core, 0.6, 0.85]]) {
       m.position.set(center, CAN.y, 0); m.scale.set(length, height * fade, 1); m.material.opacity = opacity * fade;
     }
     body.material.map.repeat.set(-length / 4, 1); body.material.map.offset.x = c.t * 4;
-    const size = 2 * fade;
-    flare.position.set(Math.max(head, end + size / 2), CAN.y, 0); flare.scale.set(size, size, 1); flare.material.opacity = fade;
-    const damageValue = D.CANNON.dmg * Math.min(3, G.st.pow || 1);
+    const size = (t < 0.45 ? 3 : 2) * fade;
+    flare.position.set(Math.max(head, end + size * 0.7), CAN.y, 0); flare.scale.set(size * 1.4, size, 1); flare.material.opacity = fade;
+    trail.position.set(center, 0.12, 0); trail.scale.set(length, 0.45, 1); trail.material.opacity = 0.45 * fade;
+    if (fade > 0.3 && c.t >= c.nextArc) {
+      c.nextArc = c.t + 0.06;
+      const x0 = x - Math.random() * length * 0.9, x1 = Math.max(head, x0 - 0.6 - Math.random() * 1.2);
+      bolt(x0, CAN.y + (Math.random() - 0.5) * 1.8, x1, CAN.y + (Math.random() - 0.5) * 1.8, 0xffbcc7);
+    }
+    const damageValue = D.cannonDamage(G.st);
     for (const ally of G.allies) {
       if (ally.dead || c.hit.has(ally) || ally.x < head || ally.x > x) continue;
       c.hit.add(ally); damage(ally, damageValue);
       sheet('bolt', ally.x, aimY(ally), 0xff3344, 1.8, 0.3);
       if (!ally.dead) knockback(ally, 1.2);
     }
-    if (t >= 1.05) dispose();
+    if (t >= 1.2) dispose();
   }
 
   function updateCannon(dt) {
@@ -1484,8 +1527,7 @@
       bolt(x0, CAN.y + (Math.random() - 0.5) * 1.8, x1, CAN.y + (Math.random() - 0.5) * 1.8, 0xcff6ff);
     }
     // grows with the stage's worm strength like the worms themselves (hard mode: its normal stage's; infinite: up to 6)
-    const pw = G.st.hard ? (D.STAGES[G.st.ix] || G.st).pow : G.st.infinite ? Math.min(6, G.st.pow || 1) : G.st.pow || 1;
-    const dmg = D.CANNON.dmg * pw;
+    const dmg = D.cannonDamage(G.st);
     for (const e of G.enemies) {
       if (e.dead || c.hit.has(e) || e.x > head) continue;
       c.hit.add(e);
@@ -1660,12 +1702,18 @@
     return o;
   }
   const fxRoom = () => G.bfx.length + G.sfx.length < ORIG_MAX;
+  // 원본 효과의 실제 저장 범위가 전장을 덮지 않도록 표시 크기만 제한한다.
+  function effectScale(inst, requested, maxSpan) {
+    const extent = inst && inst.c && inst.c.d && inst.c.d.scale;
+    return extent > 0 ? Math.min(requested, maxSpan / (extent * 2)) : requested;
+  }
   function spawnStatic(name, x, y, k) {
     if (!fxRoom() || !FXB.ready(name)) return false;
     const inst = FXB.create(name);
     if (!inst) return false;
     inst.root.position.set(x, y, 0);
-    inst.root.scale.set(k, k, 1);
+    const scale = effectScale(inst, k, 4.5);
+    inst.root.scale.set(scale, scale, 1);
     inst.setOrder(1400);
     G.root.add(inst.root);
     G.sfx.push(inst);
@@ -1761,7 +1809,8 @@
     if (o.bullet && FXB.ready(o.bullet) && fxRoom()) {
       const meta = FX_META.meta[o.bullet];
       const inst = FXB.create(o.bullet);
-      inst.root.scale.set(k, k, 1);
+      const scale = effectScale(inst, k, 2.5);
+      inst.root.scale.set(scale, scale, 1);
       inst.setOrder(1400);
       G.root.add(inst.root);
       const [sx, sy] = mz || muzzle(f, 1);
@@ -1852,10 +1901,11 @@
       case 'bullet': sheet('flash', mx, my, c, 0.5, 0.08); tracer(mx, my, tx, ty, c); sheet('hit', jx, jy, c, 1.0, 0.22); break;
       case 'snipe': sheet('flash', mx, my, c, 0.7, 0.1); streak(mx, my, tx, ty, c, 0.12, 0.18); sheet('burst', jx, jy, c, 1.2, 0.2); sheet('hit', jx, jy, 0xffffff, 1.3, 0.26); break;
       case 'grenade': case 'missile': case 'fireball': { // launch flash, the round in flight (grenades lob), then the blast
+        const w = fxSize(f);
         const d = Math.abs(tx - mx), lob = f.def.fx === 'grenade' ? 0.8 + d * 0.22 : f.def.fx === 'missile' ? 0.3 + d * 0.06 : 0;
-        sheet('flash', mx, my, c, 0.8, 0.1);
-        shot(mx, my, jx, jy, c, f.def.fx === 'grenade' ? 0.42 : 0.24, lob, f.def.fx === 'fireball' ? 0.75 : 0.5,
-          () => { sheet('burst', jx, jy, c, 2.0, 0.18); sheet('smoke', jx, jy + 0.2, c, 2.2, 0.5, { grow: 0.5 }); ring(tx, 0.1, c, 2.4, 0.35); });
+        sheet('flash', mx, my, c, 0.8 * w, 0.1);
+        shot(mx, my, jx, jy, c, f.def.fx === 'grenade' ? 0.42 : 0.24, lob, (f.def.fx === 'fireball' ? 0.75 : 0.5) * w,
+          () => { sheet('burst', jx, jy, c, 2.0 * w, 0.18); sheet('smoke', jx, jy + 0.2, c, 2.2 * w, 0.5, { grow: 0.5 }); ring(tx, 0.1, c, 2.4 * w, 0.35); });
         break;
       }
       case 'flame': for (let i = 0; i < 2; i++) sheet('smoke', mx + f.dir * (0.4 + Math.random() * Math.abs(tx - mx)), my + (Math.random() - 0.5) * 0.4, c, 1.1, 0.35, { grow: 0.6 }); break;
@@ -1918,6 +1968,7 @@
     requestAnimationFrame(frame);
     const rdt = Math.min(0.1, (now - (last || now)) / 1000);
     last = now;
+    if (G && G.manualSim) return; // 자동 검증은 고정 간격 계산만 사용한다.
     if (G) {
       if (pan && pan.battle !== G) pan = null;
       if (G.cine > 0 && !G.paused) { G.cine -= rdt; if (G.cine <= 0) { document.body.classList.remove('cine'); if (!G.userCam) pan = null; if (G.heldToast) { toast(...G.heldToast); G.heldToast = null; } } }
@@ -2108,7 +2159,7 @@
     setSpeed(s) { if (G && !(G.over && G.st.finale)) G.speed = s; },
     setPaused(p) { if (G) G.paused = p; },
     wallet: () => (G ? wallet() : 0),
-    orderSkill, skillState, onField: (def) => !!G && onField(def),
+    orderSkill, skillState, productionState, onField: (def) => !!G && onField(def),
     TIME_LIMIT: 600,
     // tests: every effect sheet in a row at the camera's centre, frozen at frame `u` (0..1)
     fxTest(u = 0.3) {

@@ -11,7 +11,7 @@ assert.equal(D.UNITS.filter(u => u.rank === 'SS').length, 24);
 for (const u of D.UNITS) {
   assert(Number.isFinite(u.cost) && u.cost > 0 && u.cost % 10 === 0);
   assert(u.cost <= D.WORKER.cap.at(-1));
-  if (u.rank === 'SS') assert.equal(D.formationCost(u), 6);
+  assert(!('formationCost' in u));
   const flyHp = u.fly ? 0.5 : 1, flyAtk = u.fly ? 0.8 : 1, siegeHp = u.siege ? 1.2 : 1;
   const health = u.hp / flyHp / siegeHp * u.multi / (u.guard ? 0.6 : 1) / (1 - u.evade) / D.UNIT_BALANCE.hpPerPower;
   const attack = u.atk / flyAtk / u.rate * u.multi * u.balance.attackValue / D.UNIT_BALANCE.dpsPerPower;
@@ -45,5 +45,13 @@ for (let i = 1; i < D.RANK_ORDER.length; i++) {
   const higher = D.UNITS.filter(u => u.rank === D.RANK_ORDER[i]).map(u => u.balance.efficiency);
   assert(Math.min(...higher) > Math.max(...lower));
 }
-assert.equal(['ullr', 'tiamat', 'constantia', 'empress', 'labiata'].reduce((sum, id) => sum + D.formationCost(id), 0), D.DECK_CAP);
-console.log('전체 대원 비용, 등급 효율, 가격 효율, 비행·공성 보정, 최고 등급 편성 검사 통과');
+assert(!D.SYNERGIES.some(s => s.id === 'grunt'));
+for (const rank of ['S', 'SS']) {
+  const traits = { fly: false, siege: false, guard: false, range: 3 };
+  const slow = D.unitStats(rank, 600, 'single', { spd: 1, evade: 0.6 }, traits);
+  const fast = D.unitStats(rank, 600, 'single', { spd: 1.7, evade: 0.6 }, traits);
+  assert.equal(slow.hp, fast.hp);
+  if (rank === 'S') assert(fast.atk < slow.atk);
+  else assert.equal(fast.atk, slow.atk);
+}
+console.log('전체 대원 비용, 등급 효율, 가격 효율, 비행·공성 보정, 편성 점수 제거 검사 통과');

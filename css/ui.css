@@ -955,12 +955,10 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 .crc-art .links { position: absolute; left: 2px; bottom: 2px; }
 .crc .crc-cost { gap: 3px; min-width: 40px; height: 24px; border-radius: 5px; padding: 0 5px; font-style: normal; font-variant-numeric: tabular-nums; color: #251a03; text-shadow: none; background: linear-gradient(#ffe79d, #efbd4d); }
 .crc-cost > span { flex: none; width: 8px; height: 13px; background: #2d2100; clip-path: polygon(48% 0, 0 58%, 38% 58%, 22% 100%, 100% 35%, 60% 35%, 78% 0); }
-.crc-deck-cost { position: absolute; left: 2px; bottom: 2px; padding: 2px 5px; border: 1px solid #f1c76c; border-radius: 4px; background: #17202ff2; color: #fff0bf; font-size: 11px; font-weight: 800; line-height: 15px; white-space: nowrap; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px #000; }
 .detail .unit-costs > small { display: block; color: var(--dim); font-size: 12px; }
 @media (max-width: 640px) {
   .crc .crc-cost { min-width: 0; height: 20px; gap: 2px; padding: 0 3px; font-size: 10px; }
   .crc-cost > span { width: 6px; height: 11px; }
-  .crc-deck-cost { padding: 1px 3px; font-size: 10px; line-height: 14px; }
   .cr-grid .crc-cost { padding: 0 2px; font-size: 9px; }
   .cr-grid .crc-cost > span { display: none; }
 }
@@ -1342,3 +1340,12 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
 }
 
 @media (orientation: landscape) and (max-height: 600px) and (max-width: 1200px) { .hud-bottom .deck-wrap, body.deck1 .hud-bottom .deck-wrap { flex-basis: min(510px, 112dvh); max-width: min(510px, 112dvh); } }
+
+/* 생산 표시가 카드 크기와 위치를 바꾸지 않도록 겹쳐 표시한다. */
+.slot .production { display: none; position: absolute; inset: 0; z-index: 6; align-items: center; justify-content: center; flex-direction: column; gap: 2px; background: #101a2bd9; color: #ffe495; pointer-events: none; }
+.slot.producing .production { display: flex; }
+.slot.producing::before { display: none; }
+.slot .production b { font-size: clamp(10px, 1.5vw, 13px); line-height: 1.2; text-shadow: 0 1px 2px #000; }
+.slot .production small { color: #fff; font-size: 12px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.production-bar { width: 72%; height: 4px; margin-top: 2px; background: #ffffff29; overflow: hidden; border-radius: 2px; }
+.production-bar i { display: block; width: var(--build, 0%); height: 100%; background: #ffcb4d; }

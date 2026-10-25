@@ -38,8 +38,7 @@
     if (c >= 3) ids.push('andvari');
     if (c >= 4) ids.push('labiata'); // the first SS (the making's pity reaches it around here)
     const out = [];
-    let cost = 0;
-    for (const id of ids) { const k = D.formationCost(id); if (out.length < 10 && cost + k <= D.DECK_CAP && !out.includes(id)) { out.push(id); cost += k; } }
+    for (const id of ids) if (out.length < 10 && !out.includes(id)) out.push(id);
     return out;
   }
 
@@ -49,7 +48,7 @@
     const live = G.allies.filter((a) => !a.dead);
     const tanks = live.filter((a) => a.def.roles.includes('tank') && !a.def.tower).length;
     const towers = live.filter((a) => a.def.tower).length;
-    const ready = deck.map((d, i) => ({ i, u: U[d.id] })).filter((s) => G.cds[s.i] <= 0 && !GAME.onField(s.u) && !(s.u.tower && towers >= 2));
+    const ready = deck.map((d, i) => ({ i, u: U[d.id] })).filter((s) => G.cds[s.i] <= 0 && !GAME.productionState(s.i) && !GAME.onField(s.u) && !(s.u.tower && towers >= 2));
     const isTank = (u) => u.roles.includes('tank') || u.multi > 1;
     ready.sort((a, b) => (tanks < 2 ? isTank(b.u) - isTank(a.u) : 0) || b.u.cost - a.u.cost);
     const wallet = GAME.wallet();
@@ -68,8 +67,9 @@
   const breathe = () => new Promise((r) => { const ch = new MessageChannel(); ch.port1.onmessage = () => { ch.port1.close(); ch.port2.close(); r(); }; ch.port2.postMessage(0); });
   async function battle(st, deck, opt = {}) {
     await GAME.preload(st, deck.map((d) => U[d.id]), () => {});
-    GAME.start(st, deck.map((d) => ({ def: U[d.id], lv: d.lv })), {});
+    GAME.start(opt.seed == null ? st : { ...st, simulationSeed: opt.seed }, deck.map((d) => ({ def: U[d.id], lv: d.lv })), {});
     const G = GAME.state;
+    G.manualSim = true;
     if (opt.setup) opt.setup(G);
     const T = opt.T || 600;
     let n = 0;

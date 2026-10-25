@@ -22,7 +22,7 @@
       try {
         const ids = [u.id, ...['gnome', 'leprechaun'].filter(id => id !== u.id)];
         const result = await BAL.battle(stage, ids.map(id => ({ id, lv: D.relLv(D.UNIT[id].rank, 10) })), {
-          T: 120,
+          seed, T: 120,
           setup: G => { G.money = 0; G.worker = 3; G.base.hp = G.base.max = 10000000; },
           bot: G => {
             if (G.cds[0] <= 0 && !GAME.onField(u) && G.money >= u.cost) {

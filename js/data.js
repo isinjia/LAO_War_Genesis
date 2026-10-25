@@ -21,7 +21,7 @@
     B: { k: 1, c: 1, cd: 1, r: 0, color: '#9fb4cc' },
     A: { k: 1.3, c: 1.6, cd: 1.4, r: 0.2, color: '#5dd2ff' },
     S: { k: 1.8, c: 2.4, cd: 2.0, r: 0.4, color: '#c879ff' },
-    SS: { k: 4.0, c: 4.0, cd: 3.0, r: 0.6, color: '#ffb52e' },
+    SS: { k: 5.5, c: 4.0, cd: 1.8, r: 0.6, color: '#ffb52e' },
   };
   const RANK_ORDER = ['B', 'A', 'S', 'SS'];
   // [id, name, rank, type, fx, color, sfx, desc, tweaks]; tweaks multiply hp / atk / spd / rate, add range, set skill / slow
@@ -151,7 +151,6 @@
     ramiel: '중장형 공격기',
   };
   // 같은 역할과 조건이면 상위 등급과 높은 소환 전력이 더 높은 전력당 효율을 갖는다.
-  const DECK_COST = { B: 1, A: 2, S: 4, SS: 6 };
   const SUMMON_POWER = {
     brownie: 100, leprechaun: 120, gnome: 180, impet: 280, daphne: 280,
     banshee: 450, sylphid: 200, raven: 550, nymph: 200, amy: 600, andvari: 700,
@@ -165,12 +164,16 @@
     ullr: 2600, tiamat: 2800, constantia: 2200, empress: 2400,
   };
   const UNIT_BALANCE = {
-    hpPerPower: 18, dpsPerPower: 0.8, priceExponent: 0.15,
+    hpPerPower: 18, dpsPerPower: 0.8, priceExponent: 0.15, legendPriceExponent: 0.3, legendPowerDiscount: 0.6,
     flyHp: 0.5, flyAtk: 0.8, siegeHp: 1.2,
     guardDamage: 0.6, areaTargets: 2,
     healthShare: { wall: 0.82, single: 0.35, snipe: 0.25, splash: 0.4, melee: 0.58, slow: 0.48, stun: 0.52, chain: 0.42, laser: 0.4 },
   };
-  function unitBudget(rank, power) { return power * RANKS[rank].k * Math.pow(power / 100, UNIT_BALANCE.priceExponent); }
+  function unitBudget(rank, power) {
+    // 최고 등급은 한 명 제한을 보상해 소환 전력만 할인하고 기존 성능 예산은 보존한다.
+    const strengthPower = rank === 'SS' ? power / UNIT_BALANCE.legendPowerDiscount : power;
+    return strengthPower * RANKS[rank].k * Math.pow(strengthPower / 100, UNIT_BALANCE.priceExponent) * (rank === 'SS' ? Math.pow(strengthPower / 500, UNIT_BALANCE.legendPriceExponent) : 1);
+  }
   function unitStats(rank, power, type, tw, traits) {
     const t = TYPES[type], rule = UNIT_BALANCE, budget = unitBudget(rank, power);
     const rate = Math.round(t.rate * (tw.rate || 1) * 100) / 100;
@@ -182,7 +185,11 @@
     const controlValue = slow ? 1 + slow[0] * Math.min(1, slow[1] / rate) : 1;
     const skillCharge = rank === 'SS' ? 12 : rank === 'S' ? 18 : 0;
     const skillValue = skillCharge ? 1 + (rank === 'SS' ? 3 : 2) * rate / (skillCharge + rate) : 1;
-    const attackValue = (t.area ? rule.areaTargets : 1) * rangeValue * controlValue * skillValue;
+    // 복수 생산 가능한 고기동 회피형은 접근·생존 이점을 화력 예산에도 반영한다.
+    // 한 명 제한이 있는 최고 등급에는 중복 생산에 대한 비용을 부과하지 않는다.
+    const mobility = t.spd * (tw.spd || 1);
+    const swarmEvasionValue = rank === 'SS' ? 1 : 1 + (tw.evade || 0) * Math.max(0, mobility - 1) * 0.6;
+    const attackValue = (t.area ? rule.areaTargets : 1) * rangeValue * controlValue * skillValue * swarmEvasionValue;
     const multi = tw.multi || 1;
     const hp = budget * rule.hpPerPower * share / multi * (traits.guard ? rule.guardDamage : 1) * (1 - (tw.evade || 0));
     const atk = budget * rule.dpsPerPower * (1 - share) * rate / multi / attackValue;
@@ -195,13 +202,13 @@
   const UNITS = LIST.map(([id, name, rank, type, fx, color, sfx, desc, tw = {}]) => {
     if (FLYERS.has(id)) desc = '비행 · ' + desc;
     const t = TYPES[type], R = RANKS[rank];
-    const formationCost = DECK_COST[rank], power = SUMMON_POWER[id];
+    const power = rank === 'SS' ? r10(SUMMON_POWER[id] * UNIT_BALANCE.legendPowerDiscount) : SUMMON_POWER[id];
     const range = RANGE[id] || Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10;
     const traits = { fly: FLYERS.has(id), siege: !!tw.siege, guard: (CLASS[id] || '').endsWith('보호기'), range };
     const stats = unitStats(rank, power, type, tw, traits);
     const u = {
-      id, name, rank, type, formationCost, role: t.role, cls: CLASS[id] || '', fx, color, sfx, desc,
-      cost: power,
+      id, name, rank, type, role: t.role, cls: CLASS[id] || '', fx, color, sfx, desc,
+      cost: power, production: rank === 'SS' ? Math.min(2.4, Math.round((0.5 + power / 900) * 10) / 10) : Math.min(4.5, Math.round((0.6 + power / 700) * 10) / 10),
       cd: Math.min(45, Math.round(t.cd * R.cd * (tw.cd || 1) * 10) / 10),
       hp: stats.hp,
       atk: stats.atk, balance: stats.balance,
@@ -253,9 +260,6 @@
   const WILD_SHOP = { B: { n: 20, price: 200 }, A: { n: 5, price: 400 }, S: { n: 1, price: 600 }, SS: { n: 1, price: 2500 } };
   const SHOP_CARDS = { B: 20, A: 6, S: 2, SS: 1 }; // copies per recruit-shop buy of a card you own
 
-  // 편성 한도는 대원별 비용의 합으로 계산한다.
-  const formationCost = (unit) => (typeof unit === 'string' ? UNIT[unit] : unit).formationCost;
-  const DECK_CAP = 30;
 
   // money: reward when it falls
   const ENEMIES = {
@@ -399,6 +403,11 @@
   // worker (income) levels: money per second and wallet size; cost of the next level
   const WORKER = { rate: [24, 32, 40, 48, 56, 64, 72, 80], cap: [600, 900, 1200, 1500, 1800, 2200, 2600, 3000].map((v) => v * VALUE), cost: [80, 160, 240, 320, 400, 480, 560] };
   const CANNON = { charge: 44, reach: 15, dmg: 300 }; // damage x the stage's pow
+  function cannonDamage(stage) {
+    const power = stage.hard ? (STAGES[stage.ix] || stage).pow : stage.infinite ? Math.min(6, stage.pow || 1) : stage.pow || 1;
+    return CANNON.dmg * power;
+  }
+
   const MAX_LV = 12; // card level cap
   const lvMul = (lv) => 1 + 0.2 * (lv - 1); // hp / atk at battle level lv (levels above the card's start, 1-based)
   const lvCost = (lv) => Math.round(150 * Math.pow(lv, 1.9) / 50) * 50; // xp from battle level lv to lv + 1
@@ -422,24 +431,57 @@
   // 열 레벨 작전 조정표 시작
   // 적 체력 배율, 적 공격 배율, 적 요새 체력. 보상과 아군 기지는 유지한다.
   const CAMPAIGN_TUNE = {
+    '7-10': [1, 1, 18700],
+    '7-7': [1, 1, 19800],
+    '7-6': [1, 1, 20800],
+    '7-4': [1, 1, 26300],
+    '7-3': [1, 1, 47300],
+    '7-2': [1, 1, 30300],
+    '7-1': [1, 1, 29300],
+    '6-7': [1.12, 1, 26400],
+    '6-6': [1.12, 1, 27400],
+    '6-5': [1.12, 1, 26500],
+    '6-4': [1.12, 1, 22300],
+    '6-3': [1.12, 1, 9500],
+    '6-2': [1.12, 1, 26000],
+    '6-1': [1.12, 1, 36200],
+    '5-10': [1.15, 1, 24600],
+    '5-9': [1.15, 1, 21000],
+    '5-8': [1.15, 1, 14800],
+    '5-7': [1.15, 1, 12200],
+    '5-6': [1.15, 1, 18300],
+    '5-5': [1.15, 1, 22400],
+    '5-4': [1.15, 1, 26200],
+    '5-3': [1.15, 1, 25300],
+    '5-2': [1.15, 1, 35000],
+    '5-1': [1.15, 1, 23100],
+    'H7-2': [0.72, 0.72, 36000],
+    'H6-10': [0.64, 1, 32200],
+    'H6-9': [0.64, 1, 37600],
+    'H8-2': [1, 0.5616, 47400],
+    'H7-4': [1, 0.5616, 36900],
+    'H7-3': [1, 0.72, 66300],
+    '4-2': [1.25, 0.72, 75400],
+    '3-6': [1, 0.72, 61400],
+    '3-4': [1, 0.72, 71700],
     '3-2': [0.846, 1, 85500],
     '3-9': [0.512, 1, 35200],
     '3-10': [0.631, 1, 65700],
-    '4-1': [0.64, 1, 50300],
-    '4-3': [0.64, 0.78, 24300],
-    '4-4': [0.4494, 1, 38600],
-    '4-5': [0.3551, 1, 28300],
-    '4-6': [0.6623, 1, 35500],
-    '4-7': [0.4096, 0.4746, 13100],
-    '4-8': [0.2253, 1, 14000],
-    '4-9': [0.3584, 1, 13500],
-    '4-10': [0.1936, 0.78, 16500],
-    '6-8': [0.8295, 1, 21800],
-    '6-9': [0.8, 1, 31300],
-    '6-10': [0.6899, 1, 28400],
-    '7-5': [0.8475, 1, 19000],
-    '7-8': [0.55, 1, 17000],
-    '7-9': [0.7884, 1, 15800],
+    '4-1': [0.8, 1, 75400],
+    '4-3': [1.12, 0.78, 36400],
+    '4-4': [0.7864, 1, 57900],
+    '4-5': [0.6215, 1, 42400],
+    '4-6': [1.1591, 1, 53200],
+    '4-7': [0.9216, 0.4746, 19600],
+    '4-8': [0.704, 1, 21000],
+    '4-9': [0.896, 1, 20200],
+    '4-10': [0.726, 0.78, 24800],
+    '6-8': [0.929, 1, 24000],
+    '6-9': [0.896, 1, 34400],
+    '6-10': [0.7727, 1, 31200],
+    '7-5': [0.8475, 1, 20300],
+    '7-8': [0.55, 1, 18200],
+    '7-9': [0.7884, 1, 16900],
     'H1-3': [0.8, 1, 32300],
     'H1-5': [0.8734, 1, 36200],
     'H1-8': [0.7524, 1, 44900],
@@ -456,18 +498,18 @@
     'H3-1': [0.4096, 1, 77800],
     'H3-2': [0.4096, 1, 70600],
     'H3-3': [0.64, 1, 84100],
-    'H3-4': [0.64, 1, 77800],
+    'H3-4': [0.64, 0.72, 77800],
     'H3-5': [0.64, 1, 70400],
-    'H3-6': [0.8, 0.85, 78300],
+    'H3-6': [0.8, 0.612, 78300],
     'H3-7': [0.8, 1, 73700],
     'H3-8': [0.4212, 0.72, 89100],
     'H3-9': [0.2622, 1, 32500],
     'H3-10': [0.4096, 0.78, 57100],
     'H4-1': [0.4427, 1, 68200],
-    'H4-2': [0.8, 0.85, 64200],
+    'H4-2': [0.8, 0.612, 64200],
     'H4-3': [0.817, 1, 45500],
     'H4-4': [0.7155, 0.78, 54600],
-    'H4-5': [0.5567, 1, 58700],
+    'H4-5': [0.5567, 0.72, 58700],
     'H4-6': [0.6838, 0.78, 56100],
     'H4-7': [0.573, 1, 25800],
     'H4-8': [0.4419, 1, 36700],
@@ -484,26 +526,34 @@
     'H5-9': [0.2143, 1, 12300],
     'H5-10': [0.2538, 1, 12800],
     'H6-8': [0.7639, 1, 32800],
-    'H7-5': [0.512, 1, 18400],
-    'H7-6': [0.4435, 1, 22200],
+    'H7-5': [0.336, 0.72, 15600],
+    'H7-6': [0.3548, 0.78, 18900],
     'H7-7': [0.1802, 1, 11100],
     'H7-8': [0.2163, 0.78, 15700],
-    'H7-9': [0.3277, 1, 11700],
+    'H7-9': [0.2622, 1, 9900],
     'H7-10': [0.44, 0.65, 20200],
-    'H8-3': [0.719, 1, 35000],
-    'H8-4': [0.512, 1, 23800],
-    'H8-5': [0.402, 1, 23500],
-    'H8-6': [0.44, 1, 27400],
-    'H8-7': [0.4046, 0.85, 38100],
+    'H8-3': [0.5752, 1, 28000],
+    'H8-4': [0.3277, 0.9, 20200],
+    'H8-5': [0.402, 0.72, 23500],
+    'H8-6': [0.352, 1, 21900],
+    'H8-7': [0.3237, 0.85, 30500],
     'H8-8': [0.2499, 1, 18500],
     'H8-9': [0.4279, 0.78, 18200],
-    'H8-10': [0.2253, 1, 19300],
+    'H8-10': [0.2253, 0.72, 19300],
   };
   for (const st of [...STAGES, ...HARD]) {
     const tuning = CAMPAIGN_TUNE[st.code];
     if (!tuning) continue;
     [st.enemyHpK, st.enemyAtkK, st.baseHp] = tuning;
   }
+  // 돌격 작전은 첫 소환 선택에 대응할 시간을 확보한다.
+  for (const code of ['4-2', 'H4-2', 'H8-2']) {
+    const st = [...STAGES, ...HARD].find(stage => stage.code === code);
+    st.spawns = st.spawns.map(wave => [wave[0], wave[1] < 15 ? wave[1] + 5 : wave[1], ...wave.slice(2)]);
+  }
+  // 무한 공중 증원이 전선을 고정하던 구간은 유한 편대로 바꾼다.
+  const airSiege = HARD.find(stage => stage.code === 'H8-4');
+  airSiege.spawns = airSiege.spawns.map(wave => wave[0] === 'Intruder_N' ? [wave[0], 12, 13, 8, wave[4]] : wave);
   // 열 레벨 작전 조정표 끝
 
   // infinite front: floor n (1, 2, ...) cycles the chapters' worms, every 5th floor brings a chapter boss
@@ -582,7 +632,6 @@
     { id: 'wings', kind: '인연', name: '검은 날개', need: '레이븐 + 흐레스벨그', tip: '두 대원 사거리 +0.5 · 공격 +10%', pair: ['raven', 'hraesvelgr'], test: (us) => has(us, 'raven', 'hraesvelgr') },
     { id: 'shore', kind: '인연', name: '해안 자매', need: '브라우니 + 레프리콘 + 노움', tip: '세 대원 체력 · 공격 +12%', pair: ['brownie', 'leprechaun', 'gnome'], test: (us) => has(us, 'brownie', 'leprechaun', 'gnome') },
     { id: 'command', kind: '인연', name: '지휘 체계', need: '라비아타 + 발키리', tip: '전원 체력 +8%', pair: ['labiata', 'valkyrie'], test: (us) => has(us, 'labiata', 'valkyrie') },
-    { id: 'grunt', kind: '각오', name: '보병의 긍지', need: 'SS 없이 편성', tip: '전원 공격 +20% · 체력 +15%', test: (us) => us.length >= 5 && !us.some((u) => u.rank === 'SS') },
     { id: 'lean', kind: '각오', name: '소수 정예', need: '편성 6명 이하', tip: '재배치 시간 -30% · 발전 효율 시작 Lv2', test: (us) => us.length > 0 && us.length <= 6 },
   ];
   const synergiesOf = (units) => SYNERGIES.filter((sy) => sy.test(units)).map((sy) => sy.id);
@@ -650,6 +699,6 @@
     return p;
   }
 
-  window.DATA = { UNITS, UNIT, TYPES, ROLES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, DECK_COST, formationCost, UNIT_BALANCE, unitBudget, unitStats, DECK_CAP, START_LV, CARDS, cardsNeed, relLv, PULL_CARDS, WILD_SHOP, SHOP_CARDS,
-    ENEMIES, TRAITS, MODS, INF_BUFFS, dailyStage, SYNERGIES, synergiesOf, MISSIONS, PERIODIC, periodic, dayNo, BASE_RIG, STAGES, HARD, infiniteFloor, WORKER, CANNON, VALUE, MAX_LV, lvMul, lvCost, xpNeed, reward };
+  window.DATA = { UNITS, UNIT, TYPES, ROLES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, UNIT_BALANCE, unitBudget, unitStats, START_LV, CARDS, cardsNeed, relLv, PULL_CARDS, WILD_SHOP, SHOP_CARDS,
+    ENEMIES, TRAITS, MODS, INF_BUFFS, dailyStage, SYNERGIES, synergiesOf, MISSIONS, PERIODIC, periodic, dayNo, BASE_RIG, STAGES, HARD, infiniteFloor, WORKER, CANNON, cannonDamage, VALUE, MAX_LV, lvMul, lvCost, xpNeed, reward };
 })();
