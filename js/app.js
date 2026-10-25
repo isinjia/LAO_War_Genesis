@@ -120,7 +120,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.31'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.32'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -1973,6 +1973,7 @@
     if (story && story.typing) nextLine();
   }
   if (q.get('smoke')) { const sc = document.createElement('script'); sc.src = 'tools/smoke.js'; document.head.appendChild(sc); }
-  if (q.get('balance')) { const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now(); document.head.appendChild(sc); } // tools/balance.js: the balance report
+  if (q.get('balance') || (noSave && q.get('audit'))) { const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now(); document.head.appendChild(sc); } // tools/balance.js: the balance report
+  if (noSave && q.get('audit')) { const sc = document.createElement('script'); sc.src = 'tools/campaign_audit.js?t=' + Date.now(); document.head.appendChild(sc); }
   if (noSave && q.get('storyqa')) { const sc = document.createElement('script'); sc.src = 'tools/story_layout_test.js'; document.head.appendChild(sc); }
 })();

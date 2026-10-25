@@ -596,6 +596,9 @@
   function spawnEnemy(eid, mag, boss) {
     const def = Object.assign({ id: eid }, D.ENEMIES[eid]);
     const f = makeFighter(-1, def, 'e_' + eid, G.len - 0.6, mag * (G.st.pow || 1));
+    // 작전별 적 조정은 아군 기지 체력·포격 피해·처치 보상과 분리한다.
+    f.hp = f.maxHp = f.maxHp * (G.st.enemyHpK || 1);
+    f.atk *= G.st.enemyAtkK || 1;
     f.atk *= window.TUNE_EATK || 1.0; // monsters' attack factor (1.4 before V1.30: the line melted, units had to be resent constantly)
     if (def.shield) f.shield = f.maxHp * def.shield;
     f.money = Math.round(def.money * (0.8 + 0.2 * mag) * (0.6 + 0.4 * Math.min(3, G.st.pow || 1))); // tougher stages pay more (up to the campaign's top)

@@ -1,0 +1,4846 @@
+{
+  "phase": "baseline",
+  "cardLevel": 10,
+  "rows": [
+    {
+      "code": "1-1",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 10300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 84.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 41,
+          "firstDamage": null,
+          "peak": 71
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-2",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 23500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 72.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 33,
+          "firstDamage": null,
+          "peak": 57
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-3",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 25300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 77.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 41,
+          "firstDamage": null,
+          "peak": 67
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-4",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 28000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 77,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 36,
+          "firstDamage": null,
+          "peak": 60
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-5",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 25400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 78.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 37,
+          "firstDamage": null,
+          "peak": 57
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-6",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 16100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 58.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 30,
+          "firstDamage": null,
+          "peak": 42
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-7",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 23900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 57.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 32,
+          "firstDamage": null,
+          "peak": 50
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-8",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 31500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 76.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 37,
+          "firstDamage": null,
+          "peak": 55
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-9",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 27700,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 72.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 40,
+          "firstDamage": null,
+          "peak": 63
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "1-10",
+      "chapter": 0,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 31200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 77.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 37,
+          "firstDamage": null,
+          "peak": 55
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-1",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 59000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 86.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 37,
+          "firstDamage": null,
+          "peak": 33
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-2",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 56300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 90.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 45,
+          "firstDamage": null,
+          "peak": 36
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-3",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 53500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 84,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 36,
+          "firstDamage": null,
+          "peak": 33
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-4",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 53300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 79.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 36,
+          "firstDamage": null,
+          "peak": 43
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-5",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 50100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 94.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 46,
+          "firstDamage": null,
+          "peak": 45
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-6",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 52600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 84.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 40,
+          "firstDamage": null,
+          "peak": 42
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-7",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 54000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 93.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 48,
+          "firstDamage": null,
+          "peak": 52
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-8",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 54200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 86.9,
+          "base": 0.97,
+          "enemy": 0,
+          "deploys": 45,
+          "firstDamage": 47.1,
+          "peak": 54
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-9",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 54400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 91.9,
+          "base": 0.96,
+          "enemy": 0,
+          "deploys": 52,
+          "firstDamage": 54.5,
+          "peak": 46
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "2-10",
+      "chapter": 1,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 47500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 92,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 51,
+          "firstDamage": null,
+          "peak": 57
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "3-1",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 99300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 175.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 59,
+          "firstDamage": null,
+          "peak": 69
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "3-2",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 90000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 215.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 67,
+          "firstDamage": null,
+          "peak": 70
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "3-3",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 77500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 136.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 52,
+          "firstDamage": null,
+          "peak": 68
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "3-4",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 71700,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 144.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 51,
+          "firstDamage": null,
+          "peak": 65
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "3-5",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 64900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 154.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 58,
+          "firstDamage": null,
+          "peak": 68
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "3-6",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 61400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 109.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 50,
+          "firstDamage": null,
+          "peak": 63
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "3-7",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 57800,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 138.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 55,
+          "firstDamage": null,
+          "peak": 63
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "3-8",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 86500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 163,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 55,
+          "firstDamage": null,
+          "peak": 66
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "3-9",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 57300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 369.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 108,
+          "firstDamage": null,
+          "peak": 55
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "3-10",
+      "chapter": 2,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 73000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 283.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 114,
+          "firstDamage": null,
+          "peak": 56
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "4-1",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 69700,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 302.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 97,
+          "firstDamage": null,
+          "peak": 63
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "4-2",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 50300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 117,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 48,
+          "firstDamage": null,
+          "peak": 67
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "4-3",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 33700,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 0.164,
+          "deploys": 394,
+          "firstDamage": null,
+          "peak": 72
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "4-4",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 45100,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 0.313,
+          "deploys": 389,
+          "firstDamage": null,
+          "peak": 66
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "4-5",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 57000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 204.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 73,
+          "firstDamage": null,
+          "peak": 64
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "4-6",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 46300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 163.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 82,
+          "firstDamage": null,
+          "peak": 58
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "4-7",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 25000,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 467,
+          "firstDamage": null,
+          "peak": 39
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "4-8",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 29900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 243.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 131,
+          "firstDamage": null,
+          "peak": 72
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "4-9",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 24500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 366.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 197,
+          "firstDamage": null,
+          "peak": 59
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "4-10",
+      "chapter": 3,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 28100,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 0.95,
+          "deploys": 364,
+          "firstDamage": null,
+          "peak": 69
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "5-1",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 20100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 87.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 45,
+          "firstDamage": null,
+          "peak": 37
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-2",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 30400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 82.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 40,
+          "firstDamage": null,
+          "peak": 38
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-3",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 22000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 127.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 75,
+          "firstDamage": null,
+          "peak": 45
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-4",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 22800,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 141.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 92,
+          "firstDamage": null,
+          "peak": 41
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-5",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 19500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 142.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 88,
+          "firstDamage": null,
+          "peak": 54
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-6",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 15900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 112.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 67,
+          "firstDamage": null,
+          "peak": 47
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-7",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 10600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 82.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 42,
+          "firstDamage": null,
+          "peak": 41
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-8",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 12900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 154.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 109,
+          "firstDamage": null,
+          "peak": 54
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-9",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 18300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 151.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 109,
+          "firstDamage": null,
+          "peak": 55
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "5-10",
+      "chapter": 4,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 21400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 177.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 119,
+          "firstDamage": null,
+          "peak": 57
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-1",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 32900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 117.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 54,
+          "firstDamage": null,
+          "peak": 29
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-2",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 23600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 99.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 60,
+          "firstDamage": null,
+          "peak": 44
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-3",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 8600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 62.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 31,
+          "firstDamage": null,
+          "peak": 36
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-4",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 20300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 121.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 64,
+          "firstDamage": null,
+          "peak": 43
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-5",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 24100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 167.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 101,
+          "firstDamage": null,
+          "peak": 52
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-6",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 24900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 166.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 113,
+          "firstDamage": null,
+          "peak": 54
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-7",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 24000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 180.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 116,
+          "firstDamage": null,
+          "peak": 53
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-8",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 24200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 194,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 145,
+          "firstDamage": null,
+          "peak": 46
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-9",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 36800,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 181.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 116,
+          "firstDamage": null,
+          "peak": 55
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "6-10",
+      "chapter": 5,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 31600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 205.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 140,
+          "firstDamage": null,
+          "peak": 49
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-1",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 27400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 87.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 33,
+          "firstDamage": null,
+          "peak": 27
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-2",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 28300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 106.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 52,
+          "firstDamage": null,
+          "peak": 37
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-3",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 44200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 89,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 35,
+          "firstDamage": null,
+          "peak": 32
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-4",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 24600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 104.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 50,
+          "firstDamage": null,
+          "peak": 40
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-5",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 20000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 128.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 72,
+          "firstDamage": null,
+          "peak": 37
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-6",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 19400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 118.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 71,
+          "firstDamage": null,
+          "peak": 39
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-7",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 18500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 151.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 101,
+          "firstDamage": null,
+          "peak": 48
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-8",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 18900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 136.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 72,
+          "firstDamage": null,
+          "peak": 37
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-9",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 17500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 138.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 87,
+          "firstDamage": null,
+          "peak": 37
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "7-10",
+      "chapter": 6,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 17500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 125.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 71,
+          "firstDamage": null,
+          "peak": 44
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-1",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 39000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 97,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 35,
+          "firstDamage": null,
+          "peak": 49
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-2",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 31600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 95.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 41,
+          "firstDamage": null,
+          "peak": 56
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-3",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 24500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 100.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 49,
+          "firstDamage": null,
+          "peak": 42
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-4",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 25800,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 138.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 79,
+          "firstDamage": null,
+          "peak": 44
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-5",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 26800,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 135.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 73,
+          "firstDamage": null,
+          "peak": 44
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-6",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 23900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 121.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 63,
+          "firstDamage": null,
+          "peak": 42
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-7",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 35000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 130.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 71,
+          "firstDamage": null,
+          "peak": 36
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-8",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 23500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 147.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 92,
+          "firstDamage": null,
+          "peak": 50
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-9",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 21900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 158.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 89,
+          "firstDamage": null,
+          "peak": 49
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "8-10",
+      "chapter": 7,
+      "hard": false,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 27300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 156,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 90,
+          "firstDamage": null,
+          "peak": 49
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-1",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 15500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 87.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 39,
+          "firstDamage": null,
+          "peak": 61
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-2",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 35300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 153.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 53,
+          "firstDamage": null,
+          "peak": 68
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-3",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 38000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 277.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 65,
+          "firstDamage": null,
+          "peak": 71
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H1-4",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 42000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 151.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 53,
+          "firstDamage": null,
+          "peak": 67
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-5",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 38100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 201.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 67,
+          "firstDamage": null,
+          "peak": 52
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-6",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 24200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 102.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 52,
+          "firstDamage": null,
+          "peak": 43
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-7",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 35900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 107.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 53,
+          "firstDamage": null,
+          "peak": 50
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-8",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 47300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 150.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 61,
+          "firstDamage": null,
+          "peak": 52
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-9",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 41600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 144.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 58,
+          "firstDamage": null,
+          "peak": 51
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H1-10",
+      "chapter": 0,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 46800,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 162.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 72,
+          "firstDamage": null,
+          "peak": 53
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H2-1",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 88500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 208.6,
+          "base": 0.767,
+          "enemy": 0,
+          "deploys": 88,
+          "firstDamage": 32,
+          "peak": 25
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H2-2",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 84500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 144.5,
+          "base": 0.599,
+          "enemy": 0,
+          "deploys": 68,
+          "firstDamage": 32,
+          "peak": 23
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H2-3",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 80300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 192.3,
+          "base": 0.944,
+          "enemy": 0,
+          "deploys": 84,
+          "firstDamage": 42.5,
+          "peak": 25
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H2-4",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 80000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 213.6,
+          "base": 0.883,
+          "enemy": 0,
+          "deploys": 97,
+          "firstDamage": 26.7,
+          "peak": 46
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H2-5",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 75200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 205.6,
+          "base": 0.597,
+          "enemy": 0,
+          "deploys": 95,
+          "firstDamage": 47.5,
+          "peak": 50
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H2-6",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 78900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 175.4,
+          "base": 0.258,
+          "enemy": 0,
+          "deploys": 80,
+          "firstDamage": 43.5,
+          "peak": 49
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H2-7",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 81000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 221.8,
+          "base": 0.203,
+          "enemy": 0,
+          "deploys": 95,
+          "firstDamage": 65.2,
+          "peak": 52
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H2-8",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 81300,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 76.1,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 31,
+          "firstDamage": 45.7,
+          "peak": 30
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H2-9",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 81600,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 89.9,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 46,
+          "firstDamage": 30.7,
+          "peak": 37
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H2-10",
+      "chapter": 1,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 71300,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 309,
+          "base": 0,
+          "enemy": 0.076,
+          "deploys": 151,
+          "firstDamage": 49,
+          "peak": 50
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-1",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 149000,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 206,
+          "firstDamage": null,
+          "peak": 62
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-2",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 135000,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 202,
+          "firstDamage": null,
+          "peak": 55
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-3",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 116300,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 174,
+          "firstDamage": null,
+          "peak": 66
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-4",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 107600,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 0.829,
+          "enemy": 1,
+          "deploys": 164,
+          "firstDamage": 39.7,
+          "peak": 67
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-5",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 97400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 377.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 115,
+          "firstDamage": null,
+          "peak": 61
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-6",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 92100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 380,
+          "base": 0.527,
+          "enemy": 0,
+          "deploys": 99,
+          "firstDamage": 40,
+          "peak": 67
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-7",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 86700,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 283.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 92,
+          "firstDamage": null,
+          "peak": 65
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-8",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 129800,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 187,
+          "firstDamage": null,
+          "peak": 62
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-9",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 86000,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 291,
+          "firstDamage": null,
+          "peak": 56
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H3-10",
+      "chapter": 2,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 109500,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 217.6,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 102,
+          "firstDamage": 197,
+          "peak": 37
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H4-1",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 104600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 367.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 96,
+          "firstDamage": null,
+          "peak": 69
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H4-2",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 75500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 247.9,
+          "base": 0.887,
+          "enemy": 0,
+          "deploys": 76,
+          "firstDamage": 18,
+          "peak": 69
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H4-3",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 50600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 267.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 124,
+          "firstDamage": null,
+          "peak": 67
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H4-4",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 67700,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 233.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 105,
+          "firstDamage": null,
+          "peak": 62
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H4-5",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 85500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 302.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 113,
+          "firstDamage": null,
+          "peak": 59
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H4-6",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 69500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 235,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 98,
+          "firstDamage": null,
+          "peak": 63
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H4-7",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 37500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 279.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 222,
+          "firstDamage": null,
+          "peak": 47
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H4-8",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 44900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 221.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 111,
+          "firstDamage": null,
+          "peak": 60
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H4-9",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 36800,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 217.4,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 106,
+          "firstDamage": null,
+          "peak": 60
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H4-10",
+      "chapter": 3,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 42200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 394,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 265,
+          "firstDamage": null,
+          "peak": 60
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H5-1",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 30200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 211,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 109,
+          "firstDamage": null,
+          "peak": 37
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H5-2",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 45600,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 282.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 141,
+          "firstDamage": null,
+          "peak": 36
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H5-3",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 33000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 223.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 130,
+          "firstDamage": null,
+          "peak": 36
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H5-4",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 34200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 455.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 316,
+          "firstDamage": null,
+          "peak": 45
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H5-5",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 29300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 313.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 187,
+          "firstDamage": null,
+          "peak": 48
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H5-6",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 23900,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 389,
+          "firstDamage": null,
+          "peak": 40
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H5-7",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 15900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 210.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 130,
+          "firstDamage": null,
+          "peak": 48
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H5-8",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 19400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 308.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 221,
+          "firstDamage": null,
+          "peak": 43
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H5-9",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 27500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 269.2,
+          "base": 0.777,
+          "enemy": 0,
+          "deploys": 183,
+          "firstDamage": 56.7,
+          "peak": 39
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H5-10",
+      "chapter": 4,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 32100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 571.1,
+          "base": 0.98,
+          "enemy": 0,
+          "deploys": 368,
+          "firstDamage": 58,
+          "peak": 50
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H6-1",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 49400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 105.7,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 39,
+          "firstDamage": null,
+          "peak": 27
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-2",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 35400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 134.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 76,
+          "firstDamage": null,
+          "peak": 42
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-3",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 12900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 71.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 36,
+          "firstDamage": null,
+          "peak": 35
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-4",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 30500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 120,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 57,
+          "firstDamage": null,
+          "peak": 39
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-5",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 36200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 159.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 88,
+          "firstDamage": null,
+          "peak": 42
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-6",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 37400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 159.8,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 102,
+          "firstDamage": null,
+          "peak": 51
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-7",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 36000,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 150.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 94,
+          "firstDamage": null,
+          "peak": 46
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-8",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 36300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 173.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 116,
+          "firstDamage": null,
+          "peak": 52
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-9",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 55200,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 152.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 92,
+          "firstDamage": null,
+          "peak": 50
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H6-10",
+      "chapter": 5,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 47400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 177.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 114,
+          "firstDamage": null,
+          "peak": 53
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H7-1",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 41100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 117.9,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 39,
+          "firstDamage": null,
+          "peak": 27
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H7-2",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 42500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 150.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 67,
+          "firstDamage": null,
+          "peak": 27
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H7-3",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 66300,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 122.2,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 42,
+          "firstDamage": null,
+          "peak": 27
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H7-4",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 36900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 158.3,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 78,
+          "firstDamage": null,
+          "peak": 41
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H7-5",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 30000,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 557.4,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 230,
+          "firstDamage": 357.3,
+          "peak": 22
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H7-6",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 29100,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 358.5,
+          "base": 0.936,
+          "enemy": 0,
+          "deploys": 188,
+          "firstDamage": 31.5,
+          "peak": 38
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H7-7",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 27800,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 511.3,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 237,
+          "firstDamage": 260.3,
+          "peak": 23
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H7-8",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 28400,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 362.9,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 134,
+          "firstDamage": 36.5,
+          "peak": 24
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H7-9",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 26300,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 303.4,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 143,
+          "firstDamage": 252,
+          "peak": 22
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H7-10",
+      "chapter": 6,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 26300,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 558,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 244,
+          "firstDamage": 537.7,
+          "peak": 25
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H8-1",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 58500,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 111.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 39,
+          "firstDamage": null,
+          "peak": 52
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H8-2",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 47400,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 118.6,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 44,
+          "firstDamage": null,
+          "peak": 55
+        }
+      ],
+      "pass": true
+    },
+    {
+      "code": "H8-3",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 36800,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 292.1,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 143,
+          "firstDamage": null,
+          "peak": 50
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H8-4",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 38700,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 387,
+          "firstDamage": null,
+          "peak": 22
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H8-5",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 40200,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 301,
+          "firstDamage": null,
+          "peak": 24
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H8-6",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 35900,
+      "runs": [
+        {
+          "win": true,
+          "over": "win",
+          "t": 309.5,
+          "base": 1,
+          "enemy": 0,
+          "deploys": 165,
+          "firstDamage": null,
+          "peak": 46
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H8-7",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 52500,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 282,
+          "firstDamage": null,
+          "peak": 25
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H8-8",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 35300,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 1,
+          "enemy": 1,
+          "deploys": 369,
+          "firstDamage": null,
+          "peak": 24
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H8-9",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 32900,
+      "runs": [
+        {
+          "win": false,
+          "over": "timeout",
+          "t": 600,
+          "base": 0.36,
+          "enemy": 1,
+          "deploys": 281,
+          "firstDamage": 321.8,
+          "peak": 23
+        }
+      ],
+      "pass": false
+    },
+    {
+      "code": "H8-10",
+      "chapter": 7,
+      "hard": true,
+      "ids": [
+        "brownie",
+        "leprechaun",
+        "gnome",
+        "valkyrie",
+        "impet",
+        "nymph",
+        "raven",
+        "undine",
+        "phoenix",
+        "thetis"
+      ],
+      "hpK": 1,
+      "atkK": 1,
+      "fort": 41000,
+      "runs": [
+        {
+          "win": false,
+          "over": "lose",
+          "t": 438.1,
+          "base": 0,
+          "enemy": 1,
+          "deploys": 215,
+          "firstDamage": 368.5,
+          "peak": 23
+        }
+      ],
+      "pass": false
+    }
+  ],
+  "complete": true
+}

@@ -161,7 +161,7 @@
     const t = TYPES[type], R = RANKS[rank];
     const u = {
       id, name, rank, type, role: t.role, cls: CLASS[id] || '', fx, color, sfx, desc,
-      cost: r10(t.cost * R.c * (tw.cost || 1) * VALUE),
+      cost: r10(t.cost * R.c * (tw.cost || 1) * VALUE) * 0.5,
       cd: Math.min(45, Math.round(t.cd * R.cd * (tw.cd || 1) * 10) / 10),
       hp: Math.round(t.hp * R.k * (tw.hp || 1) * (TUNE[id] || 1) * VALUE * STAT_K),
       atk: Math.round(t.atk * R.k * (tw.atk || 1) * (TUNE[id] || 1) * VALUE * STAT_K),
@@ -180,6 +180,9 @@
       // the original's defenders (보호기) hold the line: they take less damage (GUARD_DR, js/game.js damage())
       guard: (CLASS[id] || '').endsWith('보호기') ? 1 : 0,
     };
+    // 전체 대원 조정: 기존 최종 능력치에서 체력과 공격력을 30% 낮춘다.
+    u.hp = Math.round(u.hp * 0.7);
+    u.atk = Math.round(u.atk * 0.7);
     u.roles = roleTags(u, type);
     const tag = [u.siege && '요새 공격', u.ship && '전투함', u.tower && '방어 타워', u.multi > 1 && `${u.multi}기 배치`, u.evade && `회피 ${Math.round(u.evade * 100)}%`].filter(Boolean);
     if (tag.length) u.desc = tag.join(' · ') + ' · ' + u.desc;
@@ -282,7 +285,7 @@
     swarm: { name: '대군', tip: '약한 철충이 쉴 새 없이 몰려옴 · 범위 공격이 유리' },
     air: { name: '공습', tip: '비행 개체 다수 · 사거리 2.4 이상 대원 필요' },
     armor: { name: '중장갑', tip: '장갑 개체 출현 · 저격 · 단일 화력이 유리' },
-    blitz: { name: '기습', tip: '시작과 동시에 돌격 · 적 이동 속도 +25%' },
+    blitz: { name: '기습', tip: '초반 증원 부대 돌격 · 적 이동 속도 +25%' },
     siege: { name: '포위전', tip: '요새 체력 1.5배 · 적 출현은 느림 · 보상 1.3배' },
     emp: { name: 'EMP', tip: '오르카 포격 충전 속도 40%' },
     poor: { name: '보급 차단', tip: '전력 충전 -25%' },
@@ -305,10 +308,10 @@
     if (!mod) return;
     st.mod = mod;
     const sp = st.spawns;
-    if (mod === 'swarm') { sp[0] = [sp[0][0], 1, sp[0][2] * 0.45, 0, 0.8]; st.rush.at = 0.7; }
+    if (mod === 'swarm') { sp[0] = [sp[0][0], 5, sp[0][2] * 0.6, 0, 0.8]; st.rush.at = 0.7; }
     if (mod === 'air') sp.push([pickTrait(ch.pool, c, 'fly'), 6, 9, 0, 1]);
     if (mod === 'armor') sp.push([pickTrait(ch.pool, c, 'armor'), 18, 30, 2 + Math.floor(s / 4), 1]);
-    if (mod === 'blitz') { sp.push([sp[0][0], 0, 0.8, 5, 1]); st.enemySpd = 1.25; }
+    if (mod === 'blitz') { sp.push([sp[0][0], 10, 1.8, 3, 1]); st.enemySpd = 1.25; }
     if (mod === 'siege') { st.baseHp = Math.round(st.baseHp * 1.5 / 100) * 100; sp.forEach((x) => { x[2] *= 1.2; }); st.xp = Math.round(st.xp * 1.3); st.bonus = 1.3; }
     if (mod === 'emp') { st.cannonK = 0.4; st.pow = Math.round(st.pow * 0.85 * 100) / 100; }
     if (mod === 'poor') st.incomeK = 0.75;
@@ -371,9 +374,85 @@
     // (the first two chapters' normal stages are eased for newcomers: their hard versions climb further)
     hard: true, finale: false, ix: st.ix, code: 'H' + st.code, pow: Math.round((st.pow * (st.chapter < 2 ? 3 : 1.8) + 1.0) * 100) / 100,
     baseHp: Math.round(st.baseHp * 1.5 / 100) * 100, xp: Math.round(st.xp * 2.4), // hard levels the squad for H8 in about 3-4 weeks
-    spawns: st.spawns.map((x) => (x[3] ? [x[0], x[1], x[2], x[3] + 1, x[4]] : x)),
+    // 첫 급습에는 추가 병력을 겹치지 않는다. 뒤쪽 유한 증원만 한 기 늘린다.
+    spawns: st.spawns.map((x) => [x[0], x[1], x[2], x[3] && x[1] >= 18 ? x[3] + 1 : x[3], x[4]]),
     boss: st.boss && Object.assign({}, st.boss, { mag: st.boss.mag * 1.2 }),
   }));
+  // 열 레벨 작전 조정표 시작
+  // 적 체력 배율, 적 공격 배율, 적 요새 체력. 보상과 아군 기지는 유지한다.
+  const CAMPAIGN_TUNE = {
+    '3-9': [0.512, 1, 35200],
+    '3-10': [0.631, 1, 65700],
+    '4-1': [0.64, 1, 50300],
+    '4-3': [0.64, 0.78, 24300],
+    '4-4': [0.55, 1, 40600],
+    '4-5': [0.4096, 1, 29800],
+    '4-6': [0.6623, 1, 35500],
+    '4-7': [0.4096, 0.4746, 13100],
+    '4-8': [0.2253, 1, 14000],
+    '4-9': [0.3584, 1, 13500],
+    '4-10': [0.1936, 0.78, 16500],
+    '6-8': [0.8295, 1, 21800],
+    '6-9': [0.8, 1, 31300],
+    '6-10': [0.6899, 1, 28400],
+    '7-8': [0.55, 1, 17000],
+    '7-9': [0.7884, 1, 15800],
+    'H1-3': [0.8, 1, 32300],
+    'H2-1': [0.6869, 1, 71600],
+    'H2-2': [0.6855, 1, 76000],
+    'H2-3': [0.8, 1, 68300],
+    'H2-5': [0.8102, 1, 67700],
+    'H2-7': [1, 0.78, 81000],
+    'H2-8': [0.8, 0.6084, 81300],
+    'H2-9': [0.8, 0.78, 81600],
+    'H2-10': [0.64, 0.6084, 51500],
+    'H3-1': [0.4096, 1, 77800],
+    'H3-2': [0.4096, 1, 70600],
+    'H3-3': [0.64, 1, 84100],
+    'H3-4': [0.64, 1, 77800],
+    'H3-5': [0.64, 1, 70400],
+    'H3-6': [0.8, 1, 78300],
+    'H3-7': [0.8, 1, 73700],
+    'H3-8': [0.64, 1, 93800],
+    'H3-9': [0.2622, 1, 32500],
+    'H3-10': [0.4096, 0.78, 57100],
+    'H4-1': [0.64, 1, 75600],
+    'H4-2': [0.8, 1, 64200],
+    'H4-3': [0.817, 1, 45500],
+    'H4-4': [0.8, 1, 57500],
+    'H4-5': [0.64, 1, 61800],
+    'H4-6': [0.8, 1, 59100],
+    'H4-7': [0.573, 1, 25800],
+    'H4-9': [0.6409, 1, 33100],
+    'H5-2': [0.64, 1, 33000],
+    'H5-3': [0.44, 1, 25300],
+    'H5-4': [0.179, 1, 11600],
+    'H5-5': [0.3277, 1, 13000],
+    'H5-6': [0.3808, 1, 13200],
+    'H5-8': [0.3743, 1, 12600],
+    'H5-9': [0.2143, 1, 12300],
+    'H5-10': [0.2538, 1, 12800],
+    'H7-5': [0.512, 1, 18400],
+    'H7-6': [0.4435, 1, 22200],
+    'H7-7': [0.1802, 1, 11100],
+    'H7-8': [0.512, 0.78, 17400],
+    'H7-9': [0.3277, 1, 11700],
+    'H7-10': [0.44, 0.65, 20200],
+    'H8-4': [0.512, 1, 23800],
+    'H8-5': [0.512, 1, 24700],
+    'H8-6': [0.44, 1, 27400],
+    'H8-7': [0.6154, 1, 40100],
+    'H8-8': [0.3844, 1, 19500],
+    'H8-9': [0.4279, 1, 18200],
+    'H8-10': [0.2253, 1, 19300],
+  };
+  for (const st of [...STAGES, ...HARD]) {
+    const tuning = CAMPAIGN_TUNE[st.code];
+    if (!tuning) continue;
+    [st.enemyHpK, st.enemyAtkK, st.baseHp] = tuning;
+  }
+  // 열 레벨 작전 조정표 끝
+
   // infinite front: floor n (1, 2, ...) cycles the chapters' worms, every 5th floor brings a chapter boss
   function infiniteFloor(n) {
     const ci = Math.min(CHAPTERS.length - 1, Math.floor((n - 1) / 3)); // later chapters' worms as the floors climb

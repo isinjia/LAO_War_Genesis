@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-25",
+  "stages": 160,
+  "battles": 780,
+  "allPassed": true,
+  "individualChanges": 64,
+  "normal": 80,
+  "hard": 80,
+  "smokePassed": 22,
+  "hashes": {
+    "js/data.js": "f313eaac5f072a86756705b9cca7b0dac8ad0af7b0738bf4a9f4e68ee152694a",
+    "js/game.js": "a13ebb4d91cfd98d8aba1ed68efcfc8754fc1ea38fbe08b555668fe9bef6fb0f",
+    "js/app.js": "5fd4ad134685bfd327d108b271c9c80a27b3619872122f63eaa6b8d37806444c",
+    "tools/campaign_audit.js": "ca9c3dc53241406d6a1f7de7980d1e5f7df2c2c262239be6b357edc3290ff138",
+    "tools/reports/campaign_verify.json": "2d2c944c1e5990caf086a9a565b99ac163ca045a457c847c5974ca93cc33399a"
+  }
+}
