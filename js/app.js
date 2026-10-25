@@ -30,7 +30,7 @@
   if (save.tuna == null) save.tuna = D.GACHA.startTuna;
   save.hstars = save.hstars || {};
   save.deck = (save.deck || []).filter((id) => save.owned[id] && D.UNIT[id]);
-  while (deckCost(save.deck) > D.DECK_CAP) save.deck.splice(save.deck.reduce((m, id, i, a) => (D.DECK_COST[D.UNIT[id].rank] > D.DECK_COST[D.UNIT[a[m]].rank] ? i : m), 0), 1);
+  while (deckCost(save.deck) > D.DECK_CAP) save.deck.splice(save.deck.reduce((m, id, i, a) => (D.formationCost(id) > D.formationCost(a[m]) ? i : m), 0), 1);
   if (!save.deck.length) save.deck = autoDeck();
   // three deck presets (덱 1 / 2 / 3); save.deck is the active one, copied into save.decks on every save
   if (!Array.isArray(save.decks) || save.decks.length !== 3) save.decks = [save.deck.slice(), [], []];
@@ -68,12 +68,12 @@
   const owned = (id) => !!save.owned[id];
   const rankIx = (u) => D.RANK_ORDER.indexOf(u.rank);
 
-  function deckCost(ids) { return ids.reduce((a, id) => a + D.DECK_COST[D.UNIT[id].rank], 0); }
-  const fits = (id) => save.deck.length < DECK_MAX && deckCost(save.deck) + D.DECK_COST[D.UNIT[id].rank] <= D.DECK_CAP;
+  function deckCost(ids) { return ids.reduce((a, id) => a + D.formationCost(id), 0); }
+  const fits = (id) => save.deck.length < DECK_MAX && deckCost(save.deck) + D.formationCost(id) <= D.DECK_CAP;
   function autoDeck() {
     const out = [];
     D.UNITS.filter((u) => save.owned[u.id]).sort((a, b) => a.cost - b.cost).forEach((u) => {
-      if (out.length < DECK_MAX && deckCost(out) + D.DECK_COST[u.rank] <= D.DECK_CAP) out.push(u.id);
+      if (out.length < DECK_MAX && deckCost(out) + D.formationCost(u) <= D.DECK_CAP) out.push(u.id);
     });
     return out;
   }
@@ -120,7 +120,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.34'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.35'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -798,11 +798,11 @@
     b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (ready ? ' up' : '') + (have && need && n >= need ? ' full' : '');
     b.dataset.id = u.id;
     b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt="" draggable="false"><i class="crc-cost" aria-label="출격 전력 ${u.cost}"><span aria-hidden="true"></span>${u.cost}</i>${rk(u.rank, u)}` +
-      `<span class="crc-deck-cost">편성 ${D.DECK_COST[u.rank]}</span>` +
+      `<span class="crc-deck-cost">편성 ${D.formationCost(u)}</span>` +
       `</div>` +
       `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
       (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-xp crc-name">${u.name}</div>`);
-    b.title = `${u.name} · 출격 전력 ${fmt(u.cost)} · 편성 코스트 ${D.DECK_COST[u.rank]}`;
+    b.title = `${u.name} · 출격 전력 ${fmt(u.cost)} · 편성 코스트 ${D.formationCost(u)}`;
     b.onclick = onClick;
     return b;
   }
@@ -1056,7 +1056,7 @@
       <div class="utr">${u.guard ? '<span>받는 피해 -40%</span>' : ''}${u.siege ? '<span>요새 전용</span>' : u.range < 2.4 ? '<span class="no">대공 불가</span>' : '<span>대공 가능</span>'}${u.type === 'snipe' ? '<span>장갑 관통 x1.5</span>' : u.area ? '<span class="no">장갑에 50%</span>' : ''}</div>
       <div>${have ? u.desc : howToGet(u)}</div>
       ${have ? `<div class="card-row"><span>카드</span><div class="crc-xp"><i style="width:${need ? Math.min(100, (n / need) * 100) : 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>${short && save.wild[u.rank] ? `<small>${u.rank} 와일드카드 ${fmt(save.wild[u.rank])}장 보유</small>` : ''}</div>` : ''}
-      <div class="stat-grid"><span class="unit-costs">출격 전력 <b>${fmt(u.cost)}</b><small>편성 코스트 <b>${D.DECK_COST[u.rank]}</b></small></span><span>재배치 <b>${u.cd}s</b></span>
+      <div class="stat-grid"><span class="unit-costs">출격 전력 <b>${fmt(u.cost)}</b><small>편성 코스트 <b>${D.formationCost(u)}</b></small></span><span>재배치 <b>${u.cd}s</b></span>
       <span>체력 ${stat(u.hp)}</span><span>공격 ${stat(u.atk)}</span>
       <span>사거리 <b>${u.range}</b></span><span>이동 <b>${u.spd}</b></span>
       <span>넉백 <b>${u.kb}회</b></span><span>${u.skill ? `스킬 <b>${u.skill}타</b>` : ''}</span></div>
@@ -1078,7 +1078,7 @@
       btns.push([inDeck ? '편성 해제' : '편성', () => {
         if (inDeck) { if (save.deck.length <= 1) return GAME.toast('최소 1명은 편성해야 합니다'); save.deck = save.deck.filter((x) => x !== u.id); }
         else if (save.deck.length >= DECK_MAX) return GAME.toast('편성 칸을 눌러 대원을 먼저 빼 주세요');
-        else if (!fits(u.id)) return GAME.toast(`편성 코스트 초과 (${deckCost(save.deck)} + ${D.DECK_COST[u.rank]} > ${D.DECK_CAP})`);
+        else if (!fits(u.id)) return GAME.toast(`편성 코스트 초과 (${deckCost(save.deck)} + ${D.formationCost(u)} > ${D.DECK_CAP})`);
         else save.deck.push(u.id);
         persist(); closeModal(); renderSquad();
       }, inDeck ? 'd' : 'b']);
@@ -1608,7 +1608,7 @@
         <small>ON: 스테이지 스토리를 매번 보여 줍니다 · OFF: 한 번 본 스토리는 건너뜁니다</small></div>` +
       `<div class="opt-row opt-toggle"><span>전체화면</span><button id="optFs" class="tgl opt-fullscreen${fsOn() ? ' on' : ''}" aria-pressed="${fsOn()}" ${fsOk ? '' : 'disabled'}>${fsLabel()}</button>
         <small>${fsOk ? '버튼을 눌러 전체화면을 켜거나 해제합니다' : '이 브라우저는 전체화면을 지원하지 않습니다'}</small></div>` +
-      `<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.<span style="float:right;color:var(--dim)">${VERSION}</span></div>`, [
+      `<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.<span style="float:right;color:var(--dim)">${VERSION}</span></div><div id="settingsActions" class="settings-actions"></div>`, [
       ['확인', back || closeModal],
       ['도움말', () => openHelp(), 'd'],
       ['세이브 내보내기 / 불러오기', () => openSaveIO(), 'd'],
@@ -1620,6 +1620,13 @@
         ]);
       }, 'd'],
     ]);
+    Array.from($('modalBtns').children).slice(1).forEach((button) => {
+      button.classList.add('settings-secondary');
+      const copy = button.cloneNode(true);
+      copy.classList.remove('settings-secondary');
+      copy.onclick = button.onclick;
+      $('settingsActions').appendChild(copy);
+    });
     $('optStory').onclick = () => {
       save.storyAlways = !save.storyAlways; persist(); AUDIO.play('click', 0.6, 1.15);
       $('optStory').classList.toggle('on', save.storyAlways); $('optStory').textContent = save.storyAlways ? 'ON' : 'OFF';
@@ -1933,6 +1940,8 @@
     document.querySelector('.pwin-title').style.display = title ? '' : 'none';
     $('modalBody').innerHTML = body;
     document.querySelector('.pwin').classList.toggle('wide', !!wide);
+    document.querySelector('.pwin').classList.toggle('settings-window', !!$('settingsActions'));
+    $('modalBody').scrollTop = 0;
     const box = $('modalBtns');
     box.innerHTML = '';
     btns.forEach(([label, fn, style]) => {
@@ -1980,6 +1989,13 @@
   if (q.get('smoke')) { const sc = document.createElement('script'); sc.src = 'tools/smoke.js'; document.head.appendChild(sc); }
   if (q.get('balance') || (noSave && (q.get('audit') || q.get('formationqa')))) { const sc = document.createElement('script'); sc.src = 'tools/balance.js?t=' + Date.now(); document.head.appendChild(sc); } // tools/balance.js: the balance report
   if (noSave && q.get('audit')) { const sc = document.createElement('script'); sc.src = 'tools/campaign_audit.js?t=' + Date.now(); document.head.appendChild(sc); }
+  if (noSave && q.get('unitcostqa')) {
+    const sc = document.createElement('script');
+    sc.src = 'tools/balance.js?t=' + Date.now();
+    sc.onload = () => { const audit = document.createElement('script'); audit.src = 'tools/unit_cost_audit.js?t=' + Date.now(); document.head.appendChild(audit); };
+    document.head.appendChild(sc);
+  }
+  if (noSave && q.get('enemycannonqa')) { const sc = document.createElement('script'); sc.src = 'tools/enemy_cannon_test.js'; document.head.appendChild(sc); }
   if (noSave && q.get('formationqa')) { const sc = document.createElement('script'); sc.src = 'tools/formation_test.js?t=' + Date.now(); document.head.appendChild(sc); }
   if (noSave && q.get('storyqa')) { const sc = document.createElement('script'); sc.src = 'tools/story_layout_test.js'; document.head.appendChild(sc); }
 })();

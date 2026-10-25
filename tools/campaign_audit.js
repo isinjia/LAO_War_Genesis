@@ -20,7 +20,7 @@
       const ids = [...new Set([...D.STARTERS, ...(st.ix > 0 || st.hard ? ['valkyrie'] : []), ...rewards])];
       if (expanded && st.chapter > 0) ids.push(...['daphne', 'banshee', 'amy', 'andvari'].filter((id) => !ids.includes(id)));
       const chosen = ids.slice(0, 10);
-      const cost = chosen.reduce((sum, id) => sum + D.DECK_COST[D.UNIT[id].rank], 0);
+      const cost = chosen.reduce((sum, id) => sum + D.formationCost(id), 0);
       if (cost > D.DECK_CAP) throw new Error('검증 편성이 실제 편성 비용 제한을 초과했습니다.');
       return chosen.map((id) => ({ id, lv: D.relLv(D.UNIT[id].rank, 10) }));
     }

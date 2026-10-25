@@ -306,7 +306,7 @@
       ix: st.ix, st, len: st.len, deck, hooks, t: 0, speed: 1, paused: false, over: null, overT: 0,
       allies: [], enemies: [], fx: [], texts: [], bfx: [], sfx: [],
       syn: new Set(D.synergiesOf(deck.map((d) => d.def))), kills: 0, deploys: 0, skillsUsed: 0,
-      money: (st.startMoney || 0) + 300 * buffN(st, 'money'), worker: 0, cannon: 0, cannonFire: null,
+      money: (st.startMoney || 0) + 300 * buffN(st, 'money'), worker: 0, cannon: D.CANNON.charge, cannonFire: null, enemyCannonFire: null,
       cds: deck.map(() => 0),
       base: { hp: 0, max: 0 }, ebase: { hp: st.baseHp, max: st.baseHp },
       spawns: st.spawns.map((s) => ({ e: s[0], next: s[1], every: s[2], left: s[3] || Infinity, mag: s[4] })),
@@ -1088,6 +1088,7 @@
           if (f.state === 'gone') { disposeFighter(f); list.splice(i, 1); }
         }
       }
+      updateEnemyCannon(dt);
       updateFx(dt);
       return;
     }
@@ -1097,6 +1098,7 @@
     G.cds = G.cds.map((c) => Math.max(0, c - dt));
     if (G.cannon < D.CANNON.charge) G.cannon = Math.min(D.CANNON.charge, G.cannon + dt * (G.st.cannonK || 1) / (1 - 0.2 * Math.min(3, buffN(G.st, 'cannon'))));
     updateCannon(dt);
+    updateEnemyCannon(dt);
     basePower(dt);
     spawner(dt);
     for (const f of G.allies) stepFighter(f, dt);
@@ -1222,6 +1224,7 @@
     if (!G.rushDone && ratio <= G.st.rush.at) {
       G.rushDone = true;
       G.st.rush.spawns.forEach((s) => G.spawns.push({ e: s[0], next: G.t + s[1], every: s[2], left: s[3] || Infinity, mag: s[4], rush: true }));
+      fireEnemyCannon();
       toast('적 증원 부대 출현!', true);
       AUDIO.play('warning', 0.6);
     }
@@ -1250,6 +1253,7 @@
   function finish(kind) {
     if (G.over) return;
     G.over = kind;
+    updateEnemyCannon(0);
     G.overT = 0;
     if (kind === 'win') {
       G.enemies.forEach((e) => { if (!e.dead) die(e); });
@@ -1378,11 +1382,61 @@
   }
 
   function cannonLayer(map, color, order) {
+    const ownMap = map === tex.energy;
+    if (ownMap) { map = map.clone(); map.needsUpdate = true; }
     const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map, color, transparent: true, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false }));
+    m.cannonOwnMap = ownMap;
     m.renderOrder = order;
     G.root.add(m);
     return m;
   }
+  // 증원 포격은 적진에서 중앙까지만 진행하며, 지상·공중 대원을 각각 한 번만 타격한다.
+  function fireEnemyCannon() {
+    if (!G || G.over || G.enemyCannonFire) return;
+    const layers = [cannonLayer(tex.glow, 0xff3344, 2001), cannonLayer(tex.beam, 0xff243c, 1998),
+      cannonLayer(tex.energy, 0xff5160, 1999), cannonLayer(tex.beam, 0xffd4d8, 2000), cannonLayer(tex.glow, 0xff4255, 2001)];
+    layers.forEach(m => { m.material.opacity = 0; });
+    G.enemyCannonFire = { t: 0, fired: false, hit: new Set(), layers };
+    AUDIO.play('charge', 0.65);
+    ring(G.len - CAN.x, CAN.y, 0xff3344, 3, 0.9);
+  }
+  function updateEnemyCannon(dt) {
+    const c = G.enemyCannonFire;
+    if (!c) return;
+    const dispose = () => {
+      for (const m of c.layers) { G.root.remove(m); if (m.cannonOwnMap) m.material.map.dispose(); m.material.dispose(); m.geometry.dispose(); }
+      G.enemyCannonFire = null;
+    };
+    if (G.over) { dispose(); return; }
+    c.t += dt;
+    const x = G.len - CAN.x, end = G.len * 0.5, charge = 0.9;
+    const [orb, glow, body, core, flare] = c.layers;
+    orb.position.set(x, CAN.y, 0);
+    if (c.t < charge) {
+      const size = 0.5 + c.t / charge * 2;
+      orb.scale.set(size, size, 1); orb.material.opacity = 0.3 + c.t / charge * 0.5;
+      return;
+    }
+    if (!c.fired) { c.fired = true; AUDIO.play('beam', 0.7); shake(0.16, 0.25); }
+    const t = c.t - charge, fade = t < 0.7 ? 1 : Math.max(0, 1 - (t - 0.7) / 0.35);
+    const head = x - Math.min(1, t / 0.45) * (x - end), length = Math.max(0.01, x - head), center = (x + head) / 2;
+    orb.material.opacity = 0.7 * fade;
+    for (const [m, height, opacity] of [[glow, 3.7, 0.18], [body, 2.3, 0.55], [core, 0.5, 0.85]]) {
+      m.position.set(center, CAN.y, 0); m.scale.set(length, height * fade, 1); m.material.opacity = opacity * fade;
+    }
+    body.material.map.repeat.set(-length / 4, 1); body.material.map.offset.x = c.t * 4;
+    const size = 2 * fade;
+    flare.position.set(Math.max(head, end + size / 2), CAN.y, 0); flare.scale.set(size, size, 1); flare.material.opacity = fade;
+    const damageValue = D.CANNON.dmg * Math.min(3, G.st.pow || 1);
+    for (const ally of G.allies) {
+      if (ally.dead || c.hit.has(ally) || ally.x < head || ally.x > x) continue;
+      c.hit.add(ally); damage(ally, damageValue);
+      sheet('bolt', ally.x, aimY(ally), 0xff3344, 1.8, 0.3);
+      if (!ally.dead) knockback(ally, 1.2);
+    }
+    if (t >= 1.05) dispose();
+  }
+
   function updateCannon(dt) {
     const c = G.cannonFire;
     if (!c) return;
@@ -1403,18 +1457,19 @@
       c.muzzle = cannonLayer(tex.glow, 0xbff4ff, 2001); // the barrel stays lit while it fires
       c.trail = cannonLayer(tex.beam, 0x38c8ff, 1997);  // the lane glows hot under the beam
     }
-    const reachX = D.CANNON.reach;
+    const cannonEnd = Math.min(CAN.x + D.CANNON.reach, G.len * 0.5);
+    const reachX = Math.max(0, cannonEnd - CAN.x);
     const head = CAN.x + Math.min(1, t / CAN.sweep) * reachX;
     const len = Math.max(0.01, head - CAN.x), cx = CAN.x + len / 2;
     const fade = t < CAN.sweep + CAN.hold ? 1 : Math.max(0, 1 - (t - CAN.sweep - CAN.hold) / CAN.fade);
     const thin = 0.25 + 0.75 * fade; // the beam narrows as it dies
     const fl = 1 + Math.sin(c.t * 60) * 0.06 + (Math.random() - 0.5) * 0.06;
-    c.glow.scale.set(len + 0.8, 4.2 * thin * fl, 1); c.glow.position.set(cx, CAN.y, 0); c.glow.material.opacity = 0.2 * fade;
+    c.glow.scale.set(len, 4.2 * thin * fl, 1); c.glow.position.set(cx, CAN.y, 0); c.glow.material.opacity = 0.2 * fade;
     c.body.scale.set(len, 2.5 * thin * fl, 1); c.body.position.set(cx, CAN.y, 0); c.body.material.opacity = 0.6 * fade;
     c.body.material.map.repeat.set(len / 4, 1); c.body.material.map.offset.x = -c.t * 4; // energy streams outward
     c.core.scale.set(len, 0.6 * thin * (1 + Math.sin(c.t * 90) * 0.15), 1); c.core.position.set(cx, CAN.y, 0); c.core.material.opacity = 0.85 * fade;
     const fs = (t < CAN.sweep ? 3.0 : 2.0) * thin * fl;
-    c.flare.scale.set(fs * 1.4, fs, 1); c.flare.position.set(head, CAN.y, 0); c.flare.material.opacity = fade;
+    c.flare.scale.set(fs * 1.4, fs, 1); c.flare.position.set(Math.min(head, cannonEnd - fs * 0.7), CAN.y, 0); c.flare.material.opacity = fade;
     c.trail.scale.set(len, 0.45, 1); c.trail.position.set(cx, 0.12, 0); c.trail.material.opacity = 0.45 * fade;
     const ms = 2.6 * thin * fl;
     c.muzzle.scale.set(ms, ms, 1); c.muzzle.position.set(CAN.x + 0.1, CAN.y, 0); c.muzzle.material.opacity = 0.9 * fade;
@@ -1442,7 +1497,7 @@
       sheet('blue', e.x, aimY(e), 0xbff4ff, 2.0, 0.4);
     }
     if (t > end) {
-      for (const k of ['glow', 'body', 'core', 'flare', 'muzzle', 'trail']) { const m = c[k]; G.root.remove(m); m.material.dispose(); m.geometry.dispose(); }
+      for (const k of ['glow', 'body', 'core', 'flare', 'muzzle', 'trail']) { const m = c[k]; G.root.remove(m); if (m.cannonOwnMap) m.material.map.dispose(); m.material.dispose(); m.geometry.dispose(); }
       G.cannonFire = null;
     }
   }

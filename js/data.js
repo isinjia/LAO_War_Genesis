@@ -16,12 +16,12 @@
     chain: { role: '전격 범위', cost: 220, cd: 7, hp: 360, atk: 60, rate: 1.6, range: 3.8, spd: 1.0, kb: 3, area: 1 },
     laser: { role: '관통 레이저', cost: 320, cd: 9, hp: 600, atk: 120, rate: 2.3, range: 4.4, spd: 1.0, kb: 2, area: 1 },
   };
-  // hp / atk, cost, cooldown and extra reach per rank
+  // 등급별 성능 예산 효율과 재소환·사거리 기본값
   const RANKS = {
     B: { k: 1, c: 1, cd: 1, r: 0, color: '#9fb4cc' },
-    A: { k: 1.8, c: 1.6, cd: 1.4, r: 0.2, color: '#5dd2ff' },
-    S: { k: 3.2, c: 2.4, cd: 2.0, r: 0.4, color: '#c879ff' },
-    SS: { k: 5.5, c: 4.0, cd: 3.0, r: 0.6, color: '#ffb52e' },
+    A: { k: 1.3, c: 1.6, cd: 1.4, r: 0.2, color: '#5dd2ff' },
+    S: { k: 1.8, c: 2.4, cd: 2.0, r: 0.4, color: '#c879ff' },
+    SS: { k: 4.0, c: 4.0, cd: 3.0, r: 0.6, color: '#ffb52e' },
   };
   const RANK_ORDER = ['B', 'A', 'S', 'SS'];
   // [id, name, rank, type, fx, color, sfx, desc, tweaks]; tweaks multiply hp / atk / spd / rate, add range, set skill / slow
@@ -68,19 +68,13 @@
     ['fafnir', '파프니르', 'SS', 'chain', 'lightning', 0x5aa8ff, 'elec', '주피터로 생체 전기를 증폭하는 공작원', { hp: 1.5, range: 1.0, skill: 3 }],
     ['ramiel', '라미엘', 'SS', 'splash', 'holy', 0xfff1b8, 'energy', '천벌의 빛을 터뜨리는 공격기', { range: 1.0, atk: 1.2, skill: 3 }],
   ];
-  // balance pass at card level 10 (tools/balance.js): hp and attack x this, so units of a rank return about the same per
-  // money spent (towers by their raw stats: the ordinary battle barely reaches them)
-  const TUNE = {brownie: 0.89, leprechaun: 0.97, gnome: 1.0, impet: 1.34, daphne: 1.26, banshee: 0.72, sylphid: 0.79, raven: 1.12, nymph: 0.92, amy: 1.28, andvari: 0.84, phoenix: 4.67, thetis: 3.87, hraesvelgr: 8.31, undine: 1.09, valkyrie: 1.25, zero: 0.97, hela: 1.04, azazel: 1.39, saraqael: 1.53, leona: 0.81, ullr: 0.23, harpy: 0.2, eternity: 0.74, lemonadealpha: 0.59, sleipnir: 1.66, blacklilith: 1.83, cyclopsprincess: 1.94, blindprincess: 1.84, brunhild: 0.35, tiamat: 0.12, khan: 0.17, labiata: 1.55, lrl: 0.98, constantia: 0.62, titania: 0.33, mercury: 0.84, empress: 0.88, fafnir: 1.58, ramiel: 0.37};
   // the starting squad, and the unit each stage hands out on its first clear (stage index -> id)
   const STARTERS = ['brownie', 'leprechaun', 'gnome'];
   const STAGE_REWARD = ['impet', 'nymph', 'valkyrie', 'raven', 'undine', 'phoenix', 'thetis', 'hraesvelgr'];
 
   const r10 = (v) => Math.max(10, Math.round(v / 10) * 10);
-  // unit value: every unit fights VALUE times as hard (hp / atk) and costs VALUE times the energy, so the same income
-  // fields fewer, sturdier units (fewer deploys to hold the line); the energy cap grows with it (WORKER.cap)
+  // 발전 단계별 최대 전력의 기준 배율. 대원 능력치는 공통 예산식으로 별도 산정한다.
   const VALUE = 2;
-  // a flat lift on every unit's hp and attack (cost unchanged): V1.31 x1.35
-  const STAT_K = 1.35;
   // what a unit is for (the squad screen, tools/balance.js): every role has units at more than one rank
   const ROLES = {
     single: '단일 공격', area: '범위 공격', tank: '체력 탱커', swarm: '물량 탱커', evade: '회피 탱커',
@@ -156,17 +150,63 @@
     fafnir: '경장형 공격기',
     ramiel: '중장형 공격기',
   };
+  // 같은 역할과 조건이면 상위 등급과 높은 소환 전력이 더 높은 전력당 효율을 갖는다.
+  const DECK_COST = { B: 1, A: 2, S: 4, SS: 6 };
+  const SUMMON_POWER = {
+    brownie: 100, leprechaun: 120, gnome: 180, impet: 280, daphne: 280,
+    banshee: 450, sylphid: 200, raven: 550, nymph: 200, amy: 600, andvari: 700,
+    phoenix: 650, thetis: 800, hraesvelgr: 1000, undine: 450, valkyrie: 600,
+    leona: 600, lrl: 500, mercury: 500,
+    zero: 800, hela: 900, khan: 700,
+    azazel: 600, saraqael: 600, sleipnir: 650, harpy: 1100, cyclopsprincess: 1100,
+    lemonadealpha: 1300, titania: 1200, brunhild: 1200, ramiel: 1300,
+    blacklilith: 1500, blindprincess: 1600, fafnir: 1600,
+    eternity: 1200, labiata: 2000,
+    ullr: 2600, tiamat: 2800, constantia: 2200, empress: 2400,
+  };
+  const UNIT_BALANCE = {
+    hpPerPower: 18, dpsPerPower: 0.8, priceExponent: 0.15,
+    flyHp: 0.5, flyAtk: 0.8, siegeHp: 1.2,
+    guardDamage: 0.6, areaTargets: 2,
+    healthShare: { wall: 0.82, single: 0.35, snipe: 0.25, splash: 0.4, melee: 0.58, slow: 0.48, stun: 0.52, chain: 0.42, laser: 0.4 },
+  };
+  function unitBudget(rank, power) { return power * RANKS[rank].k * Math.pow(power / 100, UNIT_BALANCE.priceExponent); }
+  function unitStats(rank, power, type, tw, traits) {
+    const t = TYPES[type], rule = UNIT_BALANCE, budget = unitBudget(rank, power);
+    const rate = Math.round(t.rate * (tw.rate || 1) * 100) / 100;
+    const slow = tw.slow || t.slow;
+    let share = traits.guard ? Math.max(0.7, rule.healthShare[type]) : rule.healthShare[type];
+    const health = share * (tw.hp || 1), attack = (1 - share) * (tw.atk || 1) / (tw.rate || 1);
+    share = Math.max(0.15, Math.min(0.9, health / (health + attack)));
+    const rangeValue = 1 + Math.max(0, traits.range - 3) * 0.08;
+    const controlValue = slow ? 1 + slow[0] * Math.min(1, slow[1] / rate) : 1;
+    const skillCharge = rank === 'SS' ? 12 : rank === 'S' ? 18 : 0;
+    const skillValue = skillCharge ? 1 + (rank === 'SS' ? 3 : 2) * rate / (skillCharge + rate) : 1;
+    const attackValue = (t.area ? rule.areaTargets : 1) * rangeValue * controlValue * skillValue;
+    const multi = tw.multi || 1;
+    const hp = budget * rule.hpPerPower * share / multi * (traits.guard ? rule.guardDamage : 1) * (1 - (tw.evade || 0));
+    const atk = budget * rule.dpsPerPower * (1 - share) * rate / multi / attackValue;
+    return {
+      hp: Math.max(1, Math.round(hp * (traits.fly ? rule.flyHp : 1) * (traits.siege ? rule.siegeHp : 1))),
+      atk: Math.max(1, Math.round(atk * (traits.fly ? rule.flyAtk : 1))),
+      balance: { budget, efficiency: budget / power, healthShare: share, attackValue },
+    };
+  }
   const UNITS = LIST.map(([id, name, rank, type, fx, color, sfx, desc, tw = {}]) => {
     if (FLYERS.has(id)) desc = '비행 · ' + desc;
     const t = TYPES[type], R = RANKS[rank];
+    const formationCost = DECK_COST[rank], power = SUMMON_POWER[id];
+    const range = RANGE[id] || Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10;
+    const traits = { fly: FLYERS.has(id), siege: !!tw.siege, guard: (CLASS[id] || '').endsWith('보호기'), range };
+    const stats = unitStats(rank, power, type, tw, traits);
     const u = {
-      id, name, rank, type, role: t.role, cls: CLASS[id] || '', fx, color, sfx, desc,
-      cost: r10(t.cost * R.c * (tw.cost || 1) * VALUE),
+      id, name, rank, type, formationCost, role: t.role, cls: CLASS[id] || '', fx, color, sfx, desc,
+      cost: power,
       cd: Math.min(45, Math.round(t.cd * R.cd * (tw.cd || 1) * 10) / 10),
-      hp: Math.round(t.hp * R.k * (tw.hp || 1) * (TUNE[id] || 1) * VALUE * STAT_K),
-      atk: Math.round(t.atk * R.k * (tw.atk || 1) * (TUNE[id] || 1) * VALUE * STAT_K),
+      hp: stats.hp,
+      atk: stats.atk, balance: stats.balance,
       rate: Math.round(t.rate * (tw.rate || 1) * 100) / 100,
-      range: RANGE[id] || Math.round((t.range + R.r + (tw.range || 0)) * 10) / 10,
+      range,
       spd: Math.round(t.spd * (tw.spd || 1) * 100) / 100,
       kb: t.kb, area: t.area || 0,
       fly: FLYERS.has(id) ? 1 : 0,
@@ -201,7 +241,7 @@
   const SHOP_NEW_SS = 1000; // a new SS costs the same as an owned one's card
 
   // cards: every card starts at level 10 and goes to 12 (MAX_LV); unit stats are balanced at level 10 by deploy cost
-  // and rank (TUNE). Each upgrade spends copies of that card (duplicate pulls, the shop, wild cards) and XP.
+  // and rank. Each upgrade spends copies of that card (duplicate pulls, the shop, wild cards) and XP.
   const START_LV = { B: 10, A: 10, S: 10, SS: 10 };
   // copies needed from level 10 to 11 and 11 to 12
   const CARDS = { B: [1000, 1500], A: [400, 500], S: [20, 40], SS: [4, 6] };
@@ -213,8 +253,8 @@
   const WILD_SHOP = { B: { n: 20, price: 200 }, A: { n: 5, price: 400 }, S: { n: 1, price: 600 }, SS: { n: 1, price: 2500 } };
   const SHOP_CARDS = { B: 20, A: 6, S: 2, SS: 1 }; // copies per recruit-shop buy of a card you own
 
-  // formation cost: the squad's ranks must add up to DECK_CAP or less (an all-SS squad does not fit)
-  const DECK_COST = { B: 1, A: 2, S: 4, SS: 8 };
+  // 편성 한도는 대원별 비용의 합으로 계산한다.
+  const formationCost = (unit) => (typeof unit === 'string' ? UNIT[unit] : unit).formationCost;
   const DECK_CAP = 30;
 
   // money: reward when it falls
@@ -358,7 +398,7 @@
 
   // worker (income) levels: money per second and wallet size; cost of the next level
   const WORKER = { rate: [24, 32, 40, 48, 56, 64, 72, 80], cap: [600, 900, 1200, 1500, 1800, 2200, 2600, 3000].map((v) => v * VALUE), cost: [80, 160, 240, 320, 400, 480, 560] };
-  const CANNON = { charge: 22, reach: 15, dmg: 300 }; // damage x the stage's pow
+  const CANNON = { charge: 44, reach: 15, dmg: 300 }; // damage x the stage's pow
   const MAX_LV = 12; // card level cap
   const lvMul = (lv) => 1 + 0.2 * (lv - 1); // hp / atk at battle level lv (levels above the card's start, 1-based)
   const lvCost = (lv) => Math.round(150 * Math.pow(lv, 1.9) / 50) * 50; // xp from battle level lv to lv + 1
@@ -610,6 +650,6 @@
     return p;
   }
 
-  window.DATA = { UNITS, UNIT, TYPES, ROLES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, DECK_COST, DECK_CAP, START_LV, CARDS, cardsNeed, relLv, PULL_CARDS, WILD_SHOP, SHOP_CARDS,
+  window.DATA = { UNITS, UNIT, TYPES, ROLES, RANKS, RANK_ORDER, STARTERS, STAGE_REWARD, CHAPTER_REWARD, CHAPTERS, PER_CH, GACHA, SHOP_PRICE, SHOP_NEW_SS, DECK_COST, formationCost, UNIT_BALANCE, unitBudget, unitStats, DECK_CAP, START_LV, CARDS, cardsNeed, relLv, PULL_CARDS, WILD_SHOP, SHOP_CARDS,
     ENEMIES, TRAITS, MODS, INF_BUFFS, dailyStage, SYNERGIES, synergiesOf, MISSIONS, PERIODIC, periodic, dayNo, BASE_RIG, STAGES, HARD, infiniteFloor, WORKER, CANNON, VALUE, MAX_LV, lvMul, lvCost, xpNeed, reward };
 })();

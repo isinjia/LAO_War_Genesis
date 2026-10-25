@@ -1249,3 +1249,96 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
 .st-skip:active { transform: translateY(1px); }
 @media (max-width: 640px) { .st-skip .ts-txt b { font-size: 15px; } .st-skip .ts-txt small { font-size: 10px; } }
 .cutin-cap .rk-i { width: 22px; height: 22px; }
+
+/* Viewport-sized dialogs: only their content scrolls, never the title. */
+.modal { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+.pwin { min-height: 0; min-width: 0; overflow: hidden; max-height: calc(100vh - 32px); max-height: calc(100dvh - max(12px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom))); }
+.pwin-title { flex: 0 0 46px; }
+.pwin-body { flex: 1 1 auto; min-height: 0; min-width: 0; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; overflow-wrap: anywhere; }
+.pwin-btns { flex: 0 0 auto; }
+.opt-row input[type=range] { min-width: 0; width: 0; touch-action: pan-y; height: 36px; }
+.settings-actions { display: none; }
+@media (max-width: 640px), (max-height: 520px) {
+  .settings-window { height: calc(100vh - 32px); height: calc(100dvh - max(12px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom))); }
+  .settings-window .pwin-body { padding: 12px 14px; }
+  .settings-window .pwin-btns .settings-secondary { display: none; }
+  .settings-window > .pwin-btns { padding: 8px 12px 12px; }
+  .settings-window > .pwin-btns > .btn:first-child { width: 100%; }
+  .settings-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+  .settings-actions .btn { min-width: 0; min-height: 48px; height: auto; padding: 8px; font-size: 13px; white-space: normal; line-height: 1.4; }
+  .opt-row { gap: 8px; }
+  .opt-row span { min-width: 88px; font-size: 14px; }
+  .opt-row b { flex: 0 0 32px; }
+  .opt-toggle small { font-size: 12px; line-height: 1.6; }
+}
+@media (max-width: 640px) and (orientation: portrait) {
+  .topbar { height: 92px; height: calc(92px + env(safe-area-inset-top)); padding: calc(6px + env(safe-area-inset-top)) 10px 6px; display: grid; grid-template-columns: 1fr 44px 44px; grid-template-rows: 36px 38px; gap: 6px; }
+  .topbar .tb-title { display: block; min-width: 0; grid-column: 1; grid-row: 1; }
+  .topbar .tb-title b { display: none; }
+  .topbar .tb-title span { display: block; font-size: 17px; color: #fff; }
+  .topbar .res { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; margin: 0; gap: 6px; }
+  .topbar .ri { min-width: 0; height: 34px; padding: 0 6px; justify-content: space-between; font-size: 13px; }
+  .topbar .ri b { min-width: 0; }
+  .topbar .tbtn { width: 44px; height: 36px; }
+  .topbar .mail { grid-column: 2; grid-row: 1; }
+  .topbar .opt { grid-column: 3; grid-row: 1; }
+  .pane { top: calc(92px + env(safe-area-inset-top)); padding: 12px; }
+  .cr-head { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .cr-head > b { white-space: nowrap; }
+  .cr-tabs { margin: 0; }
+  .cr-tabs button { height: 36px; width: 36px; }
+  .cr-syn { grid-column: 1 / -1; height: 34px; }
+  .cr-roster { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .cr-roster .crc-lv { height: 18px; line-height: 18px; font-size: 12px; }
+  .cr-roster .crc-xp { height: 19px; }
+  .cr-roster .crc-xp span { font-size: 12px; line-height: 19px; }
+  .cr-sec { flex-wrap: wrap; }
+  .cr-foot { gap: 6px; flex-wrap: wrap; min-height: 36px; }
+}
+
+@media (max-width: 640px), (max-height: 520px) { .settings-actions .btn { word-break: keep-all; overflow-wrap: normal; } }
+
+/* Short landscape viewports reserve height for content and the battlefield. */
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 1200px) {
+  .topbar { height: 46px; padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left)); gap: 8px; }
+  .tb-title { min-width: 0; }
+  .tb-title b { font-size: 16px; }
+  .tb-title span { display: none; }
+  .res { gap: 6px; }
+  .ri { height: 30px; font-size: 13px; padding: 0 6px; }
+  .ri b { min-width: 6.2ch; }
+  .tbtn { width: 36px; height: 36px; }
+  .pane { top: 46px; bottom: calc(52px + env(safe-area-inset-bottom)); padding: 10px max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left)); }
+  .navbar, .operation-back { height: calc(52px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); }
+  .navbar button { min-height: 44px; }
+  .op-back-btn { height: 40px; }
+  .op-intro { margin: 0 auto 12px; }
+  .op-intro > span { display: none; }
+  .op-intro h2 { font-size: 22px; margin: 0 0 4px; }
+  .op-intro p { font-size: 13px; }
+  .operation-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .op-card { height: clamp(202px, 62dvh, 280px); }
+  .op-copy { padding: 12px; }
+  .op-copy h3 { font-size: 23px; margin: 6px 0; }
+  .op-copy p { font-size: 13px; min-height: 42px; margin-bottom: 6px; }
+  .op-foot { padding: 8px 12px; min-height: 44px; flex-wrap: wrap; }
+  .cr-deck { max-width: 480px; padding: 8px 10px; }
+  .cr-head { margin-bottom: 8px; }
+  .cr-roster { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+  .sinfo { bottom: calc(52px + env(safe-area-inset-bottom)); max-height: 65dvh; min-height: 0; }
+  .hud-bottom { display: flex; align-items: flex-end; gap: 8px; padding: 4px max(10px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+  .hud-bottom .deck-wrap { display: flex; width: min(62vw, 510px); max-width: 510px; flex: 0 1 510px; gap: 4px; }
+  body.deck1 .hud-bottom .deck-wrap { max-width: 510px; }
+  .hud-bottom .deck-row { display: flex; min-width: 0; }
+  .hud-bottom .power { width: 100%; min-width: 0; padding: 4px 10px; font-size: 18px; gap: 8px; }
+  .hud-bottom .power .pw-head { font-size: 11px; }
+  .hud-bottom .power .pw-num small { font-size: 11px; }
+  .hud-bottom .power .pw-bar { height: 9px; }
+  .hud-bottom .side-btn { width: 60px; height: 60px; }
+  .hud-bottom .side-btn .lbl { font-size: 10px; }
+  .hud-bottom .side-btn .lv { font-size: 15px; }
+  .hud-bottom .side-btn .cost { font-size: 12px; }
+  .hud-bottom .slot .c { font-size: 13px; }
+}
+
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 1200px) { .hud-bottom .deck-wrap, body.deck1 .hud-bottom .deck-wrap { flex-basis: min(510px, 112dvh); max-width: min(510px, 112dvh); } }

@@ -39,7 +39,7 @@
     if (c >= 4) ids.push('labiata'); // the first SS (the making's pity reaches it around here)
     const out = [];
     let cost = 0;
-    for (const id of ids) { const k = D.DECK_COST[U[id].rank]; if (out.length < 10 && cost + k <= D.DECK_CAP && !out.includes(id)) { out.push(id); cost += k; } }
+    for (const id of ids) { const k = D.formationCost(id); if (out.length < 10 && cost + k <= D.DECK_CAP && !out.includes(id)) { out.push(id); cost += k; } }
     return out;
   }
 
@@ -163,7 +163,7 @@
     return v;
   }
   // rank adjusts what a unit is expected to return per money (a rank's stat gain over its cost gain)
-  const RANK_K = { B: 1, A: 1.125, S: 1.33, SS: 1.375 };
+  const RANK_K = Object.fromEntries(D.RANK_ORDER.map(rank => [rank, D.RANKS[rank].k]));
   // the measuring situations keep the campaign's base strength curve (before DIFF), so unit scores don't move when
   // the campaign is retuned
   const basePow = (g) => Math.round((1 + 3.0 * Math.pow(g / 79, 0.75)) * 100) / 100;
