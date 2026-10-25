@@ -3,15 +3,18 @@
   const q = new URLSearchParams(location.search);
   if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || !q.has('unlock')) return;
   const phase = q.get('audit') || 'baseline';
+  const reportSet = q.get('auditSet') || 'campaign';
   const panel = document.createElement('pre'); panel.id = 'campaign-audit';
   panel.style.cssText = 'position:fixed;inset:0;z-index:99999;overflow:auto;background:#101923;color:#fff;padding:20px;white-space:pre-wrap';
   document.body.append(panel);
-  const out = { phase, cardLevel: 10, rows: [] };
+  const out = { phase, reportSet, cardLevel: 10, rows: [] };
   const render = () => { panel.textContent = JSON.stringify(out); };
   try {
     if (!['baseline', 'fit', 'verify'].includes(phase)) throw new Error('지원하지 않는 검증 종류입니다.');
+    if (!/^[a-z][a-z_]{0,40}$/.test(reportSet)) throw new Error('지원하지 않는 검증 기록 이름입니다.');
     while (!window.BAL) await new Promise((r) => setTimeout(r, 100));
     const D = DATA;
+    out.units = D.UNITS.map(({ id, cost, hp, atk }) => ({ id, cost, hp, atk }));
     function deck(st, expanded = false) {
       const rewards = D.CHAPTER_REWARD.slice(0, st.chapter + (st.hard ? 1 : 0));
       const ids = [...new Set([...D.STARTERS, ...(st.ix > 0 || st.hard ? ['valkyrie'] : []), ...rewards])];
@@ -37,14 +40,20 @@
     const stages = [...D.STAGES, ...D.HARD];
     let freshPrevious = null;
     if (q.has('fresh')) {
-      const previous = await (await fetch(`tools/reports/campaign_verify.json?t=${Date.now()}`)).json();
+      const previous = await (await fetch(`tools/reports/${reportSet}_verify.json?t=${Date.now()}`)).json();
       if (!previous.complete || previous.rows.length !== 160 || previous.rows.some((r) => !r.pass)) throw new Error('추가 검사는 전 구간 통과 후 실행합니다.');
+      if (!previous.units || JSON.stringify(previous.units) !== JSON.stringify(out.units)) throw new Error('대원 수치가 달라 전 구간 새 검사가 필요합니다.');
       freshPrevious = new Map(previous.rows.map((r) => [r.code, r]));
     }
     if (q.has('resume') || q.has('retry')) {
-      const previous = await (await fetch(`tools/reports/campaign_${phase}.json?t=${Date.now()}`)).json();
+      const previous = await (await fetch(`tools/reports/${reportSet}_${phase}.json?t=${Date.now()}`)).json();
       if (previous.phase !== phase || previous.cardLevel !== 10) throw new Error('재개할 검증 기록이 일치하지 않습니다.');
-      out.rows = q.has('retry') ? previous.rows.filter((r) => r.pass) : previous.rows;
+      if (!previous.units || JSON.stringify(previous.units) !== JSON.stringify(out.units)) throw new Error('대원 수치가 달라 기존 검증을 재사용할 수 없습니다.');
+      out.rows = previous.rows.filter((r) => {
+        const st = stages.find((s) => s.code === r.code);
+        const unchanged = st && r.hpK === (st.enemyHpK || 1) && r.atkK === (st.enemyAtkK || 1) && r.fort === st.baseHp;
+        return unchanged && (!q.has('retry') || r.pass);
+      });
     }
     const completed = new Set(out.rows.map((r) => r.code));
     for (const st of stages.filter((s) => !completed.has(s.code))) {

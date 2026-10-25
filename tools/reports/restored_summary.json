@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-25",
+  "cardLevel": 10,
+  "unitsRestored": 40,
+  "stageTuningUnchanged": true,
+  "totalBattles": 222,
+  "normal": {
+    "stages": 80,
+    "wins": 80
+  },
+  "hard": {
+    "stages": 80,
+    "wins": 74
+  },
+  "failedStages": [
+    "H2-3",
+    "H2-4",
+    "H2-5",
+    "H2-6",
+    "H2-9",
+    "H3-8"
+  ],
+  "dataHash": "3faf891497faec06e732fa8f234f3080abd4d6c24493e40b5c4b1f7896f53859"
+}

@@ -65,7 +65,7 @@
   }
 
   // a breath between battle chunks (a message, not a timer: hidden tabs throttle timers) so the page stays answerable
-  const breathe = () => new Promise((r) => { const ch = new MessageChannel(); ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
+  const breathe = () => new Promise((r) => { const ch = new MessageChannel(); ch.port1.onmessage = () => { ch.port1.close(); ch.port2.close(); r(); }; ch.port2.postMessage(0); });
   async function battle(st, deck, opt = {}) {
     await GAME.preload(st, deck.map((d) => U[d.id]), () => {});
     GAME.start(st, deck.map((d) => ({ def: U[d.id], lv: d.lv })), {});
