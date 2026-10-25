@@ -33,6 +33,7 @@
   let VW = 16, VH = 9, camX = 0, camBottom = -2.6, hudFrac = -1, hudTop = 0, zoom = 1; // zoom: wheel / pinch (zMin() = the whole lane, 2 = closer) // hudTop: the top bar's bottom edge (px) // hudFrac: the share of the screen the bottom HUD covers
   let G = null; // the running battle
   let resetFieldInput = () => {};
+  let zoomAtMinimum = false;
   let last = 0;
   const tex = {};
 
@@ -165,6 +166,8 @@
   }
   // the view size for the screen and the zoom: the lane keeps its height on screen, only the scale changes
   const ZMAX = 2;
+  const mobileBattleView = () => matchMedia('(pointer: coarse)').matches || innerWidth <= 640 || (innerWidth <= 1100 && innerHeight <= 520);
+  const defaultBattleZoom = () => mobileBattleView() ? zMin() : 1;
   // the widest zoom shows the whole lane, both bases (landscape); portrait stops at 0.45 so units stay visible
   function zMin() {
     if (!G) return 0.8;
@@ -172,6 +175,7 @@
     return Math.min(0.8, Math.max(0.45, vw1 / (G.len + 5.4)));
   }
   function view() {
+    if (G) zoom = zoomAtMinimum ? zMin() : Math.max(zMin(), Math.min(ZMAX, zoom));
     const w = innerWidth, h = innerHeight, aspect = w / h;
     VH = Math.max(8.5, Math.min(10.5, 11 / aspect)) / zoom; // portrait phones: a bit more height, units stay readable
     VW = VH * aspect;
@@ -186,6 +190,7 @@
   // zoom about a screen x (the cursor / the pinch centre): the world point under it stays put
   function setZoom(z, sx = innerWidth / 2) {
     z = Math.max(zMin(), Math.min(ZMAX, z));
+    zoomAtMinimum = Math.abs(z - zMin()) < 1e-4;
     if (Math.abs(z - zoom) < 1e-4) return;
     const f = sx / innerWidth - 0.5, wx = camX + f * VW;
     zoom = z; view();
@@ -315,7 +320,8 @@
     G.base.hp = G.base.max = Math.round(3000 * st.pow / 100) * 100;
     if (G.syn.has('lean')) G.worker = 1; // 소수 정예: work efficiency starts at Lv2
     scene.add(G.root);
-    zoom = 1; view();
+    zoomAtMinimum = mobileBattleView();
+    zoom = defaultBattleZoom(); view();
     buildField();
     camX = -100; clampCam(); updateCam();
     AUDIO.music(battleMusic(st));
@@ -2039,7 +2045,7 @@
   });
 
   window.GAME = {
-    cameraState: () => ({ x: camX, zoom, panning: !!pan, left: camera.left, right: camera.right }),
+    cameraState: () => ({ x: camX, zoom, minZoom: zMin(), maxZoom: ZMAX, defaultZoom: defaultBattleZoom(), panning: !!pan, left: camera.left, right: camera.right }),
     zoom: (z, sx) => (z == null ? zoom : setZoom(z, sx)),
     setHudInset(f, top) { hudTop = top || 0; if (Math.abs(f - hudFrac) > 0.005) { hudFrac = f; resize(); } },
     init, preload, start, stop, deploy, upgradeWorker, fireCannon, toast,

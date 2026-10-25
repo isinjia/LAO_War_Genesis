@@ -120,7 +120,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.33'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.34'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -131,19 +131,23 @@
   // with the squad set up for it (the three starters, in the order the coach talks about them)
   // Fullscreen is a session action in settings only; starting the game never requests it.
   const fsEl = document.documentElement;
-  const fsOk = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
+  const fsRequest = fsEl.requestFullscreen && document.fullscreenEnabled !== false ? fsEl.requestFullscreen
+    : fsEl.webkitRequestFullscreen && document.webkitFullscreenEnabled !== false ? fsEl.webkitRequestFullscreen : null;
+  const fsOk = !!fsRequest;
   const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const fsLabel = () => !fsOk ? '지원하지 않음' : fsOn() ? '전체화면 해제' : '전체화면 켜기';
+  const fsFailed = () => { GAME.toast('이 브라우저에서는 전체화면을 사용할 수 없습니다'); syncFullscreenOption(); };
   function enterFs() {
     if (!fsOk || fsOn()) return;
-    try { const p = (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl, { navigationUI: 'hide' }); if (p && p.catch) p.catch(() => {}); } catch (e) { /* refused */ }
+    try { const p = fsRequest === fsEl.requestFullscreen ? fsRequest.call(fsEl, { navigationUI: 'hide' }) : fsRequest.call(fsEl); if (p && p.catch) p.catch(fsFailed); } catch (e) { fsFailed(); }
   }
   function exitFs() {
     if (!fsOn()) return;
-    try { const p = (document.exitFullscreen || document.webkitExitFullscreen).call(document); if (p && p.catch) p.catch(() => {}); } catch (e) { /* ignore */ }
+    try { const p = (document.exitFullscreen || document.webkitExitFullscreen).call(document); if (p && p.catch) p.catch(fsFailed); } catch (e) { fsFailed(); }
   }
   function syncFullscreenOption() {
     const button = $('optFs');
-    if (button) { button.classList.toggle('on', fsOn()); button.textContent = fsOn() ? 'ON' : 'OFF'; }
+    if (button) { button.classList.toggle('on', fsOn()); button.textContent = fsLabel(); button.disabled = !fsOk; button.setAttribute('aria-pressed', String(fsOn())); }
   }
   document.addEventListener('fullscreenchange', syncFullscreenOption);
   document.addEventListener('webkitfullscreenchange', syncFullscreenOption);
@@ -1602,8 +1606,8 @@
       '<div class="opt-row opt-toggle"><small>이펙트 강도를 낮추면 이펙트 양·화면 흔들림·밝기가 줄고, 투명도를 올리면 이펙트가 비쳐 보입니다</small></div>' +
       `<div class="opt-row opt-toggle"><span>스토리 다시 보기</span><button id="optStory" class="tgl${save.storyAlways ? ' on' : ''}">${save.storyAlways ? 'ON' : 'OFF'}</button>
         <small>ON: 스테이지 스토리를 매번 보여 줍니다 · OFF: 한 번 본 스토리는 건너뜁니다</small></div>` +
-      (fsOk ? `<div class="opt-row opt-toggle"><span>전체화면</span><button id="optFs" class="tgl${fsOn() ? ' on' : ''}">${fsOn() ? 'ON' : 'OFF'}</button>
-        <small>설정에서 직접 켤 때만 전체화면으로 전환합니다</small></div>` : '') +
+      `<div class="opt-row opt-toggle"><span>전체화면</span><button id="optFs" class="tgl opt-fullscreen${fsOn() ? ' on' : ''}" aria-pressed="${fsOn()}" ${fsOk ? '' : 'disabled'}>${fsLabel()}</button>
+        <small>${fsOk ? '버튼을 눌러 전체화면을 켜거나 해제합니다' : '이 브라우저는 전체화면을 지원하지 않습니다'}</small></div>` +
       `<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.<span style="float:right;color:var(--dim)">${VERSION}</span></div>`, [
       ['확인', back || closeModal],
       ['도움말', () => openHelp(), 'd'],

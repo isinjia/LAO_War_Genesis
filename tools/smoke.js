@@ -136,7 +136,9 @@
       if (!GAME.cameraState().panning) throw new Error('victory pan not reproduced');
       await APP.launch(D.STAGES[2]);
       const initial = GAME.cameraState();
-      if (initial.panning || initial.zoom !== 1 || Math.abs(initial.left + 3) > .1) throw new Error('old camera carried into next battle');
+      if (initial.panning || Math.abs(initial.zoom - initial.defaultZoom) > 1e-4 || Math.abs(initial.left + 3) > .1) throw new Error('이전 전투의 카메라 상태가 남았습니다');
+      // 최소 배율에서 양쪽 기지가 모두 보이면 이동할 여백이 없다. 확대 후 드래그를 검사한다.
+      GAME.zoom(Math.max(1.2, initial.zoom));
       GAME.look(GAME.state.len);
       const before = GAME.cameraState().x;
       const gl = document.getElementById('gl');
