@@ -1951,3 +1951,80 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
   .settings-window input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: #ffcc00; }
   .settings-window input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -9px; border-radius: 50%; background: #fff; border: 3px solid #ffcc00; box-shadow: 0 1px 4px #000a; }
 }
+/* squad in phone landscape (v3): a narrow control column on the left (deck tabs + synergy, rank filters), deck row and
+   roster on the right, no separate control row */
+@media (orientation: landscape) and (max-height: 520px) {
+  #pSquad.on { grid-template-columns: 116px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); column-gap: 8px; row-gap: 6px; }
+  #pSquad .cr-head { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 6px; margin: 0; }
+  #pSquad .cr-head > b, #pSquad .cr-foot { display: none; }
+  #pSquad .cr-tabs { margin: 0; justify-content: space-between; gap: 4px; }
+  #pSquad .cr-tabs button { width: 36px; height: 36px; }
+  #pSquad .cr-syn { width: 100%; height: 36px; }
+  #pSquad #rankFilter { grid-column: 1; grid-row: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-content: start; margin: 0; overflow: visible; }
+  #pSquad #rankFilter button { height: 40px; padding: 0 4px; justify-content: center; }
+  #pSquad #rankFilter button:first-child { grid-column: 1 / -1; }
+  #pSquad #deckEdit { grid-column: 2; grid-row: 1; }
+  #pSquad #squadList { grid-column: 2; grid-row: 2; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pSquad.on { grid-template-columns: 96px minmax(0, 1fr); }
+  #pSquad .cr-tabs button { width: 29px; height: 36px; font-size: 14px; }
+  #pSquad #rankFilter button { height: 38px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #pSquad #squadList { grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 6px; }
+  #pSquad #squadList .crc-art { aspect-ratio: 1 / 0.82; }
+  #pSquad #squadList .crc-lv { margin-top: 1px; font-size: 12px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pSquad.on { grid-template-columns: 112px minmax(0, 1fr); }
+  #pSquad .cr-tabs button { width: 34px; height: 36px; }
+  #pSquad #deckEdit .crc .crc-cost { font-size: 10px; height: 16px; padding: 0 2px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 880px) {
+  #pSquad.on { grid-template-columns: 120px minmax(0, 1fr); }
+  #pSquad .cr-tabs button { width: 36px; height: 36px; }
+  #pSquad #deckEdit .crc .crc-cost { font-size: 11px; height: 17px; padding: 0 2px; min-width: 0; }
+  #pSquad #deckEdit .crc .crc-cost > span { display: none; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .settings-window .opt-row { margin: 2px 0; }
+  .settings-window .opt-toggle { margin: 2px 0; }
+  .settings-window .tgl { min-height: 36px; }
+  .settings-window #settingsActions { margin-top: 4px; gap: 4px; }
+  .settings-window #settingsActions .btn { height: 36px; }
+  .settings-window #settingsActions .btn:last-child { margin-top: 12px; }
+  .settings-window .tgl::before { content: '현재 '; font-size: 11px; font-weight: 400; opacity: 0.8; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .settings-window .tgl::before { content: none; }
+  .settings-window .tgl { font-style: normal; font-size: 15px; min-width: 72px; min-height: 40px; }
+  /* deck row: slots of 78px or more (the row scrolls sideways when ten don't fit), rank shown by the frame colour */
+  #pSquad #deckEdit .crc-art .rk-i { display: none; }
+  #pSquad #deckEdit .crc .crc-cost { font-size: 12px; height: 19px; padding: 0 4px; }
+  #pSquad #deckEdit .crc .crc-cost > span { display: inline-block; }
+  #pSquad #deckEdit .crc .crc-lvb { font-size: 12px; }
+  /* larger small type */
+  .navbar .nav { font-size: 14px; }
+  #shopList .ucard .nm { font-size: 13px; }
+  .gcard .dup, .gcard .new { font-size: 12px; }
+  .gcard .nm { font-size: 12px; }
+  .dreport .dr-row span, .dreport .dr-head { font-size: 13.5px; }
+  .pwin:has(.detail) .pwin-btns { justify-content: center; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  .navbar .nav { font-size: 12.5px; }
+}
+/* squad roster in phone landscape: compact cards (face, cost, level badge, a thin card bar) so two to three rows show */
+@media (orientation: landscape) and (max-height: 520px) {
+  #pSquad #squadList { grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 6px; }
+  #pSquad #squadList .crc { padding: 3px 3px 4px; }
+  #pSquad #squadList .crc-art { aspect-ratio: 1 / 1; }
+  #pSquad #squadList .crc-lv { display: none; }
+  #pSquad #squadList .crc .crc-lvb { display: block; position: absolute; right: 1px; bottom: 1px; min-width: 16px; height: 17px; padding: 0 3px; border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75); font: 900 12px/17px var(--en); color: #fff; text-align: center; }
+  #pSquad #squadList .crc .crc-lvb::before { content: 'Lv'; font-size: 9px; margin-right: 1px; }
+  #pSquad #squadList .crc-xp:not(.crc-name) { height: 13px; margin-top: 3px; }
+  #pSquad #squadList .crc-xp span { font-size: 11px; line-height: 13px; }
+  #pSquad #squadList .crc-name { font-size: 11px; height: auto; line-height: 1.2; margin-top: 3px; }
+}
