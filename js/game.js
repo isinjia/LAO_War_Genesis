@@ -5,7 +5,7 @@
   const D = window.DATA;
   // effect settings (설정 > 이펙트 강도 / 이펙트 투명도), kept per device: power 0-100 (amount, shake, brightness),
   // trans 0-80 (% see-through). fxK(): the opacity factor every battle effect is drawn with
-  window.FXSET = (() => { try { return Object.assign({ power: 100, trans: 0 }, JSON.parse(localStorage.getItem('lwg_fx') || '{}')); } catch (e) { return { power: 100, trans: 0 }; } })();
+  window.FXSET = (() => { try { return Object.assign({ power: 100, trans: 0, follow: true }, JSON.parse(localStorage.getItem('lwg_fx') || '{}')); } catch (e) { return { power: 100, trans: 0, follow: true }; } })();
   window.fxK = () => (1 - FXSET.trans / 100) * (0.35 + 0.65 * FXSET.power / 100);
   window.fxSave = () => { try { localStorage.setItem('lwg_fx', JSON.stringify(FXSET)); } catch (e) { /* ignore */ } };
   const STEP = 1 / 60;
@@ -1979,7 +1979,8 @@
       while (G && G.acc >= STEP && n < 10) { update(STEP); G && (G.acc -= STEP); n++; }
       if (!G) return;
       if (G.userCam && now - G.userCam > 5000) G.userCam = false;
-      if (!pan && !G.userCam && !G.over) {
+      // the camera follows the front line unless the player turned it off (설정 > 카메라 자동 추적)
+      if (!pan && !G.userCam && !G.over && FXSET.follow !== false) {
         let front = 0;
         for (const a of G.allies) if (!a.dead) front = Math.max(front, a.x);
         const want = front + VW * 0.15;

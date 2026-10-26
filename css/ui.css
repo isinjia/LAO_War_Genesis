@@ -992,8 +992,8 @@ body.finale-on .hud-bottom, body.finale-on .hud-top { opacity: 0; pointer-events
 @keyframes rowout { 0% { transform: none; filter: none; } 40% { transform: translateY(10px) scale(0.98); filter: brightness(0.8); } 100% { transform: translateY(-16px) scale(0.92); filter: brightness(0.45) saturate(0.5); } }
 
 /* wild cards: a small rank-coloured card icon with its letter */
-.wild-i { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 19px; margin: 0 2px 0 4px; vertical-align: -4px; border-radius: 3px;
-  font: 900 9px/1 var(--en); font-style: normal; color: #111; background: linear-gradient(135deg, #fff 0%, var(--wc, #aaa) 55%); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 6px var(--wc, #aaa); }
+.wild-i { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 19px; margin: 0 2px 0 4px; vertical-align: -4px; border-radius: 3px;
+  font: 900 10px/1 var(--en); font-style: normal; color: #111; background: linear-gradient(135deg, #fff 0%, var(--wc, #aaa) 55%); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 6px var(--wc, #aaa); }
 .wild-i.r-B { --wc: #9aa8bb; } .wild-i.r-A { --wc: #5aa8ff; } .wild-i.r-S { --wc: #c47cff; } .wild-i.r-SS { --wc: #ffcf3a; }
 .rws .w, .mis .mr .w { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; font-weight: 700; }
 .wildbuy { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 10px 14px; text-align: left; color: #fff;
@@ -1042,6 +1042,7 @@ body.deck1 .swap { display: flex; visibility: hidden; flex: none; width: 44px; }
   background: rgba(10, 12, 16, 0.96); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 8px; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6); }
 .card-menu.show { display: flex; animation: cmin 0.14s ease-out; }
 .card-menu::before { content: ''; position: absolute; left: var(--ax, 50%); top: -7px; margin-left: -7px; border: 7px solid transparent; border-top: 0; border-bottom-color: rgba(10, 12, 16, 0.96); }
+.card-menu.side::before { display: none; }
 .card-menu.above::before { top: auto; bottom: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: rgba(10, 12, 16, 0.96); }
 @keyframes cmin { from { opacity: 0; transform: translateY(-4px) scale(0.96); } }
 .card-menu button { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 38px; border-radius: 6px; color: #fff;
@@ -1349,3 +1350,604 @@ body.deck1 .deck-wrap { max-width: 690px; } /* 640 of cards + the 44px swap and 
 .slot .production small { color: #fff; font-size: 12px; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .production-bar { width: 72%; height: 4px; margin-top: 2px; background: #ffffff29; overflow: hidden; border-radius: 2px; }
 .production-bar i { display: block; width: var(--build, 0%); height: 100%; background: #ffcb4d; }
+
+/* ── phone landscape (short screens): the lobby gives its height to content ──
+   tabs move to a rail on the left, the top bar slims down, a sub page's back action sits in the top bar, the stage
+   sheet opens as a side panel, the squad shows deck and roster side by side, the making shows banner and pulls side by
+   side. */
+@media (orientation: landscape) and (max-height: 520px) {
+  :root { --rail: calc(64px + env(safe-area-inset-left)); --tb: 42px; }
+  .topbar { height: var(--tb); padding-left: calc(var(--rail) + 6px); }
+  .tbtn { width: 34px; height: 34px; }
+  .ri { height: 28px; }
+  .navbar { top: var(--tb); bottom: 0; left: 0; right: auto; width: var(--rail); height: auto; flex-direction: column; justify-content: flex-start; gap: 2px;
+    padding: 6px 0 env(safe-area-inset-bottom) env(safe-area-inset-left); border-top: 0; border-right: 1px solid var(--line); background: linear-gradient(90deg, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.8)); }
+  .navbar .nav { width: 100%; height: 60px; min-height: 0; flex: none; font-size: 12px; }
+  .nav .ni { width: 28px; height: 26px; }
+  .nav.on::before { top: 12%; bottom: 12%; left: 0; right: auto; width: 3px; height: auto; }
+  .pane { top: var(--tb); left: var(--rail); bottom: 0; padding: 8px 12px 10px; }
+  /* sub pages: the tabs stay, the back action is the arrow in the top bar */
+  .operation-depth .navbar { display: flex; }
+  .operation-depth .operation-back { display: none; }
+  .desktop-op-back { display: block; position: absolute; left: var(--rail); top: 0; width: 42px; height: var(--tb); z-index: 4; }
+  .desktop-op-back[hidden] { display: none; }
+  .operation-depth .topbar { padding-left: calc(var(--rail) + 44px); }
+  .back.arrow::before { left: 14px; top: 13px; width: 14px; height: 14px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .topbar .desktop-op-back { position: absolute; }
+  /* chapter map: the path fills what is left of the height; the stage sheet is a panel on the right */
+  #pStages { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 6px; padding-bottom: 8px; overflow: hidden; }
+  .ch-head { padding: 0 0 0 12px; border-left-width: 4px; }
+  .ch-no { font-size: 14px; }
+  .ch-title { font-size: 20px; line-height: 1.15; }
+  .ch-sub { font-size: 12px; }
+  .path { min-height: 0; height: 100%; }
+  #pStages .sinfo { position: fixed; top: var(--tb); right: 0; bottom: 0; left: auto; width: min(330px, 42vw); max-height: none; min-height: 0; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 6px; padding: 10px 12px max(10px, env(safe-area-inset-bottom)); overflow-y: auto;
+    border-left: 1px solid rgba(255, 255, 255, 0.14); border-top: 0; transform: translateX(105%); }
+  #pStages .sinfo.open { transform: none; }
+  #pStages .sinfo .si-stars { margin-right: 34px; }
+  #pStages .sinfo .si-go { margin-top: auto; position: sticky; bottom: 0; padding-top: 6px; background: linear-gradient(0deg, rgba(8, 9, 11, 0.98) 70%, transparent); }
+  #pStages .sinfo .si-go .btn.lg { height: 46px; font-size: 18px; min-width: 0; }
+  #pStages:has(.sinfo.open) .path, #pStages:has(.sinfo.open) .ch-head { margin-right: min(330px, 42vw); }
+  .si-close { width: 36px; height: 36px; }
+  /* squad: deck on the left, the roster scrolls on the right */
+  #pSquad.on { display: grid; grid-template-columns: min(356px, 46%) minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); column-gap: 10px; overflow: hidden; }
+  #pSquad .cr-deck { grid-column: 1; grid-row: 1 / 4; margin: 0; max-width: none; align-self: start; max-height: 100%; box-sizing: border-box; overflow-y: auto; padding: 6px 8px; }
+  #pSquad .cr-head { margin-bottom: 6px; gap: 6px; }
+  #pSquad .cr-head > b { font-size: 14px; white-space: nowrap; }
+  #pSquad .cr-tabs button { width: 32px; height: 32px; font-size: 15px; }
+  #pSquad .cr-syn { height: 32px; padding: 0 8px; font-size: 12px; white-space: nowrap; }
+  #pSquad .cr-grid { gap: 6px; }
+  #pSquad .cr-deck .crc-art { aspect-ratio: 1 / 1; }
+  #pSquad .cr-deck .crc-xp:not(.crc-name) { display: none; }
+  #pSquad .cr-foot { margin-top: 6px; font-size: 12px; }
+  #pSquad .cr-sec { grid-column: 2; margin: 0 0 4px; max-width: none; }
+  #pSquad #rankFilter { grid-column: 2; margin-bottom: 6px; }
+  #pSquad #squadList { grid-column: 2; min-height: 0; overflow-y: auto; align-content: start; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; padding-bottom: 10px; }
+  /* making: banner and pulls on one screen */
+  .gtabs { margin-bottom: 6px; }
+  .gtab { height: 36px; padding: 0 16px; }
+  #gMaking .banner { min-height: 0; height: calc(100dvh - var(--tb) - 62px); max-height: 420px; }
+  #gMaking .banner > img, #gMaking .banner > video { height: 100%; width: 42%; }
+  #gMaking .banner-info { padding: 8px 12px 8px 0; gap: 4px; justify-content: flex-end; }
+  #gMaking .pickup { font-size: 12px; letter-spacing: 1px; }
+  #gMaking .pick-name { font-size: 24px; }
+  #gMaking .pick-name .rk-i { width: 34px; height: 30px; }
+  #gMaking .pickup-select { padding: 6px 12px; }
+  #gMaking .pick-desc { font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #gMaking .rates { font-size: 12px; gap: 6px; }
+  #gMaking .rates .rk-i { width: 18px; height: 18px; }
+  #gMaking .pity { font-size: 12px; }
+  #gMaking .pity > small { display: none; }
+  #gMaking .pity-bar { margin-top: 3px; }
+  #gMaking .pull-btns { margin-top: 4px; }
+  #gMaking .pull-btns .btn { height: 48px; font-size: 16px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #pStages .node { scale: 0.82; }
+  #pStages .path { margin: 4px 0 6px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #pStages .sinfo .si-go { gap: 6px; }
+  #pStages .sinfo .si-go .btn.lg { border-width: 0 16px 0 20px; border-image-width: 0 16px 0 20px; padding: 0; letter-spacing: 1px; }
+  /* making results: the two rows of five fit above the buttons */
+  .gres-grid { top: calc(50% - 26px); gap: 8px; width: min(780px, 94vw, calc((100dvh - 104px) / 2 * 0.76 * 5 + 32px)); }
+  .gres-btns { bottom: max(8px, env(safe-area-inset-bottom)); }
+  .gres-btns .btn { height: 44px; }
+  .gcard .nm { font-size: 11px; padding: 2px; }
+  #btnPatch { min-height: 36px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #pSquad .cr-sec, #pSquad #rankFilter, #pSquad #squadList { min-width: 0; width: 100%; box-sizing: border-box; }
+  #pSquad .cr-sec small { display: none; }
+  #pSquad #rankFilter { gap: 4px; }
+  #pSquad #rankFilter button { padding: 0 9px; }
+  #pSquad #rankFilter .count { flex-basis: 100%; margin-left: 0; font-size: 11px; line-height: 1.5; }
+  #pStages .path { margin: 4px 24px 6px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* touch targets: 36-38px at least, text 11px at least */
+  :root { --tb: 46px; }
+  .tbtn { width: 38px; height: 38px; }
+  .ri { height: 30px; }
+  #pSquad .cr-tabs button { width: 36px; height: 36px; }
+  #pSquad .cr-syn { height: 36px; }
+  .filter button { height: 36px; }
+  .ch-story button { height: 36px; }
+  .pickup-select { min-height: 36px; }
+  .hb { width: 46px; height: 40px; }
+  .wild-i { font-size: 11px; width: 17px; }
+  .gcard .dup, .gcard .new { font-size: 11px; }
+  .slot .snm { font-size: 11px; letter-spacing: -0.6px; }
+  .hud-bottom .side-btn .lbl { font-size: 11px; letter-spacing: -0.4px; }
+  .si-deck .dsq-u .lv, .dsq-u .lv { font-size: 11px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #pSquad .cr-deck .crc-art .rk-i { display: none; } /* the deck card keeps its cost; the rank shows on the card frame colour */
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pSquad.on { grid-template-columns: 50% minmax(0, 1fr); }
+  #pSquad #squadList { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+}
+@media (orientation: landscape) and (max-height: 340px) {
+  #gMaking .pickup { display: none; }
+  #gMaking .pick-desc { -webkit-line-clamp: 1; }
+  #gMaking .pick-name { font-size: 21px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pSquad .cr-deck .crc-lv { display: none; } /* small phones: the deck card is the face and its cost (level on the card sheet) */
+  #pSquad .cr-deck .crc .crc-cost { height: 18px; min-width: 0; padding: 0 3px; font-size: 11px; }
+  #pSquad .cr-deck .crc-art { aspect-ratio: 1 / 1.15; }
+}
+@media (orientation: landscape) and (max-height: 340px) {
+  #gMaking .pick-desc { display: none; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #pStages .node { scale: min(0.82, var(--ns, 0.82)); }
+  #pStages .sinfo { width: min(300px, 40vw); }
+  #pStages:has(.sinfo.open) .path, #pStages:has(.sinfo.open) .ch-head { margin-right: calc(min(300px, 40vw) + 16px); }
+  #pStages .sinfo .si-go .btn.lg, #pStages .sinfo .si-go .btn.si-edit { flex: 1 1 0; }
+  /* windows: thinner title and button rows, the body scrolls and shows it can */
+  .pwin-title { flex-basis: 38px; height: 38px; font-size: 17px; }
+  .pwin-body { padding: 10px 14px; scrollbar-width: thin; scrollbar-color: #ffcc00 transparent;
+    background: linear-gradient(var(--panel2) 30%, transparent) top / 100% 22px no-repeat local,
+      linear-gradient(transparent, var(--panel2) 70%) bottom / 100% 22px no-repeat local,
+      radial-gradient(farthest-side at 50% 0, rgba(255, 204, 0, 0.4), transparent) top / 100% 9px no-repeat scroll,
+      radial-gradient(farthest-side at 50% 100%, rgba(255, 204, 0, 0.4), transparent) bottom / 100% 9px no-repeat scroll; }
+  .pwin-body::-webkit-scrollbar { width: 5px; }
+  .pwin-body::-webkit-scrollbar-thumb { background: #ffcc00aa; border-radius: 3px; }
+  .pwin-btns { padding: 6px 10px 8px; }
+  .pwin-btns .btn { height: 40px; }
+  .detail .art { max-height: calc(100dvh - 120px); }
+  /* squad: the roster gets the height (owned / XP / wild cards are on the top bar, shop and card sheet) */
+  #pSquad #rankFilter .count { display: none; }
+  #pSquad #rankFilter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  #pSquad #rankFilter button { flex: none; }
+  /* battle: the deck buttons' cost reads at a glance */
+  .slot .c { font-size: 15px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* windows: the buttons stand in a column on the right, so the content has the whole height */
+  .pwin, .pwin.wide { width: min(760px, 100%); display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); }
+  .pwin-title { grid-column: 1 / -1; }
+  .pwin-body { grid-column: 1; grid-row: 2; min-height: 0; }
+  .pwin-btns { grid-column: 2; grid-row: 2; flex-direction: column; flex-wrap: nowrap; justify-content: flex-end; align-items: stretch; gap: 6px; padding: 10px 12px 12px 4px; }
+  .pwin-btns .btn { min-width: 132px; }
+  .settings-window > .pwin-btns > .btn:first-child { width: auto; }
+  .pwin-body { background: linear-gradient(var(--panel2) 30%, transparent) top / 100% 26px no-repeat local,
+      linear-gradient(transparent, var(--panel2) 70%) bottom / 100% 26px no-repeat local,
+      linear-gradient(rgba(255, 204, 0, 0.5), transparent) top / 100% 10px no-repeat scroll,
+      linear-gradient(transparent, rgba(255, 204, 0, 0.5)) bottom / 100% 10px no-repeat scroll; }
+  /* stage sheet: a slimmer panel with larger figures; the map keeps a clear gap between stages */
+  #pStages .sinfo { width: min(290px, 38vw); }
+  #pStages:has(.sinfo.open) .path, #pStages:has(.sinfo.open) .ch-head { margin-right: calc(min(290px, 38vw) + 16px); }
+  #pStages .sinfo .si-type { font-size: 13px; }
+  #pStages .sinfo .si-rewards .rw { font-size: 15px; }
+  /* squad: the roster takes the height of its title row */
+  #pSquad .cr-sec { display: none; }
+  #pSquad #rankFilter button { height: 38px; }
+  /* making: figures and costs readable */
+  #gMaking .rates { font-size: 13px; }
+  #gMaking .pull-btns .btn small { font-size: 12px; }
+  /* recruit shop: a full row of cards with their prices above the fold */
+  #shopFilter .count { display: none; }
+  #shopList { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .wildbuy { padding: 6px 12px; }
+  /* battle deck buttons: face and cost (names don't fit at this size) */
+  .slot .snm { display: none; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #pGacha #shopList { grid-template-columns: repeat(auto-fill, minmax(clamp(68px, calc(100dvh - 248px), 104px), 1fr)); }
+  #pGacha #shopFilter { margin-bottom: 6px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* battle: the deck row takes the width between the two round buttons */
+  .hud-bottom .deck-wrap, body.deck1 .hud-bottom .deck-wrap { flex-basis: min(560px, calc(100vw - 190px)); max-width: min(560px, calc(100vw - 190px)); width: auto; }
+  /* lobby: rail labels and map stars a little larger */
+  .navbar .nav { font-size: 13px; }
+  #pStages .node .stars i { width: 15px; height: 14px; }
+  /* settings rows closer together so all of them fit */
+  .settings-window .pwin-body { padding: 8px 14px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pSquad.on { grid-template-columns: 46% minmax(0, 1fr); }
+  #pSquad #squadList { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; }
+}
+@media (orientation: landscape) and (max-height: 520px) { .settings-window .opt-row { margin: 4px 0; } .settings-window .opt-row input[type=range] { height: 36px; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  /* unit sheet: four stats per row so the whole sheet fits */
+  .detail .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px 10px; }
+  .detail .stat-grid > span { min-height: 0; }
+  /* windows sit closer to the screen edges */
+  .modal { padding: 6px max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left)); }
+  .pwin, .pwin.wide { max-height: calc(100dvh - 12px); }
+  .mailbox { max-height: none; gap: 6px; }
+  .mailrow { padding: 6px 10px; }
+  /* lobby rail: brighter labels */
+  .navbar .nav { color: #b9c0c8; }
+  .navbar .nav .ni { background: #9aa2aa; }
+  .navbar .nav.on { color: var(--y); }
+  .navbar .nav.on .ni { background: var(--y); }
+  /* making: figures readable */
+  #gMaking .rates { font-size: 14px; gap: 8px; }
+  #gMaking .pity { font-size: 13px; }
+  /* recruit shop: full names on two lines */
+  #shopList .ucard .nm { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; font-size: 11.5px; letter-spacing: -0.3px; word-break: keep-all; }
+  /* roster cards a little flatter: more of them per screen */
+  #pSquad #squadList .crc-art { aspect-ratio: 1 / 0.92; }
+  #pSquad #squadList .crc-lv { margin-top: 2px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .detail .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+  .detail .stat-grid > span { white-space: nowrap; }
+  .detail .art { max-width: 24%; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #shopList .ucard .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; letter-spacing: -0.5px; }
+}
+.crc-lvb { display: none; }
+@media (orientation: landscape) and (max-height: 520px) {
+  /* windows as wide as their content needs (up to 760px) */
+  .pwin, .pwin.wide { width: auto; min-width: min(460px, 100%); max-width: min(760px, 100%); }
+  .settings-window, .pwin:has(.detail), .pwin:has(.dreport), .pwin:has(.mailbox) { width: min(760px, 100%); }
+  .pwin-body { max-width: 600px; }
+  .pwin:has(.detail) .pwin-body, .settings-window .pwin-body, .pwin:has(.mailbox) .pwin-body, .pwin:has(.dreport) .pwin-body { max-width: none; }
+  /* unit sheet: the upgrade line repeats the button beside it */
+  .detail .up-note { display: none; }
+  .detail .stats { line-height: 1.55; }
+  /* bigger touch and type */
+  .tbtn { width: 40px; height: 40px; }
+  .navbar .nav { font-size: 14px; }
+  #shopList .ucard .nm { font-size: 12px; }
+  #shopList .ucard .price { font-size: 12px; }
+  #gMaking .rates .rk-i { width: 20px; height: 20px; }
+  #gMaking .pull-btns .btn small { font-size: 13px; }
+  /* stage sheet: enemy and squad faces readable */
+  #pStages .sinfo .si-enemies .en { width: 46px; }
+  #pStages .sinfo .si-enemies .en img { width: 44px; height: 44px; }
+  #pStages .sinfo .si-deck .dsq-u { width: 40px; height: 40px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  /* small phones: the stage panel lies over the map (the map keeps its size; ✕ or a tap on the map closes it) */
+  #pStages:has(.sinfo.open) .path, #pStages:has(.sinfo.open) .ch-head { margin-right: 0; }
+  #pStages .sinfo { box-shadow: -14px 0 24px rgba(0, 0, 0, 0.6); }
+  /* deck cards: the level as a badge on the face */
+  #pSquad .cr-deck .crc-lvb { display: block; position: absolute; right: 1px; bottom: 1px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 4px; background: rgba(0, 0, 0, 0.75);
+    font: 900 11px/16px var(--en); color: #fff; text-align: center; }
+}
+@media (orientation: landscape) and (max-height: 520px) { #pStages .path { margin: 4px 40px 6px 36px; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  /* card menu: one short row under the card, so it hides little of the deck */
+  .card-menu { flex-direction: row; width: auto !important; min-width: 0; gap: 5px; padding: 5px; }
+  .card-menu button { min-width: 78px; height: 42px; padding: 0 10px; }
+  .card-menu .cm-up { height: 42px; }
+  /* map tags readable after the node scale */
+  #pStages .node .tag { font-size: 13px; top: -15px; }
+  /* settings note */
+  .settings-window .opt-toggle small { font-size: 12px; line-height: 1.5; }
+  /* battle deck cost readable over the face */
+  .slot .c { font-size: 17px; text-shadow: 0 1px 2px #000, 0 0 4px #000, 0 0 6px #000; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pStages .sinfo { width: min(262px, 40vw); padding: 8px 10px; }
+  #pSquad #squadList .crc-art .rk-i { display: none; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* settings: sliders on the left, switches and actions on the right, all on one screen */
+  .settings-window .pwin-body { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 18px; align-content: start; grid-auto-flow: row dense; }
+  .settings-window .pwin-body > .opt-row:has(input[type=range]) { grid-column: 1; }
+  .settings-window .pwin-body > :not(.opt-row:has(input[type=range])) { grid-column: 2; }
+  .settings-window .opt-toggle small { display: none; }
+  .settings-window .opt-toggle { margin: 4px 0; flex-wrap: nowrap; }
+  .settings-window .opt-row span { min-width: 76px; }
+  .settings-window .tgl { min-height: 36px; min-width: 64px; }
+  .settings-window .pwin-body > div[style] { margin-top: 4px !important; }
+  .settings-window .settings-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+  .settings-window .settings-actions .btn { height: 40px; min-width: 0; font-size: 13px; padding: 0 6px; border-width: 0 14px 0 16px; border-image-width: 0 14px 0 16px; }
+  /* recruit shop: the name lies over the picture, on two lines when it needs them */
+  #shopList .ucard { position: relative; }
+  #shopList .ucard .nm { position: absolute; left: 0; right: 0; top: calc(100% - 22px - 2.6em); border-top: 0; padding: 10px 5px 3px; white-space: normal; overflow: hidden; text-overflow: clip;
+    line-height: 1.2; font-size: 12px; letter-spacing: -0.3px; word-break: keep-all; background: linear-gradient(transparent, rgba(0, 0, 0, 0.85) 40%); display: flex; align-items: flex-end; height: 2.6em; box-sizing: content-box; }
+  #shopList .ucard img { border-bottom: 3px solid var(--rc, #555); }
+  /* secondary text larger and lighter */
+  .ch-sub { font-size: 13px; color: #c9ced4; }
+  .si-stars i { opacity: 0.85; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  /* small phones: a roomier top bar */
+  .ri { padding: 0 6px 0 3px; gap: 3px; }
+  .ri b { min-width: 0; }
+  .ri i { width: 18px; height: 16px; }
+  .res { gap: 4px; }
+  .tb-title b { font-size: 14px; letter-spacing: 0; }
+  .topbar { gap: 6px; }
+  /* deck: tighter frame, larger faces */
+  #pSquad .cr-deck { padding: 5px 5px; }
+  #pSquad .cr-grid { gap: 4px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* settings: two newspaper columns (sliders, then the rest) instead of a shared-row grid */
+  .settings-window .pwin-body { display: block; columns: 2; column-gap: 18px; }
+  .settings-window .pwin-body > * { break-inside: avoid; }
+  .settings-window .opt-row:has(input[data-fx="trans"]) { break-after: column; }
+  .settings-window .settings-actions { display: flex; flex-direction: column; gap: 5px; }
+  .settings-window .settings-actions .btn { height: 36px; font-size: 13px; white-space: nowrap; }
+  /* recruit shop: the name sits just above the price row */
+  #shopList .ucard .nm { top: auto; bottom: 21px; height: auto; max-height: 2.4em; padding: 12px 5px 2px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .settings-window #settingsActions { display: none; }
+  .settings-window .pwin-btns .settings-secondary { display: flex !important; }
+  .settings-window .pwin-btns { justify-content: flex-start; padding-top: 10px; }
+  .settings-window .pwin-btns .btn { min-width: 168px; height: 38px; font-size: 13px; white-space: nowrap; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* secondary figures at 12px at least */
+  .detail .stat-next small { font-size: 12px; }
+  .detail .stat-grid small, .detail .stats small { font-size: 12px; }
+  #pStages .node .tag { font-size: 14px; }
+  .settings-window .pwin-body > div[style] { font-size: 12.5px !important; }
+  .mrow .mp, .mission .mp, small.mp { font-size: 12.5px; }
+  /* dark buttons read as buttons */
+  .btn.d { color: #fff; filter: brightness(1.35); }
+  .btn.d:disabled { filter: none; color: #9aa3ad; }
+  /* stage panel: equal buttons, clear of the screen edge */
+  #pStages .sinfo .si-go { padding-bottom: 6px; }
+  #pStages .sinfo .si-go .btn.si-edit, #pStages .sinfo .si-go #btnGo { flex: 1 1 0; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pSquad.on { grid-template-columns: 50% minmax(0, 1fr); }
+  #pSquad #squadList { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* settings: the destructive action stands apart */
+  .settings-window .pwin-btns .btn:last-child { margin-top: 8px; color: #ff9a92; }
+  .settings-window .pwin-btns .btn { height: 38px; }
+  /* battle: the deck row clear of the bottom edge */
+  .hud-bottom { padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  /* stage panel content never runs under its buttons */
+  #pStages .sinfo .si-go { position: static; background: none; }
+  #pStages .sinfo { gap: 5px; }
+}
+@media (orientation: landscape) and (max-height: 360px) {
+  #pStages .sinfo .si-stars { display: none; } /* the map nodes show the stars */
+  #pStages .sinfo .si-head { margin-right: 36px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  /* small phones: an icon rail (the tab names stay under the icons, smaller rail) */
+  :root { --rail: calc(54px + env(safe-area-inset-left)); }
+  .navbar .nav { height: 58px; font-size: 12px; }
+  /* settings: a narrower button column, longer sliders */
+  .settings-window .pwin-btns { padding-left: 2px; }
+  .settings-window .pwin-btns .btn { min-width: 128px; font-size: 12px; border-width: 0 12px 0 14px; border-image-width: 0 12px 0 14px; }
+  .settings-window .opt-row span { min-width: 58px; font-size: 12.5px; white-space: normal; line-height: 1.2; }
+  .settings-window .opt-row { gap: 6px; }
+  .settings-window .opt-row b { min-width: 2.2em; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* settings: the tutorial note repeats the button (version is on the title screen) */
+  .settings-window .pwin-body > div[style] { display: none; }
+  .settings-window .pwin-btns .btn { font-size: 13px; }
+  /* larger back arrow and battle corner buttons */
+  .desktop-op-back { width: 48px; }
+  .operation-depth .topbar { padding-left: calc(var(--rail) + 50px); }
+  .back.arrow::before { left: 16px; top: 13px; width: 16px; height: 16px; border-width: 0 0 5px 5px; }
+  .hb { width: 52px; height: 44px; }
+  /* reading windows use the width */
+  .pwin-body { max-width: none; }
+  /* deck level badge says what it is */
+  #pSquad .cr-deck .crc-lvb::before { content: 'Lv'; font-size: 9px; margin-right: 1px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pStages:has(.sinfo.open) { overflow-x: auto; padding-right: calc(min(262px, 40vw) + 12px); scrollbar-width: thin; }
+  #pStages .path, #pStages .ch-head { min-width: calc(100vw - var(--rail) - 100px); }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* battle deck buttons: the name on a strip across the top of the face */
+  .slot .snm { display: block; top: 0; bottom: auto; left: 0; right: 0; max-width: none; padding: 1px 3px 7px 16px; text-align: left; font-size: 11.5px; letter-spacing: -0.4px;
+    background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0)); }
+  .slot .rk-i { width: 15px; height: 15px; }
+  .hud-bottom .side-btn .lbl { font-size: 12px; color: #dfe4ea; }
+  /* chapters: four per screen */
+  .chapters { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .chap { height: calc(100dvh - var(--tb) - 74px); min-height: 170px; max-height: 280px; }
+  .chap .nm { font-size: 18px; }
+  /* switches read as buttons */
+  .tgl { color: #fff; background: #34404e; border-color: rgba(255, 255, 255, 0.45); font-style: normal; }
+  /* reading windows and missions */
+  .pwin-body { font-size: 14px; }
+  .mailrow .mi small { font-size: 13px; }
+  #missionList small { font-size: 13px; color: #c6ccd3; }
+  .btn.d:disabled { color: #b8c0c9; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  .chapters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .slot .snm { font-size: 11px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  body.deck1 .deck[data-page="0"] .dpage[data-p="1"] .snm, body.deck1 .deck[data-page="1"] .dpage[data-p="0"] .snm { display: none; } /* the row behind keeps quiet */
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pStages.split, #pStages.split:has(.sinfo.open) { overflow: hidden; padding-right: 12px; }
+  #pStages.split .path, #pStages.split .ch-head { min-width: 0; margin-right: calc(min(262px, 40vw) + 4px); }
+  #pStages.split .path { margin-left: 4px; }
+  #pStages .sinfo { box-shadow: none; }
+  #pSquad #squadList { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 5px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* reading windows (mail, guide): buttons back in a row under the text, the text keeps the width */
+  .pwin:has(.mailbox), .pwin:has(.help) { display: flex; flex-direction: column; }
+  .pwin:has(.mailbox) .pwin-btns, .pwin:has(.help) .pwin-btns { flex-direction: row; justify-content: center; padding: 6px 10px 8px; }
+  .pwin:has(.mailbox) .pwin-btns .btn, .pwin:has(.help) .pwin-btns .btn { min-width: 120px; height: 40px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pStages.split:has(.sinfo.open) .path, #pStages.split:has(.sinfo.open) .ch-head { min-width: 0; margin-right: calc(min(262px, 40vw) + 4px); }
+  #pStages.split:has(.sinfo.open) .path { margin-left: 4px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .settings-window .pwin-btns .btn:last-child { margin-top: auto; border-image-source: none; border: 1px solid #ff6b60; background: #3a1714; color: #ffb3ac; }
+  .settings-window .pwin-btns { justify-content: flex-start; }
+}
+.pwin-x { display: none; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .pwin-x { display: block; position: absolute; right: 6px; top: 6px; width: 36px; height: 36px; border-radius: 50%; z-index: 3;
+    background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.35); }
+  .pwin-x::before, .pwin-x::after { content: ''; position: absolute; left: 9px; right: 9px; top: 50%; height: 2px; margin-top: -1px; background: #eee; transform: rotate(45deg); }
+  .pwin-x::after { transform: rotate(-45deg); }
+  .pwin:has(.pwin-x) .pwin-title { padding-right: 48px; }
+  /* top bar: the Korean screen name, as on the rail */
+  .tb-title b { display: none; }
+  .tb-title span { display: inline; font-size: 16px; font-weight: 700; color: var(--y); }
+  /* making: the pick's description on one line at every size */
+  #gMaking .pick-desc { display: block; -webkit-line-clamp: unset; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+  /* bigger battle labels and guide text */
+  .slot .snm { font-size: 12.5px; }
+  .hud-bottom .side-btn .lbl { font-size: 13px; }
+  .help p { font-size: 14px; }
+  .help h4 { font-size: 16px; }
+}
+@media (orientation: landscape) and (max-height: 340px) {
+  #gMaking .pick-desc { display: block; }
+}
+@media (orientation: landscape) and (max-height: 520px) { #gMaking .banner-info { min-width: 0; } }
+@media (orientation: landscape) and (max-height: 520px) { .hud-bottom .side-btn .lbl { white-space: nowrap; letter-spacing: -0.5px; } }
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) { .hud-bottom .side-btn .lbl { font-size: 11.5px; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  /* battle round buttons: large enough for their labels */
+  .hud-bottom .side-btn { width: 70px; height: 70px; }
+  .hud-bottom .side-btn .lbl { font-size: 11.5px; white-space: nowrap; letter-spacing: -0.6px; }
+  .hud-bottom .deck-wrap, body.deck1 .hud-bottom .deck-wrap { flex-basis: min(560px, calc(100vw - 210px)); max-width: min(560px, calc(100vw - 210px)); }
+  /* settings: bigger slider thumbs and switches */
+  .settings-window input[type=range] { accent-color: #ffcc00; }
+  .settings-window input[type=range]::-webkit-slider-thumb { width: 24px; height: 24px; }
+  .settings-window .tgl { min-height: 40px; font-size: 15px; }
+  /* making: the description on up to two lines (clipped, never over the next line) */
+  #gMaking .pick-desc { white-space: normal; text-overflow: clip; line-height: 1.35; max-height: 2.7em; overflow: hidden; }
+  /* unit sheet figures and rail labels */
+  .detail .stats { font-size: 14px; }
+  .detail .stat-next small { font-size: 12.5px; }
+  .navbar .nav { font-size: 13px; }
+}
+@media (orientation: landscape) and (max-height: 370px) {
+  #gMaking .pickup { display: none; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  .hud-bottom .side-btn { width: 64px; height: 64px; }
+  .hud-bottom .side-btn .lbl { font-size: 10.5px; }
+  .navbar .nav { font-size: 12px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* the bottom HUD is zoomed to ~0.9 on phones: labels sized so they land at 12px or more */
+  .slot .snm { font-size: 13.5px; }
+  .hud-bottom .side-btn .lbl { font-size: 12.5px; }
+  .hud-bottom .side-btn { width: 74px; height: 74px; }
+  .hud-bottom .deck-wrap, body.deck1 .hud-bottom .deck-wrap { flex-basis: min(560px, calc(100vw - 220px)); max-width: min(560px, calc(100vw - 220px)); }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  .hud-bottom .side-btn { width: 66px; height: 66px; }
+  .hud-bottom .side-btn .lbl { font-size: 11.5px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  /* settings: two independent columns (sliders | switches and actions); only 확인 stays in the button column */
+  .settings-window .pwin-body { columns: auto; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 18px; align-items: start; }
+  .settings-window .set-col { min-width: 0; }
+  .settings-window #settingsActions { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .settings-window #settingsActions .btn { height: 40px; font-size: 13.5px; min-width: 0; white-space: nowrap; }
+  .settings-window #settingsActions .btn:last-child { margin-top: 10px; border-image-source: none; border: 1px solid #ff6b60; background: #3a1714; color: #ffb3ac; }
+  .settings-window .pwin-btns .settings-secondary { display: none !important; }
+  .settings-window .pwin-btns { justify-content: flex-end; }
+  .settings-window .pwin-btns .btn { min-width: 120px; height: 44px; font-size: 15px; }
+  /* the corner ✕ inside the title row */
+  .pwin-x { top: 1px; right: 4px; width: 36px; height: 36px; }
+  /* secondary text at 13px and lighter */
+  .detail .stats small, .detail .stat-grid small { font-size: 13px; color: #c3cad2; }
+  #pStages .sinfo .si-type { color: #c3cad2; }
+  #gMaking .pick-desc { font-size: 13px; color: #d0d5db; }
+  .mailrow .mi small { color: #c9ced4; }
+  .dreport .dr-row span { font-size: 13px; }
+  .dreport .dr-head { font-size: 13px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .settings-window .pwin-body > .set-col:first-child { grid-column: 1; grid-row: 1; }
+  .settings-window .pwin-body > .set-col:last-child { grid-column: 2; grid-row: 1; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .pwin.settings-window .pwin-body > .set-col:first-child { grid-column: 1; grid-row: 1; }
+  .pwin.settings-window .pwin-body > .set-col:last-child { grid-column: 2; grid-row: 1; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .settings-window .set-col > div[style] { display: none; }
+  .settings-window #settingsActions { gap: 5px; margin-top: 6px; }
+  .settings-window #settingsActions .btn { height: 38px; border-width: 0 16px 0 18px; border-image-width: 0 16px 0 18px; }
+  .settings-window #settingsActions .btn:last-child { margin-top: 8px; }
+}
+@media (orientation: landscape) and (max-height: 520px) { .settings-window #settingsActions .btn { min-height: 0; padding: 0 6px; line-height: 1; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  .settings-window #settingsActions .btn:first-child { display: none; } /* 도움말 is the ? button on the top bar */
+}
+/* squad in phone landscape (v2): a control row, the ten deck slots in one row, the roster across the full width below */
+@media (orientation: landscape) and (max-height: 520px) {
+  #pSquad.on { grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-rows: auto auto minmax(0, 1fr); column-gap: 8px; row-gap: 6px; }
+  #pSquad .cr-deck { display: contents; }
+  #pSquad .cr-head { grid-column: 1; grid-row: 1; margin: 0; align-self: center; }
+  #pSquad .cr-foot { grid-column: 2; grid-row: 1; margin: 0; align-self: center; gap: 8px; }
+  #pSquad .cr-foot .cr-cost { white-space: nowrap; }
+  #pSquad #rankFilter { grid-column: 4; grid-row: 1; margin: 0; width: auto; align-self: center; }
+  #pSquad #deckEdit { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; padding: 6px; border-radius: 8px;
+    background: linear-gradient(180deg, rgba(36, 44, 58, 0.95), rgba(14, 17, 22, 0.95)); border: 1px solid rgba(255, 210, 0, 0.35); }
+  #pSquad #deckEdit .crc-art { aspect-ratio: 1 / 1; }
+  #pSquad #deckEdit .crc-lv { display: none; }
+  #pSquad #deckEdit .crc .crc-lvb { display: block; position: absolute; right: 1px; bottom: 1px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 4px; background: rgba(0, 0, 0, 0.75);
+    font: 900 11px/16px var(--en); color: #fff; text-align: center; }
+  #pSquad #deckEdit .crc-xp:not(.crc-name) { display: block; height: 12px; margin-top: 3px; }
+  #pSquad #deckEdit .crc-xp span { font-size: 10.5px; line-height: 12px; }
+  #pSquad #deckEdit .crc-art .rk-i { display: block; width: 16px; height: 16px; }
+  #pSquad #squadList { grid-column: 1 / -1; grid-row: 3; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  #pSquad #squadList .crc-art .rk-i { display: block; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 760px) {
+  #pSquad.on { grid-template-columns: auto minmax(0, 1fr) auto; }
+  #pSquad .cr-foot { display: none; }
+  #pSquad .cr-head > b { display: none; }
+  #pSquad #rankFilter { grid-column: 3; }
+  #pSquad #rankFilter button { padding: 0 7px; }
+  #pSquad #deckEdit { gap: 4px; padding: 4px; }
+  #pSquad #deckEdit .crc-xp:not(.crc-name) { display: none; }
+  #pSquad #deckEdit .crc-art .rk-i { display: none; }
+  #pSquad #squadList { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #pSquad #deckEdit .crc-xp:not(.crc-name) { display: none; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 880px) {
+  #pSquad .cr-head > b { display: none; }
+  #pSquad .cr-foot .cr-cost { display: none; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .pwin-btns .dup-close { display: none !important; }
+  .pwin-btns:not(:has(.btn:not(.dup-close):not(.settings-secondary))) { display: none; } /* nothing left in the row */
+  /* squad: a lower deck row, more roster */
+  #pSquad #deckEdit .crc-art { aspect-ratio: 1 / 0.78; }
+  #pSquad #deckEdit .crc-art img { object-position: center 15%; }
+  #pSquad #deckEdit .crc .crc-lvb { font-size: 12px; height: 17px; line-height: 17px; }
+  /* map tags readable after the node scale (~0.6) */
+  #pStages .node .tag { font-size: 20px; top: -22px; padding: 1px 9px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  :root { --tb: 42px; }
+  .ri { height: 28px; }
+  .tbtn { width: 38px; height: 38px; }
+  /* battle deck: clear gaps, rank badge inside the face */
+  .hud-bottom .deck-row, .hud-bottom .dpage { gap: 6px; }
+  .slot .rk-i { top: 2px; left: 2px; }
+  .slot .snm { padding-left: 19px; }
+  /* missions: an unfinished goal shows as a label, not a button */
+  #missionList .btn.d:disabled { border-image-source: none; background: none; border: 0; filter: none; color: #9aa3ad; font-size: 13px; min-width: 0; }
+  /* settings: reset well apart from the rest */
+  .settings-window #settingsActions .btn:last-child { margin-top: 22px; }
+  .settings-window input[type=range] { -webkit-appearance: none; appearance: none; height: 36px; background: transparent; }
+  .settings-window input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: #ffcc00; }
+  .settings-window input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -9px; border-radius: 50%; background: #fff; border: 3px solid #ffcc00; box-shadow: 0 1px 4px #000a; }
+}

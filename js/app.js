@@ -118,7 +118,7 @@
   const shuffle = (list) => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   // ── title ──────────────────────────────────────────────
-  const VERSION = 'V1.36'; // shown at the title's bottom right and in the settings
+  const VERSION = 'V1.37'; // shown at the title's bottom right and in the settings
   $('ver').textContent = VERSION;
   document.querySelector('#title .title-bg').style.backgroundImage = `url(${IMG.bg_title})`;
   // the title shows the campaign's own leads (the coast where it starts, Leprechaun / Brownie / Gnome)
@@ -464,9 +464,17 @@
     const path = $('stagePath');
     path.innerHTML = '';
     path.classList.toggle('hard', isHard());
-    const narrow = path.clientWidth < 560;
+    // small landscape phones with the stage panel open: the map makes room for the panel and lays the stages out in two
+    // rows of five (there and back), so all ten stay in view beside it
+    const split = sheetOpen && matchMedia('(orientation: landscape) and (max-height: 520px) and (max-width: 760px)').matches;
+    $('pStages').classList.toggle('split', split);
+    const narrow = !split && path.clientWidth < 560 && path.clientHeight > path.clientWidth * 0.8; // a tall narrow map zigzags downwards (portrait); a short one stays across (landscape)
+    // across: two stages on the same row sit 2 steps apart (split: one step of a fifth); nodes (86px) shrink until they leave a gap there
+    const rowGap = narrow ? 1e9 : split ? path.clientWidth * 0.2 : path.clientWidth * (2 * 86 / (D.PER_CH - 1)) / 100;
+    path.style.setProperty('--ns', Math.max(0.5, Math.min(1, (rowGap - (split ? 12 : 16)) / 86)).toFixed(3));
     const pos = stages.map((s, i) => narrow
       ? [i % 2 ? 70 : 30, 6 + i * 9.8]
+      : split ? [10 + (i < 5 ? i : 9 - i) * 20, i < 5 ? 30 : 74]
       : [7 + i * (86 / (stages.length - 1)), i % 2 ? 68 : 32]);
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 100 100');
@@ -501,6 +509,7 @@
     renderStageInfo(list()[selStage]);
     $('stageInfo').classList.toggle('open', sheetOpen);
     path.classList.toggle('sheet-off', !sheetOpen);
+    $('pStages').scrollLeft = 0;
     path.onclick = (e) => { if (sheetOpen && !e.target.closest('.node')) { sheetOpen = false; renderStages(); } }; // tap the map: close
   }
 
@@ -796,7 +805,7 @@
     b.className = `crc r-${u.rank}` + (have ? '' : ' none') + (inDeck ? ' in' : '') + (ready ? ' up' : '') + (have && need && n >= need ? ' full' : '');
     b.dataset.id = u.id;
     b.innerHTML = `<div class="crc-art"><img src="${IMG['u_' + u.id]}" alt="" draggable="false"><i class="crc-cost" aria-label="출격 전력 ${u.cost}"><span aria-hidden="true"></span>${u.cost}</i>${rk(u.rank, u)}` +
-      `</div>` +
+      (have ? `<b class="crc-lvb">${lv}</b>` : '') + `</div>` +
       `<div class="crc-lv">${have ? `레벨 ${lv}` : '미보유'}</div>` +
       (have ? `<div class="crc-xp"><i style="width:${prog * 100}%"></i><span>${need ? `${fmt(n)}/${fmt(need)}` : 'MAX'}</span></div>` : `<div class="crc-xp crc-name">${u.name}</div>`);
     b.title = `${u.name} · 출격 전력 ${fmt(u.cost)}`;
@@ -857,7 +866,9 @@
   // the small menu under the card
   const mousePC = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
   function cardMenu(u, el) {
-    if (mousePC() && !lobbyTut()) { closeCardMenu(); AUDIO.play('click', 0.45, 1.2); return openDetail(u); }
+    // PC and short landscape screens: the card sheet at once (its buttons upgrade / add / remove); no popup over the deck
+    const direct = mousePC() || matchMedia('(orientation: landscape) and (max-height: 520px)').matches;
+    if (direct && !lobbyTut()) { closeCardMenu(); AUDIO.play('click', 0.45, 1.2); return openDetail(u); }
     const m = $('cardMenu');
     if (m.classList.contains('show') && m.dataset.id === u.id) return closeCardMenu();
     closeCardMenu();
@@ -877,12 +888,26 @@
     const r = el.getBoundingClientRect();
     m.style.width = Math.max(96, r.width + 16) + 'px';
     m.classList.add('show');
-    const h = m.offsetHeight, below = r.bottom + h + 8 < innerHeight - 70;
-    const left = Math.max(6, Math.min(innerWidth - m.offsetWidth - 6, r.left + r.width / 2 - m.offsetWidth / 2));
-    m.style.left = left + 'px';
-    m.style.setProperty('--ax', r.left + r.width / 2 - left + 'px'); // the arrow points at the card even when the menu is pushed in
-    m.style.top = (below ? r.bottom + 4 : r.top - h - 4) + 'px';
-    m.classList.toggle('above', !below);
+    // the free band between the top bar and a bottom tab bar (in landscape the tabs are a rail on the left)
+    const tb = document.querySelector('#lobby .topbar'), nb = document.querySelector('#lobby .navbar');
+    const topY = (tb ? tb.getBoundingClientRect().bottom : 0) + 4;
+    const nr = nb && nb.offsetParent ? nb.getBoundingClientRect() : null;
+    const botY = (nr && nr.width > nr.height ? nr.top : innerHeight) - 4;
+    const h = m.offsetHeight, w = m.offsetWidth;
+    const below = r.bottom + h + 8 <= botY, above = r.top - h - 8 >= topY;
+    m.classList.remove('above', 'side');
+    if (below || above) {
+      const left = Math.max(6, Math.min(innerWidth - w - 6, r.left + r.width / 2 - w / 2));
+      m.style.left = left + 'px';
+      m.style.setProperty('--ax', r.left + r.width / 2 - left + 'px'); // the arrow points at the card even when the menu is pushed in
+      m.style.top = (below ? r.bottom + 4 : r.top - h - 4) + 'px';
+      m.classList.toggle('above', !below);
+    } else { // short screens: beside the card, kept inside the free band
+      const right = r.right + w + 8 <= innerWidth - 6;
+      m.style.left = (right ? r.right + 6 : Math.max(6, r.left - w - 6)) + 'px';
+      m.style.top = Math.max(topY, Math.min(botY - h, r.top + r.height / 2 - h / 2)) + 'px';
+      m.classList.add('side');
+    }
   }
   function cardAction(u, k) {
     if (k === 'info' || k === 'up') { closeCardMenu(); return openDetail(u); }
@@ -1054,7 +1079,7 @@
       <span>체력 ${stat(u.hp)}</span><span>공격 ${stat(u.atk)}</span>
       <span>사거리 <b>${u.range}</b></span><span>이동 <b>${u.spd}</b></span>
       <span>넉백 <b>${u.kb}회</b></span><span>${u.skill ? `스킬 <b>${u.skill}타</b>` : ''}</span></div>
-      ${have && lv < D.MAX_LV ? `<div style="margin-top:6px">업그레이드 → 레벨 ${lv + 1}: 카드 <b>${fmt(need)}</b> · <b>${fmt(cost)} XP</b> (보유 ${fmt(save.xp)})</div>` : have ? '<div style="margin-top:6px">최대 레벨</div>' : ''}</div></div>`;
+      ${have && lv < D.MAX_LV ? `<div class="up-note" style="margin-top:6px">업그레이드 → 레벨 ${lv + 1}: 카드 <b>${fmt(need)}</b> · <b>${fmt(cost)} XP</b> (보유 ${fmt(save.xp)})</div>` : have ? '<div class="up-note" style="margin-top:6px">최대 레벨</div>' : ''}</div></div>`;
     const btns = [];
     if (have) {
       if (lv < D.MAX_LV) btns.push([`업그레이드 · ${fmt(cost)} XP`, () => {
@@ -1376,14 +1401,14 @@
     const hb = document.querySelector('.hud-bottom'), top = document.querySelector('.hud-top');
     if (!hb) return;
     const W = innerWidth, H = innerHeight, portrait = W < H * 0.9, touch = matchMedia('(pointer: coarse)').matches;
-    const budget = H * (portrait ? 0.4 : touch ? 0.28 : 0.36); // PC keeps both rows (number keys) unless the window is tiny
+    const budget = H * (portrait ? 0.4 : touch ? 0.36 : 0.36); // PC keeps both rows (number keys) unless the window is tiny; phones in landscape keep the deck buttons large enough to tap
     hb.style.zoom = top.style.zoom = '';
     document.body.classList.toggle('deck1', W <= 640 || H <= 520);
     if (touch && !document.body.classList.contains('deck1') && hb.offsetHeight > budget) document.body.classList.add('deck1');
     const h = hb.offsetHeight;
     if (h > budget) {
       const z = Math.max(0.55, budget / h); // cards stay ~55px tall: still easy to tap
-      hb.style.zoom = z.toFixed(3); top.style.zoom = Math.max(0.8, z).toFixed(3);
+      hb.style.zoom = z.toFixed(3); top.style.zoom = (!portrait && H <= 520 ? 1 : Math.max(0.8, z)).toFixed(3); // short landscape: the thin top bar keeps full size
     }
     // the top bar's content edge (its gradient padding may overlap): base labels are kept below it
     const tb = Math.max(...[...top.children].map((e) => e.getBoundingClientRect().bottom), 0);
@@ -1594,14 +1619,16 @@
   function openSettings(back) {
     const row = (k, label) => `<div class="opt-row"><span>${label}</span><input type="range" min="0" max="100" value="${Math.round(AUDIO.volume(k) * 100)}" data-k="${k}"><b>${Math.round(AUDIO.volume(k) * 100)}</b></div>`;
     const fxRow = (k, label, max) => `<div class="opt-row"><span>${label}</span><input type="range" min="0" max="${max}" value="${FXSET[k]}" data-fx="${k}"><b>${FXSET[k]}</b></div>`;
-    modal('설정', row('bgm', '배경음') + row('sfx', '효과음') + row('voice', '음성') +
-      fxRow('power', '이펙트 강도', 100) + fxRow('trans', '이펙트 투명도', 80) +
+    modal('설정', '<div class="set-col">' + row('bgm', '배경음') + row('sfx', '효과음') + row('voice', '음성') +
+      fxRow('power', '이펙트 강도', 100) + fxRow('trans', '이펙트 투명도', 80) + '</div><div class="set-col">' +
       '<div class="opt-row opt-toggle"><small>이펙트 강도를 낮추면 이펙트 양·화면 흔들림·밝기가 줄고, 투명도를 올리면 이펙트가 비쳐 보입니다</small></div>' +
+      `<div class="opt-row opt-toggle"><span>카메라 자동 추적</span><button id="optFollow" class="tgl${FXSET.follow !== false ? ' on' : ''}">${FXSET.follow !== false ? 'ON' : 'OFF'}</button>
+        <small>ON: 전투 화면이 맨 앞 대원을 따라갑니다 · OFF: 직접 옮긴 자리에 머뭅니다</small></div>` +
       `<div class="opt-row opt-toggle"><span>스토리 다시 보기</span><button id="optStory" class="tgl${save.storyAlways ? ' on' : ''}">${save.storyAlways ? 'ON' : 'OFF'}</button>
         <small>ON: 스테이지 스토리를 매번 보여 줍니다 · OFF: 한 번 본 스토리는 건너뜁니다</small></div>` +
       `<div class="opt-row opt-toggle"><span>전체화면</span><button id="optFs" class="tgl opt-fullscreen${fsOn() ? ' on' : ''}" aria-pressed="${fsOn()}" ${fsOk ? '' : 'disabled'}>${fsLabel()}</button>
         <small>${fsOk ? '버튼을 눌러 전체화면을 켜거나 해제합니다' : '이 브라우저는 전체화면을 지원하지 않습니다'}</small></div>` +
-      `<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.<span style="float:right;color:var(--dim)">${VERSION}</span></div><div id="settingsActions" class="settings-actions"></div>`, [
+      `<div style="margin-top:12px;font-size:12px">튜토리얼은 1-1에서 다시 볼 수 있습니다.<span style="float:right;color:var(--dim)">${VERSION}</span></div><div id="settingsActions" class="settings-actions"></div></div>`, [
       ['확인', back || closeModal],
       ['도움말', () => openHelp(), 'd'],
       ['세이브 내보내기 / 불러오기', () => openSaveIO(), 'd'],
@@ -1620,6 +1647,10 @@
       copy.onclick = button.onclick;
       $('settingsActions').appendChild(copy);
     });
+    $('optFollow').onclick = () => {
+      FXSET.follow = FXSET.follow === false; fxSave(); AUDIO.play('click', 0.6, 1.15);
+      $('optFollow').classList.toggle('on', FXSET.follow); $('optFollow').textContent = FXSET.follow ? 'ON' : 'OFF';
+    };
     $('optStory').onclick = () => {
       save.storyAlways = !save.storyAlways; persist(); AUDIO.play('click', 0.6, 1.15);
       $('optStory').classList.toggle('on', save.storyAlways); $('optStory').textContent = save.storyAlways ? 'ON' : 'OFF';
@@ -1787,7 +1818,10 @@
     GAME.setPaused(on);
     if (!on) return closeModal();
     const st = GAME.state ? GAME.state.st : D.STAGES[0];
-    modal('일시정지', '<b>조작</b><br>대원 버튼 / Q W E R T (윗줄) · A S D F G (아랫줄) · 배치<br>Tab · 발전 효율 강화 &nbsp; Space · 오르카 포격<br>드래그 · 휠 · 방향키 · 미니맵 · 전장 이동', [
+    // keyboard keys on a PC; a touch screen gets the touch controls
+    const help = mousePC() ? '<b>조작</b><br>대원 버튼 / Q W E R T (윗줄) · A S D F G (아랫줄) · 배치<br>Tab · 발전 효율 강화 &nbsp; Space · 오르카 포격<br>드래그 · 휠 · 방향키 · 미니맵 · 전장 이동'
+      : '<b>조작</b><br>아래 대원 버튼 · 배치<br>왼쪽 원 · 발전 효율 강화<br>오른쪽 원 · 오르카 포격<br>전장을 끌어서 · 화면 이동';
+    modal('일시정지', help, [
       ['계속하기', () => pause(false)],
       ['설정', () => openSettings(() => pause(true)), 'd'],
       ['재시작', () => { closeModal(); GAME.stop(); launch(st); }, 'd'],
@@ -1951,6 +1985,19 @@
       b.onclick = () => { AUDIO.play('click', 0.55, 0.85); fn(); };
       box.appendChild(b);
     });
+    // a ✕ in the corner for windows that have a 닫기 button (shown on short landscape screens, ui.css)
+    const pw = document.querySelector('.pwin'), old = pw.querySelector('.pwin-x');
+    if (old) old.remove();
+    // the corner ✕ stands in for a plain closing button (닫기, or the only 확인 / 취소); on short landscape screens that
+    // button itself is hidden (ui.css .dup-close), so each window has one way to close
+    const close = btns.find(([label]) => label === '닫기') || (btns.filter(([, , st]) => st !== 'settings').length && ['확인', '취소'].includes(btns[0][0]) && (btns.length === 1 || $('settingsActions')) ? btns[0] : null);
+    if (close) box.children[btns.indexOf(close)].classList.add('dup-close');
+    if (close) {
+      const x = document.createElement('button');
+      x.className = 'pwin-x'; x.setAttribute('aria-label', '닫기');
+      x.onclick = () => { AUDIO.play('click', 0.55, 0.85); close[1](); };
+      pw.appendChild(x);
+    }
     $('modal').classList.add('show');
   }
   function closeModal() { $('modal').classList.remove('show'); }
